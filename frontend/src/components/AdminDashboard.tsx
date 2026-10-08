@@ -255,7 +255,7 @@ export const AdminDashboard: React.FC = () => {
   return (
     <div className="flex h-screen bg-slate-100 font-sans">
       {/* Sidebar Lateral */}
-      <aside className="w-64 bg-miaa-marino text-white flex flex-col justify-between shadow-xl">
+      <aside className="w-64 text-white flex flex-col justify-between shadow-xl" style={{ backgroundColor: "#09426F" }}>
         <div>
           <div className="p-6 border-b border-white/10 flex items-center space-x-3">
             <div className="w-9 h-9 bg-miaa-ambar text-miaa-marino rounded-lg flex items-center justify-center font-black text-xl">
