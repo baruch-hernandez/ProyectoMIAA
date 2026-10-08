@@ -52,13 +52,16 @@ public class QuejaService {
     private final QuejaRepository quejaRepository;
     private final NotaQuejaRepository notaRepository;
     private final UsuarioRepository usuarioRepository;
+    private final LimiteAguascalientes limiteAgs;
 
     public QuejaService(QuejaRepository quejaRepository,
                         NotaQuejaRepository notaRepository,
-                        UsuarioRepository usuarioRepository) {
+                        UsuarioRepository usuarioRepository,
+                        LimiteAguascalientes limiteAgs) {
         this.quejaRepository = quejaRepository;
         this.notaRepository = notaRepository;
         this.usuarioRepository = usuarioRepository;
+        this.limiteAgs = limiteAgs;
     }
 
     // =====================================================================
@@ -70,6 +73,7 @@ public class QuejaService {
         if (!MUNICIPIOS_SET.contains(req.municipio())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Municipio no válido: " + req.municipio());
         }
+        validarUbicacion(req.latitud(), req.longitud());
         List<String> fotos = validarFotos(req.fotos());
 
         Usuario autor = usuarioRepository.findById(yo.id())
@@ -159,6 +163,21 @@ public class QuejaService {
 
     private static ResponseStatusException noEncontrada(Long id) {
         return new ResponseStatusException(HttpStatus.NOT_FOUND, "La queja #" + id + " no existe");
+    }
+
+    /**
+     * La ubicación es opcional, pero si viene: completa (latitud Y longitud) y dentro
+     * del estado. El @DecimalMin/@DecimalMax del DTO solo revisa un rectángulo; esto
+     * revisa el contorno real (el rectángulo incluye pedazos de Zacatecas y Jalisco).
+     */
+    private void validarUbicacion(Double lat, Double lng) {
+        if (lat == null && lng == null) return;
+        if (lat == null || lng == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La ubicación debe traer latitud y longitud");
+        }
+        if (!limiteAgs.contiene(lat, lng)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La ubicación está fuera del estado de Aguascalientes");
+        }
     }
 
     private static List<String> validarFotos(List<String> fotos) {
