@@ -8,4 +8,7 @@ import java.util.List;
 @Repository
 public interface LecturaRepository extends JpaRepository<Lectura, Long> {
     List<Lectura> findByRutaId(Long rutaId);
+
+    // SELECT COUNT(*) FROM lecturas WHERE ruta_id = ?  (Spring lo arma por el nombre)
+    long countByRutaId(Long rutaId);
 }

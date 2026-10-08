@@ -1,10 +1,13 @@
 // Requerimiento: Fotos comprimidas <= 200 KB
+// (Se agregó img.onerror: antes, si el archivo no era una imagen válida,
+//  la promesa se quedaba "colgada" para siempre.)
 export const comprimirFotoCamara = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onload = (event) => {
       const img = new Image();
+      img.onerror = () => reject(new Error('El archivo no es una imagen válida'));
       img.src = event.target?.result as string;
       img.onload = () => {
         const canvas = document.createElement('canvas');

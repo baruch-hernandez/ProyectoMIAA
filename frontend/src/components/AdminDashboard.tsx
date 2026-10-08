@@ -1,8 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import api from '../services/api';
+import { leerError } from '../services/quejasApi';
+import { usuariosApi } from '../services/usuariosApi';
+import { FiltroRutas } from './admin/FiltroRutas';
+import { TablaRutas } from './admin/TablaRutas';
+import {
+  colorRuta, contarPorEstado, esEstadoRuta, etiquetaRuta, filtrarRutas, FILTROS_INICIALES, hayFiltrosActivos,
+} from '../utils/rutas';
+import type { FiltroLecturista, FiltrosRutas, LecturistaResumen, RutaItem } from '../utils/rutas';
 
 // Corrección de íconos por defecto de Leaflet en React
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -15,18 +24,6 @@ L.Icon.Default.mergeOptions({
   iconRetinaUrl: markerIcon2x,
   shadowUrl: markerShadow,
 });
-
-interface RutaItem {
-  id: number;
-  codigoSector: string;
-  colonia: string;
-  estado: string;
-  puntos: [number, number][];
-  lecturista?: {
-    id: number;
-    nombre?: string;
-  };
-}
 
 // Componente para capturar clics en el mapa y realizar Geocodificación Inversa
 const CapturadorDeClics = ({
@@ -57,9 +54,50 @@ export const AdminDashboard: React.FC = () => {
   const [puntosTemporales, setPuntosTemporales] = useState<[number, number][]>([]);
   const [obteniendoUbicacion, setObteniendoUbicacion] = useState(false);
   const [cargandoGuardado, setCargandoGuardado] = useState(false);
+  // id de la ruta que se está actualizando/borrando (para desactivar sus botones)
+  const [rutaOcupada, setRutaOcupada] = useState<number | null>(null);
+
+  // Lecturistas reales (para filtrar y para asignar rutas)
+  const [lecturistas, setLecturistas] = useState<LecturistaResumen[]>([]);
+  const [lecturistaAsignado, setLecturistaAsignado] = useState('');
+
+  // ---------- Filtros ----------
+  // Viven en la URL (?estado=COMPLETADA&lecturista=2&q=centro): así sobreviven
+  // al recargar la página y se puede compartir el link ya filtrado.
+  const [params, setParams] = useSearchParams();
+  const filtros = useMemo<FiltrosRutas>(() => {
+    const estadoUrl = params.get('estado') ?? '';
+    return {
+      estado: esEstadoRuta(estadoUrl) ? estadoUrl : FILTROS_INICIALES.estado,
+      lecturista: (params.get('lecturista') as FiltroLecturista | null) ?? FILTROS_INICIALES.lecturista,
+      busqueda: params.get('q') ?? '',
+    };
+  }, [params]);
+
+  const cambiarFiltros = (cambios: Partial<FiltrosRutas>) => {
+    const nuevos = { ...filtros, ...cambios };
+    const p = new URLSearchParams();
+    if (nuevos.estado !== 'TODAS') p.set('estado', nuevos.estado);
+    if (nuevos.lecturista !== 'todos') p.set('lecturista', nuevos.lecturista);
+    if (nuevos.busqueda) p.set('q', nuevos.busqueda);
+    setParams(p, { replace: true }); // replace: no llenar el historial con cada letra
+  };
+  const limpiarFiltros = () => setParams(new URLSearchParams(), { replace: true });
+
+  // Se recalcula solo cuando cambian las rutas o los filtros
+  const rutasFiltradas = useMemo(() => filtrarRutas(rutas, filtros), [rutas, filtros]);
+  const conteo = useMemo(() => contarPorEstado(rutas, filtros), [rutas, filtros]);
 
   useEffect(() => {
     cargarRutas();
+    usuariosApi
+      .lecturistas()
+      .then((lista) => {
+        setLecturistas(lista);
+        // Preselecciona al primero para no obligar a elegir si solo hay uno
+        if (lista.length > 0) setLecturistaAsignado(String(lista[0].id));
+      })
+      .catch((err) => console.error('No se pudieron cargar los lecturistas:', err));
   }, []);
 
   const cargarRutas = async () => {
@@ -81,18 +119,6 @@ export const AdminDashboard: React.FC = () => {
   const handleLogout = () => {
     localStorage.clear();
     window.location.href = '/';
-  };
-
-  const obtenerColorEstado = (estado?: string) => {
-    switch (estado) {
-      case 'COMPLETADA':
-        return '#22c55e'; // Verde
-      case 'EN_PROCESO':
-        return '#eab308'; // Amarillo
-      case 'PENDIENTE':
-      default:
-        return '#ef4444'; // Rojo
-    }
   };
 
   // Reverse Geocoding usando Nominatim API
@@ -150,6 +176,11 @@ export const AdminDashboard: React.FC = () => {
       alert('Por favor activa el dibujo y marca al menos 2 puntos en el mapa.');
       return;
     }
+    const encargado = lecturistas.find((l) => String(l.id) === lecturistaAsignado);
+    if (!encargado) {
+      alert('Elige al lecturista encargado de la ruta.');
+      return;
+    }
 
     setCargandoGuardado(true);
 
@@ -159,9 +190,7 @@ export const AdminDashboard: React.FC = () => {
       estado: 'PENDIENTE',
       puntos: JSON.stringify(puntosTemporales),
       fechaAsignacion: new Date().toISOString().split('T')[0],
-      lecturista: {
-        id: 2
-      }
+      lecturista: { id: encargado.id }, // antes estaba fijo el id 2
     };
 
     console.log('Enviando payload a Spring Boot:', nuevaRutaPayload);
@@ -170,7 +199,7 @@ export const AdminDashboard: React.FC = () => {
       const response = await api.post('/rutas', nuevaRutaPayload);
       console.log('Respuesta del servidor:', response.data);
       
-      alert('¡Ruta guardada y asignada exitosamente a Juan Pérez!');
+      alert(`Ruta guardada y asignada a ${encargado.nombre}.`);
       await cargarRutas();
       
       setCodigoSector('');
@@ -186,62 +215,77 @@ export const AdminDashboard: React.FC = () => {
     }
   };
 
+  // ANTES: la tabla se actualizaba en el `finally`, es decir, AUNQUE el servidor fallara.
+  // Parecía que funcionaba, pero al recargar la página todo regresaba.
+  // AHORA: solo cambiamos la tabla cuando el servidor confirma; si falla, avisamos
+  // el motivo real y recargamos desde la BD para que la tabla diga la verdad.
+
   const handleCambiarEstado = async (id: number, nuevoEstado: string) => {
+    setRutaOcupada(id);
     try {
       await api.put(`/rutas/${id}`, { estado: nuevoEstado });
+      setRutas((prev) => prev.map((r) => (r.id === id ? { ...r, estado: nuevoEstado } : r)));
     } catch (err) {
-      console.error('Error actualizando estado en BD:', err);
+      alert('No se pudo cambiar el estado: ' + leerError(err).mensaje);
+      await cargarRutas();
     } finally {
-      setRutas((prev) =>
-        prev.map((r) => (r.id === id ? { ...r, estado: nuevoEstado } : r))
-      );
+      setRutaOcupada(null);
     }
   };
 
-  const handleEliminarRuta = async (id: number) => {
+  const handleEliminarRuta = async (ruta: RutaItem) => {
+    const seguro = window.confirm(
+      `¿Eliminar la ruta ${ruta.codigoSector} (${ruta.colonia})?\nEsta acción no se puede deshacer.`,
+    );
+    if (!seguro) return;
+
+    setRutaOcupada(ruta.id);
     try {
-      await api.delete(`/rutas/${id}`);
+      await api.delete(`/rutas/${ruta.id}`);
+      setRutas((prev) => prev.filter((r) => r.id !== ruta.id));
     } catch (err) {
-      console.error('Error eliminando ruta de BD:', err);
+      // Ej.: "No se puede eliminar: la ruta tiene 3 lecturas registradas..."
+      alert(leerError(err).mensaje);
+      await cargarRutas();
     } finally {
-      setRutas((prev) => prev.filter((r) => r.id !== id));
+      setRutaOcupada(null);
     }
   };
 
   return (
     <div className="flex h-screen bg-slate-100 font-sans">
       {/* Sidebar Lateral */}
-      <aside className="w-64 bg-slate-900 text-white flex flex-col justify-between shadow-xl">
+      <aside className="w-64 bg-miaa-marino text-white flex flex-col justify-between shadow-xl">
         <div>
-          <div className="p-6 border-b border-slate-800 flex items-center space-x-3">
-            <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center font-black text-xl">
+          <div className="p-6 border-b border-white/10 flex items-center space-x-3">
+            <div className="w-9 h-9 bg-miaa-ambar text-miaa-marino rounded-lg flex items-center justify-center font-black text-xl">
               M
             </div>
             <div>
               <h2 className="font-bold text-lg leading-none">MIAA</h2>
-              <span className="text-xs text-slate-400">Aguascalientes</span>
+              <span className="text-xs text-miaa-bruma">Aguascalientes</span>
             </div>
           </div>
 
           <nav className="p-4 space-y-1">
-            <a href="#" className="flex items-center px-4 py-3 bg-blue-600 text-white rounded-lg font-medium text-sm">
+            <a href="#" className="flex items-center px-4 py-3 bg-white/15 text-white rounded-lg font-semibold text-sm">
               🗺️ Monitoreo & Mapa 
             </a>
-            <a href="#" className="flex items-center px-4 py-3 text-slate-400 hover:bg-slate-800 rounded-lg text-sm transition">
+            <a href="#" className="flex items-center px-4 py-3 text-miaa-bruma hover:bg-white/10 rounded-lg text-sm transition">
               👥 Lecturistas
             </a>
-            <a href="#" className="flex items-center px-4 py-3 text-slate-400 hover:bg-slate-800 rounded-lg text-sm transition">
+            <a href="#" className="flex items-center px-4 py-3 text-miaa-bruma hover:bg-white/10 rounded-lg text-sm transition">
               📊 Historico de Lecturas 
             </a>
           </nav>
         </div>
 
-        <div className="p-4 border-t border-slate-800">
-          <div className="text-xs text-slate-400 mb-2">Conectado como:</div>
+        <div className="p-4 border-t border-white/10">
+          <div className="text-xs text-miaa-bruma mb-2">Conectado como:</div>
           <div className="text-sm font-semibold truncate mb-3">{usuario?.nombre || 'Administrador MIAA'}</div>
           <button
             onClick={handleLogout}
-            className="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs py-2 rounded-md font-semibold transition"
+            className="w-full bg-white/10 hover:bg-red-600 text-white text-xs py-2 rounded-md font-semibold transition"
           >
             Cerrar Sesión
           </button>
@@ -274,7 +318,7 @@ export const AdminDashboard: React.FC = () => {
             <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
               <div>
                 <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Lecturistas en Campo</span>
-                <p className="text-2xl font-bold text-slate-800 mt-1">1</p>
+                <p className="text-2xl font-bold text-slate-800 mt-1">{lecturistas.length}</p>
               </div>
               <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-xl">👷‍♂️</div>
             </div>
@@ -360,13 +404,19 @@ export const AdminDashboard: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-600 mb-1">Lecturista Asignado</label>
-                    <input
-                      type="text"
-                      value="Juan Pérez (lecturista1)"
-                      disabled
-                      className="w-full text-sm px-3 py-2 border border-slate-200 bg-slate-50 text-slate-500 rounded-lg"
-                    />
+                    <label htmlFor="lecturista-asignado" className="block text-xs font-semibold text-slate-600 mb-1">Lecturista encargado</label>
+                    <select
+                      id="lecturista-asignado"
+                      value={lecturistaAsignado}
+                      onChange={(e) => setLecturistaAsignado(e.target.value)}
+                      required
+                      className="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                    >
+                      {lecturistas.length === 0 && <option value="">No hay lecturistas registrados</option>}
+                      {lecturistas.map((l) => (
+                        <option key={l.id} value={String(l.id)}>{l.nombre} ({l.username})</option>
+                      ))}
+                    </select>
                   </div>
 
                   <button
@@ -407,9 +457,10 @@ export const AdminDashboard: React.FC = () => {
                     </>
                   )}
 
-                  {rutas.map((r) => {
-                    const colorRuta = obtenerColorEstado(r.estado);
-                    const primerPunto = r.puntos && r.puntos.length > 0 ? r.puntos[0] : [21.8824, -102.2826];
+                  {/* Solo las rutas que pasan el filtro */}
+                  {rutasFiltradas.map((r) => {
+                    const colorLinea = colorRuta(r.estado).linea;
+                    const primerPunto: [number, number] = r.puntos && r.puntos.length > 0 ? r.puntos[0] : [21.8824, -102.2826];
 
                     return (
                       <React.Fragment key={r.id}>
@@ -417,7 +468,7 @@ export const AdminDashboard: React.FC = () => {
                           <Polyline
                             positions={r.puntos}
                             pathOptions={{
-                              color: colorRuta,
+                              color: colorLinea,
                               weight: 5,
                               opacity: 0.8,
                             }}
@@ -428,15 +479,15 @@ export const AdminDashboard: React.FC = () => {
                           <Popup>
                             <div className="text-sm font-sans p-1">
                               <strong className="text-blue-900 block font-bold">{r.codigoSector}</strong>
-                              <span className="text-slate-600 block text-xs mb-2">Zona: {r.colonia}</span>
+                              <span className="text-slate-600 block text-xs">Zona: {r.colonia}</span>
+                              <span className="text-slate-600 block text-xs mb-2">
+                                Lecturista: {r.lecturista?.nombre ?? 'sin asignar'}
+                              </span>
                               <span
-                                className="text-xs px-2 py-1 rounded font-bold uppercase"
-                                style={{
-                                  backgroundColor: `${colorRuta}25`,
-                                  color: colorRuta,
-                                }}
+                                className="text-xs px-2 py-1 rounded font-bold"
+                                style={{ backgroundColor: `${colorLinea}25`, color: colorLinea }}
                               >
-                                ● {r.estado}
+                                ● {etiquetaRuta(r.estado)}
                               </span>
                             </div>
                           </Popup>
@@ -449,77 +500,29 @@ export const AdminDashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Tabla de Gestión */}
-          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-            <h3 className="text-base font-bold text-slate-800 mb-4">Gestión de Rutas Registradas en Servidor</h3>
-            
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-slate-600">
-                <thead className="bg-slate-50 text-slate-700 uppercase text-xs border-b border-slate-200">
-                  <tr>
-                    <th className="px-4 py-3">Código Sector</th>
-                    <th className="px-4 py-3">Zona / Colonia</th>
-                    <th className="px-4 py-3">Puntos Trazados</th>
-                    <th className="px-4 py-3">Estado</th>
-                    <th className="px-4 py-3 text-center">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {rutas.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="text-center py-4 text-slate-400">
-                        No hay rutas guardadas en la base de datos.
-                      </td>
-                    </tr>
-                  ) : (
-                    rutas.map((r) => {
-                      const colorRuta = obtenerColorEstado(r.estado);
-                      return (
-                        <tr key={r.id} className="hover:bg-slate-50">
-                          <td className="px-4 py-3 font-semibold text-slate-800">{r.codigoSector}</td>
-                          <td className="px-4 py-3">{r.colonia}</td>
-                          <td className="px-4 py-3 text-xs font-mono">{r.puntos ? r.puntos.length : 0} vértices</td>
-                          <td className="px-4 py-3">
-                            <span
-                              className="text-xs px-2.5 py-1 rounded-full font-bold uppercase"
-                              style={{
-                                backgroundColor: `${colorRuta}20`,
-                                color: colorRuta,
-                              }}
-                            >
-                              ● {r.estado}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-center space-x-2">
-                            <button
-                              onClick={() => handleCambiarEstado(r.id, 'COMPLETADA')}
-                              className="bg-emerald-50 text-emerald-600 hover:bg-emerald-100 px-3 py-1 rounded text-xs font-semibold transition"
-                            >
-                              ✓ Completar
-                            </button>
+          {/* Gestión de rutas: filtros + tabla (los filtros también afectan al mapa de arriba) */}
+          <section className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4" aria-labelledby="titulo-rutas">
+            <h3 id="titulo-rutas" className="text-base font-bold text-slate-800">Rutas registradas</h3>
 
-                            <button
-                              onClick={() => handleCambiarEstado(r.id, 'EN_PROCESO')}
-                              className="bg-amber-50 text-amber-600 hover:bg-amber-100 px-3 py-1 rounded text-xs font-semibold transition"
-                            >
-                              ⏳ En Proceso
-                            </button>
+            <FiltroRutas
+              filtros={filtros}
+              onCambiar={cambiarFiltros}
+              onLimpiar={limpiarFiltros}
+              conteo={conteo}
+              lecturistas={lecturistas}
+              totalVisibles={rutasFiltradas.length}
+              totalRutas={rutas.length}
+            />
 
-                            <button
-                              onClick={() => handleEliminarRuta(r.id)}
-                              className="bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1 rounded text-xs font-semibold transition"
-                            >
-                              🗑️ Eliminar
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+            <TablaRutas
+              rutas={rutasFiltradas}
+              rutaOcupada={rutaOcupada}
+              hayFiltros={hayFiltrosActivos(filtros)}
+              onCambiarEstado={handleCambiarEstado}
+              onEliminar={handleEliminarRuta}
+              onLimpiarFiltros={limpiarFiltros}
+            />
+          </section>
         </div>
       </main>
     </div>

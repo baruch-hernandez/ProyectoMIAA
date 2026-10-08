@@ -399,7 +399,7 @@ export const LecturaCaptura: React.FC = () => {
                     />
 
                     {rutas.map((r) => {
-                      const primerPunto = r.puntos && r.puntos.length > 0 ? r.puntos[0] : [21.8824, -102.2826];
+                      const primerPunto: [number, number] = r.puntos && r.puntos.length > 0 ? r.puntos[0] : [21.8824, -102.2826];
                       return (
                         <React.Fragment key={r.id}>
                           {r.puntos && r.puntos.length > 0 && (

@@ -1,6 +1,16 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { leerError } from '../services/quejasApi';
+import { guardarSesion, rutaInicio } from '../utils/sesion';
+import type { RolUsuario } from '../utils/sesion';
+
+interface LoginResponse {
+  token: string;
+  id: number;
+  nombre: string;
+  rol: RolUsuario;
+}
 
 export const Login: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -15,21 +25,16 @@ export const Login: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await api.post('/auth/login', { username, password });
-      const { token, nombre, rol } = response.data;
+      const response = await api.post<LoginResponse>('/auth/login', { username, password });
+      const { token, id, nombre, rol } = response.data;
 
-      // Guardar datos de sesión en localStorage
-      localStorage.setItem('token', token);
-      localStorage.setItem('usuario', JSON.stringify({ nombre, rol }));
+      // Ahora también se guarda el id (antes se perdía y todo caía al id 2)
+      guardarSesion(token, { id, nombre, rol });
 
-      // Redireccionar según el rol recibido del backend
-      if (rol === 'ADMIN') {
-        navigate('/admin');
-      } else {
-        navigate('/lecturas');
-      }
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Credenciales incorrectas');
+      // Cada rol tiene su pantalla de inicio (ver utils/sesion.ts)
+      navigate(rutaInicio(rol), { replace: true });
+    } catch (err) {
+      setError(leerError(err).mensaje);
     } finally {
       setLoading(false);
     }
@@ -44,16 +49,18 @@ export const Login: React.FC = () => {
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 text-sm rounded">
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 text-sm rounded" role="alert">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Usuario</label>
+            <label htmlFor="login-usuario" className="block text-sm font-medium text-slate-700 mb-1">Usuario</label>
             <input
+              id="login-usuario"
               type="text"
+              autoComplete="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"
@@ -63,9 +70,11 @@ export const Login: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Contraseña</label>
+            <label htmlFor="login-password" className="block text-sm font-medium text-slate-700 mb-1">Contraseña</label>
             <input
+              id="login-password"
               type="password"
+              autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none"

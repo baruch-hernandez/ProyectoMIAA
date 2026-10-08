@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../services/api';
+import { cerrarSesion, obtenerUsuario } from '../utils/sesion';
 
 interface Ruta {
   id: number;
   codigoSector: string;
-  zonaColonia: string;
+  colonia: string;
   puntosTrazados?: number;
   estado: string;
 }
@@ -24,9 +25,9 @@ export function LecturasView() {
   const [mensajeExito, setMensajeExito] = useState('');
 
   const navigate = useNavigate();
-  const usuarioLocal = JSON.parse(localStorage.getItem('user') || '{}');
-  const nombreOperador = usuarioLocal.nombre || 'Juan Pérez';
-  const idLecturista = usuarioLocal.id || '2';
+  const usuarioLocal = obtenerUsuario();
+  const nombreOperador = usuarioLocal?.nombre ?? 'Lecturista';
+  const idLecturista = String(usuarioLocal?.id ?? '');
 
   useEffect(() => {
     cargarRutas();
@@ -35,7 +36,7 @@ export function LecturasView() {
   const cargarRutas = async () => {
     try {
       setCargando(true);
-      const response = await axios.get(`http://localhost:8080/api/v1/rutas/lecturista/${idLecturista}`);
+      const response = await api.get(`/rutas/lecturista/${idLecturista}`);
       setRutas(response.data);
     } catch (error) {
       console.error('Error al obtener rutas asignadas:', error);
@@ -45,7 +46,7 @@ export function LecturasView() {
   };
 
   const handleCerrarSesion = () => {
-    localStorage.removeItem('user');
+    cerrarSesion();
     navigate('/');
   };
 
@@ -67,7 +68,7 @@ export function LecturasView() {
     try {
       setGuardando(true);
       const payload = {
-        numeroMedidor,
+        numMedidor: numeroMedidor, // el backend espera 'numMedidor' (@JsonProperty en Lectura.java)
         lecturaAnterior: parseFloat(lecturaAnterior),
         lecturaActual: parseFloat(lecturaActual),
         observaciones,
@@ -75,16 +76,16 @@ export function LecturasView() {
         usuario: { id: parseInt(idLecturista) }
       };
 
-      await axios.post('http://localhost:8080/api/v1/lecturas', payload);
+      await api.post('/lecturas', payload);
 
       // Actualizar el estado de la ruta a COMPLETADA si aplica
       if (rutaSeleccionada) {
-        await axios.put(`http://localhost:8080/api/v1/rutas/${rutaSeleccionada.id}`, {
+        await api.put(`/rutas/${rutaSeleccionada.id}`, {
           estado: 'COMPLETADA'
         });
       }
 
-      setMensajeExito('✅ Lectura capturada y guardada correctamente.');
+      setMensajeExito('Lectura capturada y guardada correctamente.');
       setTimeout(() => {
         setRutaSeleccionada(null);
         cargarRutas();
@@ -108,12 +109,21 @@ export function LecturasView() {
           <h1 className="text-2xl font-bold text-blue-900">MIAA - Captura de Lecturas</h1>
           <p className="text-sm text-gray-500">Operador: {nombreOperador}</p>
         </div>
-        <button
-          onClick={handleCerrarSesion}
-          className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md font-medium text-sm transition-colors"
-        >
-          Salir
-        </button>
+        <div className="flex gap-2">
+          {/* Regresar al módulo de quejas del lecturista */}
+          <button
+            onClick={() => navigate('/mis-quejas')}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md font-medium text-sm transition-colors"
+          >
+            Mis quejas
+          </button>
+          <button
+            onClick={handleCerrarSesion}
+            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md font-medium text-sm transition-colors"
+          >
+            Salir
+          </button>
+        </div>
       </div>
 
       {/* Listado de Rutas */}
@@ -130,7 +140,7 @@ export function LecturasView() {
               <div key={ruta.id} className="border border-gray-200 rounded-lg p-4 flex justify-between items-center bg-slate-50">
                 <div>
                   <h3 className="font-bold text-blue-950">{ruta.codigoSector || 'SIN CÓDIGO'}</h3>
-                  <p className="text-sm text-gray-600">Zona / Colonia: {ruta.zonaColonia || 'General'}</p>
+                  <p className="text-sm text-gray-600">Zona / Colonia: {ruta.colonia || 'General'}</p>
                   <span className={`inline-block mt-2 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                     ruta.estado === 'COMPLETADA' ? 'bg-green-100 text-green-800' : 'bg-amber-100 text-amber-800'
                   }`}>
