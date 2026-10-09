@@ -131,3 +131,35 @@ export function dentroDeAguascalientes({ lat, lng }: Coordenadas): boolean {
   }
   return dentro;
 }
+
+// ---------------------------------------------------------------- para los mapas
+// (Lo usan el mapa del lecturista y el del administrador: un solo lugar = mismo límite.)
+
+const MARGEN_MAPA = 0.12; // ~13 km: deja ver un poco alrededor del borde
+
+/** Hasta dónde se puede arrastrar un mapa: el estado + el margen. */
+export const LIMITES_MAPA_AGS: [[number, number], [number, number]] = [
+  [CAJA_AGS[0][0] - MARGEN_MAPA, CAJA_AGS[0][1] - MARGEN_MAPA],
+  [CAJA_AGS[1][0] + MARGEN_MAPA, CAJA_AGS[1][1] + MARGEN_MAPA],
+];
+
+/** Props para <MapContainer {...PROPS_MAPA_AGS}>: no deja salir ni alejarse de la zona. */
+export const PROPS_MAPA_AGS = {
+  maxBounds: LIMITES_MAPA_AGS,
+  maxBoundsViscosity: 1, // 1 = el borde es "duro", no rebota
+  minZoom: 9, // con menos zoom ya se vería medio país
+} as const;
+
+/**
+ * "Máscara": un rectángulo grande con el estado como HUECO.
+ * Así todo lo que está fuera se ve sombreado y el estado queda limpio.
+ */
+export const MASCARA_AGS: [number, number][][] = [
+  [
+    [CAJA_AGS[0][0] - 2, CAJA_AGS[0][1] - 2],
+    [CAJA_AGS[0][0] - 2, CAJA_AGS[1][1] + 2],
+    [CAJA_AGS[1][0] + 2, CAJA_AGS[1][1] + 2],
+    [CAJA_AGS[1][0] + 2, CAJA_AGS[0][1] - 2],
+  ],
+  CONTORNO_AGS,
+];

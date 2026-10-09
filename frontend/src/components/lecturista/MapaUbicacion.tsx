@@ -1,10 +1,11 @@
 import { useEffect } from 'react';
-import { MapContainer, Marker, Polygon, TileLayer, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { Coordenadas } from '../../types/queja';
 import { CENTRO_AGS } from '../../utils/catalogos';
-import { CAJA_AGS, CONTORNO_AGS, dentroDeAguascalientes } from '../../utils/limiteAgs';
+import { dentroDeAguascalientes, PROPS_MAPA_AGS } from '../../utils/limiteAgs';
+import { CapaLimiteAgs } from '../mapa/CapaLimiteAgs';
 
 // Corrección de íconos por defecto de Leaflet con Vite (igual que en AdminDashboard)
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
@@ -23,24 +24,6 @@ interface Props {
   altoClase?: string;
 }
 
-// ---------- Límite del estado ----------
-const MARGEN = 0.12; // ~13 km: deja ver un poco alrededor del borde
-/** Hasta dónde se puede arrastrar el mapa: el estado + el margen. */
-const LIMITES_MAPA = L.latLngBounds(
-  [CAJA_AGS[0][0] - MARGEN, CAJA_AGS[0][1] - MARGEN],
-  [CAJA_AGS[1][0] + MARGEN, CAJA_AGS[1][1] + MARGEN],
-);
-/**
- * "Máscara": un rectángulo grande con el estado como HUECO.
- * Así todo lo que está fuera se ve sombreado y el estado queda limpio.
- */
-const RECTANGULO_EXTERIOR: [number, number][] = [
-  [CAJA_AGS[0][0] - 2, CAJA_AGS[0][1] - 2],
-  [CAJA_AGS[0][0] - 2, CAJA_AGS[1][1] + 2],
-  [CAJA_AGS[1][0] + 2, CAJA_AGS[1][1] + 2],
-  [CAJA_AGS[1][0] + 2, CAJA_AGS[0][1] - 2],
-];
-const MASCARA: [number, number][][] = [RECTANGULO_EXTERIOR, CONTORNO_AGS];
 
 /** Escucha clics en el mapa y avisa el punto elegido. */
 function ClicEnMapa({ onClick }: { onClick: (p: Coordenadas) => void }) {
@@ -78,26 +61,14 @@ export function MapaUbicacion({ valor, onChange, onFuera, altoClase = 'h-72' }: 
         center={centro}
         zoom={valor ? 16 : 13}
         scrollWheelZoom
-        maxBounds={LIMITES_MAPA} // no deja arrastrar el mapa fuera de la zona
-        maxBoundsViscosity={1} // 1 = el borde es "duro", no rebota
-        minZoom={9} // con menos zoom ya se vería medio país
+        {...PROPS_MAPA_AGS} // no deja arrastrar ni alejar el mapa fuera de la zona
         style={{ height: '100%', width: '100%' }}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        {/* interactive={false}: los clics atraviesan la máscara y llegan al mapa */}
-        <Polygon
-          positions={MASCARA}
-          interactive={false}
-          pathOptions={{ stroke: false, fillColor: '#074376', fillOpacity: 0.22 }}
-        />
-        <Polygon
-          positions={CONTORNO_AGS}
-          interactive={false}
-          pathOptions={{ color: '#074376', weight: 2, dashArray: '6 6', fill: false }}
-        />
+        <CapaLimiteAgs />
         {onChange && <ClicEnMapa onClick={elegir} />}
         <SeguirPunto punto={valor} />
         {valor && (

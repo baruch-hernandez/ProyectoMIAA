@@ -8,6 +8,8 @@ import { leerError } from '../services/quejasApi';
 import { usuariosApi } from '../services/usuariosApi';
 import { FiltroRutas } from './admin/FiltroRutas';
 import { TablaRutas } from './admin/TablaRutas';
+import { CapaLimiteAgs } from './mapa/CapaLimiteAgs';
+import { dentroDeAguascalientes, PROPS_MAPA_AGS } from '../utils/limiteAgs';
 import {
   colorRuta, contarPorEstado, esEstadoRuta, etiquetaRuta, filtrarRutas, FILTROS_INICIALES, hayFiltrosActivos,
 } from '../utils/rutas';
@@ -53,6 +55,8 @@ export const AdminDashboard: React.FC = () => {
   const [modoDibujo, setModoDibujo] = useState(false);
   const [puntosTemporales, setPuntosTemporales] = useState<[number, number][]>([]);
   const [obteniendoUbicacion, setObteniendoUbicacion] = useState(false);
+  /** Aviso sobre el mapa (p. ej. "ese punto está fuera del estado"). */
+  const [avisoMapa, setAvisoMapa] = useState<string | null>(null);
   const [cargandoGuardado, setCargandoGuardado] = useState(false);
   // id de la ruta que se está actualizando/borrando (para desactivar sus botones)
   const [rutaOcupada, setRutaOcupada] = useState<number | null>(null);
@@ -157,6 +161,12 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const handleAgregarPunto = (lat: number, lng: number) => {
+    // Las rutas solo pueden trazarse DENTRO del estado (el backend también lo revisa)
+    if (!dentroDeAguascalientes({ lat, lng })) {
+      setAvisoMapa('Ese punto está fuera del estado de Aguascalientes. Marca la ruta dentro de la zona sin sombra.');
+      return;
+    }
+    setAvisoMapa(null);
     if (puntosTemporales.length === 0) {
       obtenerDireccionPorCoordenadas(lat, lng);
     }
@@ -165,6 +175,7 @@ export const AdminDashboard: React.FC = () => {
 
   const limpiarPuntosDibujo = () => {
     setPuntosTemporales([]);
+    setAvisoMapa(null);
     setNombreZona('');
     setCodigoSector('');
   };
@@ -174,6 +185,10 @@ export const AdminDashboard: React.FC = () => {
     e.preventDefault();
     if (!codigoSector || puntosTemporales.length < 2) {
       alert('Por favor activa el dibujo y marca al menos 2 puntos en el mapa.');
+      return;
+    }
+    if (puntosTemporales.some(([lat, lng]) => !dentroDeAguascalientes({ lat, lng }))) {
+      alert('La ruta tiene puntos fuera del estado de Aguascalientes. Limpia el trazado y vuelve a marcarla.');
       return;
     }
     const encargado = lecturistas.find((l) => String(l.id) === lecturistaAsignado);
@@ -255,7 +270,7 @@ export const AdminDashboard: React.FC = () => {
   return (
     <div className="flex h-screen bg-slate-100 font-sans">
       {/* Sidebar Lateral */}
-      <aside className="w-64 text-white flex flex-col justify-between shadow-xl" style={{ backgroundColor: "#09426F" }}>
+      <aside className="w-64 bg-miaa-marino text-white flex flex-col justify-between shadow-xl">
         <div>
           <div className="p-6 border-b border-white/10 flex items-center space-x-3">
             <div className="w-9 h-9 bg-miaa-ambar text-miaa-marino rounded-lg flex items-center justify-center font-black text-xl">
@@ -432,19 +447,30 @@ export const AdminDashboard: React.FC = () => {
 
             {/* Mapa Interactivo Leaflet */}
             <div className="lg:col-span-2 bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col">
-              <h3 className="text-base font-bold text-slate-800 mb-3">Mapa Interactivo - Municipio de Aguascalientes</h3>
+              <h3 className="text-base font-bold text-slate-800 mb-3">Mapa Interactivo - Estado de Aguascalientes</h3>
               
+              {avisoMapa && (
+                <div role="alert" className="mb-3 flex items-start justify-between gap-3 rounded-lg bg-[#fff4cc] px-3 py-2 text-sm font-medium text-[#7a5600]">
+                  <span>⚠️ {avisoMapa}</span>
+                  <button type="button" onClick={() => setAvisoMapa(null)} aria-label="Cerrar aviso" className="shrink-0 font-bold hover:text-[#4d3600]">✕</button>
+                </div>
+              )}
+
               <div className="w-full h-96 rounded-lg overflow-hidden border border-slate-200 relative">
                 <MapContainer
                   center={[21.8824, -102.2826]}
                   zoom={13}
                   scrollWheelZoom={true}
+                  {...PROPS_MAPA_AGS} // no deja arrastrar ni alejar el mapa fuera del estado
                   style={{ height: '100%', width: '100%' }}
                 >
                   <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   />
+
+                  {/* Sombrea lo que está fuera del estado y dibuja el borde */}
+                  <CapaLimiteAgs />
 
                   <CapturadorDeClics modoDibujo={modoDibujo} onAddPoint={handleAgregarPunto} />
 

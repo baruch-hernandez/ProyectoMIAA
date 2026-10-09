@@ -1,10 +1,13 @@
 package com.miaa.lecturas.controllers;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.miaa.lecturas.entities.Ruta;
 import com.miaa.lecturas.entities.Usuario;
 import com.miaa.lecturas.repositories.LecturaRepository;
 import com.miaa.lecturas.repositories.RutaRepository;
 import com.miaa.lecturas.repositories.UsuarioRepository;
+import com.miaa.lecturas.services.LimiteAguascalientes;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,6 +35,15 @@ public class RutaController {
 
     @Autowired
     private LecturaRepository lecturaRepository;
+
+    @Autowired
+    private LimiteAguascalientes limiteAgs;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    /** Más puntos que esto ya no es una ruta dibujada a mano (protege la BD). */
+    private static final int MAX_PUNTOS = 500;
 
     // 1. Obtener todas las rutas (Admin)
     @GetMapping
@@ -75,6 +87,12 @@ public class RutaController {
             }
             if (ruta.getEstado() == null) {
                 ruta.setEstado("PENDIENTE");
+            }
+
+            // El trazado debe tener al menos 2 puntos y TODOS dentro del estado
+            String problemaTrazado = validarPuntos(ruta.getPuntos());
+            if (problemaTrazado != null) {
+                return error(HttpStatus.BAD_REQUEST, problemaTrazado);
             }
 
             // ANTES: si no venía lecturista se usaba el id 2 "a ciegas".
@@ -135,6 +153,38 @@ public class RutaController {
 
         rutaRepository.deleteById(id);
         return ResponseEntity.noContent().build(); // 204: borrada, sin contenido que regresar
+    }
+
+    /**
+     * Revisa el trazado que manda el front: un texto JSON como "[[21.88,-102.29],[21.89,-102.30]]"
+     * (cada punto es [latitud, longitud]). Regresa el mensaje de error, o null si todo está bien.
+     */
+    private String validarPuntos(String puntosJson) {
+        if (puntosJson == null || puntosJson.isBlank()) {
+            return "La ruta necesita al menos 2 puntos en el mapa.";
+        }
+        double[][] puntos;
+        try {
+            puntos = objectMapper.readValue(puntosJson, double[][].class);
+        } catch (JsonProcessingException e) {
+            return "El trazado de la ruta no tiene un formato válido.";
+        }
+        if (puntos.length < 2) {
+            return "La ruta necesita al menos 2 puntos en el mapa.";
+        }
+        if (puntos.length > MAX_PUNTOS) {
+            return "La ruta tiene demasiados puntos (máximo " + MAX_PUNTOS + ").";
+        }
+        for (int i = 0; i < puntos.length; i++) {
+            double[] p = puntos[i];
+            if (p == null || p.length != 2) {
+                return "El trazado de la ruta no tiene un formato válido.";
+            }
+            if (!limiteAgs.contiene(p[0], p[1])) {
+                return "El punto " + (i + 1) + " de la ruta está fuera del estado de Aguascalientes.";
+            }
+        }
+        return null;
     }
 
     /** Mismo formato JSON de error que el resto de la API: { status, message } */
