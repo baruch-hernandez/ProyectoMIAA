@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
 
@@ -60,6 +61,10 @@ public class AuthController {
         }
 
         Usuario usuario = usuarioOpt.get();
+
+        // Registrar el acceso: con esto el admin sabe si el empleado está activo
+        usuario.setUltimoAcceso(LocalDateTime.now());
+        usuarioRepository.save(usuario);
 
         // 3. Token JWT real (antes era el texto fijo "token-miaa-session-<id>")
         AuthResponseDTO response = new AuthResponseDTO(

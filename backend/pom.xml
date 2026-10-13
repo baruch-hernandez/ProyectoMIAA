@@ -89,6 +89,8 @@
 
     <build>
         <plugins>
+            <!-- Le dice a Java EXPLÍCITAMENTE que corra Lombok al compilar
+                 (desde JDK 23 ya no lo hace solo) -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>

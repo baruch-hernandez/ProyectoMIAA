@@ -1,8 +1,8 @@
 // Convierte la respuesta del geocodificador (OpenStreetMap / Nominatim) en los
-// campos del formulario de quejas, y decide QUÉ campos se pueden llenar solos.
+// campos del formulario de reportes, y decide QUÉ campos se pueden llenar solos.
 // Sin React ni fetch: solo lógica, para poder probarla y reusarla (p. ej. en Flutter
 // la idea es la misma).
-import type { QuejaRequest } from '../types/queja';
+import type { ReporteRequest } from '../types/reporte';
 import { MUNICIPIOS } from './catalogos';
 
 /** Campos del domicilio que el GPS puede llenar. Referencias y contrato, nunca. */
@@ -75,7 +75,7 @@ export function camposLlenables(s: DireccionGps, editados: ReadonlySet<CampoGps>
   return new Set(CAMPOS_GPS.filter((c) => Boolean(s[c]) && (forzar || !editados.has(c))));
 }
 
-type FormDireccion = Pick<QuejaRequest, CampoGps>;
+type FormDireccion = Pick<ReporteRequest, CampoGps>;
 
 /**
  * Aplica la sugerencia sobre el formulario SIN pisar lo que el usuario escribió.

@@ -29,4 +29,8 @@ public class Usuario {
     private String password;
 
     private String rol; // ADMIN, LECTURISTA (ver enum Rol)
+
+    /** Último inicio de sesión. Junto con el último reporte dice si el empleado está activo. */
+    @Column(name = "ultimo_acceso")
+    private java.time.LocalDateTime ultimoAcceso;
 }

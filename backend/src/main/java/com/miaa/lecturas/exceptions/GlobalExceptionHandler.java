@@ -47,7 +47,7 @@ public class GlobalExceptionHandler {
                 .body(new ApiError(400, "Revisa los datos del formulario", errores, LocalDateTime.now()));
     }
 
-    /** JSON mal formado o un valor de enum que no existe, p. ej. "categoria": "INUNDACION". */
+    /** JSON mal formado, una fecha inválida o un valor de enum que no existe (p. ej. "origenFecha": "X"). */
     @ExceptionHandler({ HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class })
     public ResponseEntity<ApiError> formatoInvalido(Exception ex) {
         return ResponseEntity.badRequest().body(ApiError.de(400, "Formato de datos inválido"));

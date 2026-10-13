@@ -34,7 +34,7 @@ public class DataInitializer implements CommandLineRunner {
         asegurarUsuario("admin", "Administrador MIAA", "admin@miaa.gob.mx", "admin123", "ADMIN");
         asegurarUsuario("lecturista1", "Juan Pérez", "juan.perez@miaa.gob.mx", "123456", "LECTURISTA");
 
-        System.out.println("Usuarios de prueba listos (contraseñas con BCrypt):");
+        System.out.println("✅ Usuarios de prueba listos (contraseñas con BCrypt):");
         System.out.println("   - Admin:      admin / admin123");
         System.out.println("   - Lecturista: lecturista1 / 123456");
     }

@@ -1,12 +1,14 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Login } from './components/Login';
-import { AdminDashboard } from './components/AdminDashboard';
-import { LecturasView } from './components/LecturasView';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { AdminLayout } from './components/admin/AdminLayout';
+import { ReportesAdmin } from './components/admin/ReportesAdmin';
+import { EmpleadosAdmin } from './components/admin/EmpleadosAdmin';
+import { UbicacionEmpleado } from './components/admin/UbicacionEmpleado';
 import { LecturistaLayout } from './components/lecturista/LecturistaLayout';
-import { MisQuejas } from './components/lecturista/MisQuejas';
-import { NuevaQueja } from './components/lecturista/NuevaQueja';
-import { DetalleQueja } from './components/lecturista/DetalleQueja';
+import { MisReportes } from './components/lecturista/MisReportes';
+import { NuevoReporte } from './components/lecturista/NuevoReporte';
+import { DetalleReporte } from './components/reportes/DetalleReporte';
 
 function App() {
   return (
@@ -15,25 +17,26 @@ function App() {
         {/* Ruta pública */}
         <Route path="/" element={<Login />} />
 
-        {/* Rutas protegidas solo para ADMIN */}
+        {/* ADMIN: solo consulta los reportes y el estado de los empleados */}
         <Route element={<ProtectedRoute allowedRole="ADMIN" />}>
-          <Route path="/admin" element={<AdminDashboard />} />
-        </Route>
-
-        {/* Rutas protegidas solo para LECTURISTA (el empleado de campo) */}
-        <Route element={<ProtectedRoute allowedRole="LECTURISTA" />}>
-          {/* Captura de lecturas (pantalla original, con su propio encabezado) */}
-          <Route path="/lecturas" element={<LecturasView />} />
-
-          {/* Quejas y notas de domicilios, dentro del menú del lecturista */}
-          <Route element={<LecturistaLayout />}>
-            <Route path="/mis-quejas" element={<MisQuejas />} />
-            <Route path="/mis-quejas/nueva" element={<NuevaQueja />} />
-            <Route path="/mis-quejas/:id" element={<DetalleQueja />} />
+          <Route element={<AdminLayout />}>
+            <Route path="/admin" element={<ReportesAdmin />} />
+            <Route path="/admin/reportes/:id" element={<DetalleReporte volverA={{ to: '/admin', texto: 'Reportes' }} />} />
+            <Route path="/admin/empleados" element={<EmpleadosAdmin />} />
+            <Route path="/admin/empleados/:id" element={<UbicacionEmpleado />} />
           </Route>
         </Route>
 
-        {/* Redirección por defecto */}
+        {/* LECTURISTA (el empleado de campo): sube reportes y les da seguimiento */}
+        <Route element={<ProtectedRoute allowedRole="LECTURISTA" />}>
+          <Route element={<LecturistaLayout />}>
+            <Route path="/reportes" element={<MisReportes />} />
+            <Route path="/reportes/nuevo" element={<NuevoReporte />} />
+            <Route path="/reportes/:id" element={<DetalleReporte volverA={{ to: '/reportes', texto: 'Mis reportes' }} />} />
+          </Route>
+        </Route>
+
+        {/* Redirección por defecto (incluye las rutas viejas /mis-quejas, /lecturas...) */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

@@ -1,33 +1,45 @@
 package com.miaa.lecturas.controllers;
 
-import com.miaa.lecturas.dtos.LecturistaDTO;
-import com.miaa.lecturas.repositories.UsuarioRepository;
+import com.miaa.lecturas.dtos.EmpleadosDTO;
+import com.miaa.lecturas.dtos.UbicacionEmpleadoDTO;
+import com.miaa.lecturas.services.EmpleadoService;
+import com.miaa.lecturas.services.UbicacionService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @RestController
 @RequestMapping({ "/usuarios", "/api/v1/usuarios" })
 public class UsuarioController {
 
-    private final UsuarioRepository usuarioRepository;
+    private final EmpleadoService empleadoService;
+    private final UbicacionService ubicacionService;
 
-    public UsuarioController(UsuarioRepository usuarioRepository) {
-        this.usuarioRepository = usuarioRepository;
+    public UsuarioController(EmpleadoService empleadoService, UbicacionService ubicacionService) {
+        this.empleadoService = empleadoService;
+        this.ubicacionService = ubicacionService;
     }
 
     /**
-     * GET /usuarios/lecturistas → [{ id, nombre, username }]
-     * Lo usa el panel del jefe para: filtrar rutas por encargado y elegir a quién asignar una ruta.
+     * GET /usuarios/empleados (solo ADMIN)
+     * → { diasInactivo: 7, empleados: [{ id, nombre, username, ultimoAcceso, ultimoReporte,
+     *      totalReportes, ultimaActividad, activo, diasSinActividad, enLinea }] }
      */
-    @GetMapping("/lecturistas")
+    @GetMapping("/empleados")
     @PreAuthorize("hasRole('ADMIN')")
-    public List<LecturistaDTO> lecturistas() {
-        return usuarioRepository.findByRolOrderByNombreAsc("LECTURISTA").stream()
-                .map(LecturistaDTO::desde)
-                .toList();
+    public EmpleadosDTO empleados() {
+        return empleadoService.listar();
+    }
+
+    /**
+     * GET /usuarios/empleados/{id}/ubicacion (solo ADMIN)
+     * Última ubicación del lecturista y si está en línea. El mapa del admin lo consulta cada 5 s.
+     */
+    @GetMapping("/empleados/{id}/ubicacion")
+    @PreAuthorize("hasRole('ADMIN')")
+    public UbicacionEmpleadoDTO ubicacion(@PathVariable("id") Long id) {
+        return ubicacionService.deEmpleado(id);
     }
 }

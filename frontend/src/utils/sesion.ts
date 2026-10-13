@@ -45,9 +45,8 @@ export function rutaInicio(rol: RolUsuario | string | undefined): string {
     case 'ADMIN':
       return '/admin';
     case 'LECTURISTA':
-      // El lecturista es el empleado de campo: entra a sus quejas.
-      // (Si prefieres que entre a sus rutas de lectura, cambia esto a '/lecturas'.)
-      return '/mis-quejas';
+      // El lecturista es el empleado de campo: entra a sus reportes.
+      return '/reportes';
     default:
       return '/';
   }

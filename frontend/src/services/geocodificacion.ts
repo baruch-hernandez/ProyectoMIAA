@@ -2,7 +2,7 @@
 // Usa Nominatim (OpenStreetMap): gratis y sin llave, pero con reglas de uso
 // (máx. 1 petición por segundo, nada de uso masivo). Para producción en MIAA
 // conviene cambiar VITE_GEOCODER_URL por un servidor propio o pasar por el backend.
-import type { Coordenadas } from '../types/queja';
+import type { Coordenadas } from '../types/reporte';
 import type { DireccionGps, DireccionNominatim } from '../utils/direccionGps';
 import { estaEnAguascalientes, interpretarDireccion } from '../utils/direccionGps';
 

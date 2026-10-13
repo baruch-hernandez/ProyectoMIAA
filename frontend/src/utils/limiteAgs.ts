@@ -4,7 +4,7 @@
 // 386 puntos, precisión de decenas de metros: suficiente para un límite estatal).
 // Licencia CC BY 3.0 IGO: "Límites administrativos cortesía de geoBoundaries.org".
 // El backend usa el MISMO contorno (resources/geo/aguascalientes.json).
-import type { Coordenadas } from '../types/queja';
+import type { Coordenadas } from '../types/reporte';
 
 /** Contorno del estado como [latitud, longitud] (el orden que usa Leaflet). */
 export const CONTORNO_AGS: [number, number][] = [

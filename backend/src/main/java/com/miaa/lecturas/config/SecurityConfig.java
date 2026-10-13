@@ -43,9 +43,9 @@ public class SecurityConfig {
                         .requestMatchers("/auth/**", "/api/v1/auth/**", "/api/auth/**").permitAll()
                         // Sin esto, cualquier error interno se "disfraza" de 401.
                         .requestMatchers("/error").permitAll()
-                        // Todo lo demás (rutas, lecturas, informes y quejas) es solo para los
-                        // roles que existen. Un usuario con otro rol (o uno viejo) no puede hacer nada.
-                        // Qué queja puede ver cada quien lo decide QuejaService.
+                        // Todo lo demás (reportes y empleados) es solo para los roles que existen.
+                        // Qué ROL entra a cada endpoint: @PreAuthorize en los controladores.
+                        // Qué REPORTE puede ver o cambiar cada quien: ReporteService.
                         .anyRequest().hasAnyRole("ADMIN", "LECTURISTA"))
                 // Respuestas JSON (en vez de vacías) para que el front pueda mostrar el motivo.
                 .exceptionHandling(e -> e

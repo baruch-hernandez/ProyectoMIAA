@@ -1,12 +1,12 @@
 package com.miaa.lecturas.dtos;
 
-import com.miaa.lecturas.entities.NotaQueja;
+import com.miaa.lecturas.entities.NotaReporte;
 
 import java.time.LocalDateTime;
 
 public record NotaDTO(Long id, String texto, String autor, String autorRol, LocalDateTime fechaCreacion) {
 
-    public static NotaDTO desde(NotaQueja n) {
+    public static NotaDTO desde(NotaReporte n) {
         return new NotaDTO(
                 n.getId(),
                 n.getTexto(),
