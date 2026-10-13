@@ -35,7 +35,7 @@ export function Marca({ tono = 'claro', className = '' }: MarcaProps) {
 
   return (
     <span className={`inline-flex flex-col leading-none ${className}`} aria-label="MIAA, Modelo Integral de Aguas de Aguascalientes">
-      <span className={`text-2xl font-extrabold tracking-tight lowercase ${colorNombre}`}>miaa</span>
+      <span className={`text-2xl font-extrabold tracking-tight ${colorNombre}`}>MIAA</span>
       <span className={`mt-1 text-[0.65rem] font-semibold ${colorSub}`}>Modelo Integral de Aguas de Aguascalientes</span>
     </span>
   );
