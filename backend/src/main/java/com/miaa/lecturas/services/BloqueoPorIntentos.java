@@ -32,8 +32,8 @@ public class BloqueoPorIntentos {
     private final int intentosMaximos;
     private final Duration duracionBloqueo;
 
-    public BloqueoPorIntentos(@Value("${miaa.login.intentos-maximos:5}") int intentosMaximos,
-                              @Value("${miaa.login.minutos-bloqueo:15}") long minutosBloqueo) {
+    public BloqueoPorIntentos(@Value("${miaa.login.intentos-maximos}") int intentosMaximos,
+                              @Value("${miaa.login.minutos-bloqueo}") long minutosBloqueo) {
         if (intentosMaximos < 1 || minutosBloqueo < 1) {
             throw new IllegalArgumentException("miaa.login.intentos-maximos y miaa.login.minutos-bloqueo deben ser mayores a 0");
         }

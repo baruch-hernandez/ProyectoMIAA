@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useEffectEvent, useReducer, useRef, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Camera, CircleCheck, LoaderCircle, LocateFixed, RotateCcw, TriangleAlert } from 'lucide-react';
+import { ArrowLeft, Camera, Check, CircleCheck, Crosshair, LoaderCircle, LocateFixed, RotateCcw, TriangleAlert } from 'lucide-react';
 import { esErrorDeRed, reportesApi, leerError } from '../../services/reportesApi';
 import type { Coordenadas, ReporteRequest } from '../../types/reporte';
 import { MUNICIPIOS } from '../../utils/catalogos';
@@ -14,6 +14,8 @@ import { direccionDesdeCoordenadas } from '../../services/geocodificacion';
 import type { CampoGps, DireccionGps } from '../../utils/direccionGps';
 import { aplicarDireccion, camposLlenables, esCampoGps } from '../../utils/direccionGps';
 import { dentroDeAguascalientes } from '../../utils/limiteAgs';
+import type { ControlAfinado } from '../../utils/afinarGps';
+import { afinarUbicacion } from '../../utils/afinarGps';
 import { MapaUbicacion } from '../mapa/MapaUbicacion';
 import { Campo, Paso } from '../reportes/Formulario';
 import { claseInput } from '../../utils/estilos';
@@ -29,6 +31,8 @@ const PRECISION_BAJA_M = 60;
 type EstadoGps =
   | { fase: 'inactivo' }
   | { fase: 'ubicando' }
+  /** Ya hay un punto, pero seguimos esperando lecturas más precisas */
+  | { fase: 'afinando'; precision: number }
   | { fase: 'buscando'; precision?: number }
   | { fase: 'listo'; precision?: number }
   | { fase: 'sin-direccion'; precision?: number }
@@ -92,7 +96,8 @@ function reducirForm(estado: EstadoForm, accion: AccionForm): EstadoForm {
 /** Una línea que dice en qué va el GPS y qué debe revisar el lecturista. */
 function AvisoGps({ estado }: { estado: EstadoGps }) {
   const precision = 'precision' in estado ? estado.precision : undefined;
-  const baja = precision !== undefined && precision > PRECISION_BAJA_M;
+  // Mientras se afina no asustamos: la precisión todavía puede mejorar
+  const baja = estado.fase !== 'afinando' && precision !== undefined && precision > PRECISION_BAJA_M;
 
   const linea = (() => {
     switch (estado.fase) {
@@ -100,6 +105,16 @@ function AvisoGps({ estado }: { estado: EstadoGps }) {
         return null;
       case 'ubicando':
         return <p className="flex items-center gap-1.5 text-slate-600"><LoaderCircle size={15} className="animate-spin" aria-hidden="true" /> Obteniendo tu ubicación…</p>;
+      case 'afinando':
+        return (
+          <p className="flex items-start gap-1.5 text-slate-600">
+            <Crosshair size={16} className="mt-0.5 shrink-0 animate-pulse text-miaa-azul" aria-hidden="true" />
+            <span>
+              Afinando tu ubicación: <span className="cifras font-semibold">±{estado.precision} m</span>.
+              Quédate quieto unos segundos, de preferencia al aire libre y frente al domicilio.
+            </span>
+          </p>
+        );
       case 'buscando':
         return <p className="flex items-center gap-1.5 text-slate-600"><LoaderCircle size={15} className="animate-spin" aria-hidden="true" /> Buscando la dirección de ese punto…</p>;
       case 'listo':
@@ -196,25 +211,44 @@ export function NuevoReporte() {
     }, 600);
   };
 
+  /** Afinado en curso (para poder terminarlo antes o cancelarlo). */
+  const afinado = useRef<ControlAfinado | null>(null);
+  const cancelarAfinado = () => {
+    afinado.current?.cancelar();
+    afinado.current = null;
+  };
+
   /**
-   * Pide la posición al dispositivo. No cambia estado al llamarse, solo en sus callbacks.
-   * @param maximumAge ms que aceptamos una posición ya guardada (0 = siempre una lectura nueva)
+   * Pide la ubicación y la "afina": escucha el GPS hasta ~20 s y se queda con la lectura
+   * más precisa (se detiene antes si llega a ±15 m). El marcador se va moviendo con cada mejora,
+   * y la dirección se busca UNA vez al final (Nominatim permite 1 petición por segundo).
    */
-  const pedirPosicion = (maximumAge: number) => {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const punto = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        const precision = Math.round(pos.coords.accuracy);
-        // Lejos del estado (o GPS equivocado): no movemos nada, que lo marquen en el mapa
-        if (!dentroDeAguascalientes(punto)) {
-          setGps({ fase: 'fuera', motivo: 'gps', precision });
+  const afinar = () => {
+    cancelarAfinado();
+    cancelarBusqueda();
+    afinado.current = afinarUbicacion(navigator.geolocation, {
+      onMejora: ({ punto, precision }) => {
+        if (!dentroDeAguascalientes(punto)) return; // lectura loca del GPS: la ignoramos
+        setUbicacion(punto);
+        setGps({ fase: 'afinando', precision });
+      },
+      onFin: (mejor) => {
+        afinado.current = null;
+        if (!mejor) {
+          setGps({ fase: 'error', mensaje: 'No se encontró tu ubicación. Toca el mapa para marcar el punto o llena la dirección a mano.' });
           return;
         }
-        setUbicacion(punto);
-        setGps({ fase: 'buscando', precision });
-        programarBusqueda(punto, precision);
+        // Lejos del estado (o GPS equivocado): no movemos nada, que lo marquen en el mapa
+        if (!dentroDeAguascalientes(mejor.punto)) {
+          setGps({ fase: 'fuera', motivo: 'gps', precision: mejor.precision });
+          return;
+        }
+        setUbicacion(mejor.punto);
+        setGps({ fase: 'buscando', precision: mejor.precision });
+        programarBusqueda(mejor.punto, mejor.precision);
       },
-      (err) => {
+      onError: (err) => {
+        afinado.current = null;
         setGps({
           fase: 'error',
           mensaje:
@@ -223,17 +257,18 @@ export function NuevoReporte() {
               : 'No se encontró tu ubicación. Toca el mapa para marcar el punto o llena la dirección a mano.',
         });
       },
-      { enableHighAccuracy: true, timeout: 15000, maximumAge },
-    );
+    });
   };
 
   // Al abrir el formulario: pedir la ubicación una vez. useEffectEvent (React 19.2)
-  // deja usar la versión más reciente de pedirPosicion sin meterla en las dependencias.
+  // deja usar la versión más reciente de afinar sin meterla en las dependencias.
   const alAbrir = useEffectEvent(() => {
-    // Al abrir aceptamos una posición de hasta 30 s: sale más rápido
-    if (hayGeolocalizacion) pedirPosicion(30_000);
+    if (hayGeolocalizacion) afinar();
   });
-  const alSalir = useEffectEvent(() => cancelarBusqueda());
+  const alSalir = useEffectEvent(() => {
+    cancelarBusqueda();
+    cancelarAfinado();
+  });
   useEffect(() => {
     alAbrir();
     return () => alSalir(); // si salen del formulario, no dejar peticiones colgando
@@ -245,13 +280,16 @@ export function NuevoReporte() {
       setGps({ fase: 'error', mensaje: 'Este dispositivo no permite obtener la ubicación. Toca el mapa para marcar el punto.' });
       return;
     }
-    cancelarBusqueda();
     setGps({ fase: 'ubicando' });
-    pedirPosicion(0); // lo pidieron a propósito: lectura nueva, no la guardada
+    afinar();
   };
+
+  /** "Usar este punto": deja de afinar y busca la dirección con la mejor lectura hasta ahora. */
+  const usarPuntoActual = () => afinado.current?.terminar();
 
   /** Clic en el mapa o marcador arrastrado: el punto es exacto (lo eligió una persona). */
   const moverPunto = (punto: Coordenadas) => {
+    cancelarAfinado(); // la persona tomó el control: el GPS ya no mueve el marcador
     setUbicacion(punto);
     setGps({ fase: 'buscando' });
     programarBusqueda(punto);
@@ -259,11 +297,13 @@ export function NuevoReporte() {
 
   /** Tocaron o soltaron el marcador fuera del estado: el punto anterior se queda. */
   const puntoFuera = () => {
+    cancelarAfinado();
     cancelarBusqueda();
     setGps({ fase: 'fuera', motivo: 'mapa' });
   };
 
   const quitarPunto = () => {
+    cancelarAfinado();
     cancelarBusqueda();
     setUbicacion(null);
     setGps({ fase: 'inactivo' });
@@ -386,19 +426,36 @@ export function NuevoReporte() {
       <form onSubmit={enviar} className="mt-6 space-y-4">
         {/* ---------- 1. Ubicación (primero: de aquí sale la dirección) ---------- */}
         <Paso numero={1} titulo="¿Dónde está el problema?" ayuda="Usamos tu ubicación para llenar el domicilio. Si no es la casa exacta, toca el mapa o arrastra el marcador. Solo se aceptan puntos dentro del estado (la zona sin sombra).">
-          <button
-            type="button"
-            onClick={usarMiUbicacion}
-            disabled={gps.fase === 'ubicando'}
-            className="mb-3 inline-flex items-center gap-2 h-11 px-4 rounded-xl bg-miaa-bruma/60 text-miaa-marino font-semibold hover:bg-miaa-bruma disabled:opacity-60"
-          >
-            {gps.fase === 'ubicando'
-              ? <LoaderCircle size={18} className="animate-spin" aria-hidden="true" />
-              : <LocateFixed size={18} aria-hidden="true" />}
-            {gps.fase === 'ubicando' ? 'Buscando tu ubicación…' : 'Usar mi ubicación'}
-          </button>
+          <div className="mb-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={usarMiUbicacion}
+              disabled={gps.fase === 'ubicando' || gps.fase === 'afinando'}
+              className="inline-flex items-center gap-2 h-11 px-4 rounded-xl bg-miaa-bruma/60 text-miaa-marino font-semibold hover:bg-miaa-bruma disabled:opacity-60"
+            >
+              {gps.fase === 'ubicando' || gps.fase === 'afinando'
+                ? <LoaderCircle size={18} className="animate-spin" aria-hidden="true" />
+                : <LocateFixed size={18} aria-hidden="true" />}
+              {gps.fase === 'ubicando' ? 'Buscando tu ubicación…' : gps.fase === 'afinando' ? 'Afinando…' : 'Usar mi ubicación'}
+            </button>
+            {gps.fase === 'afinando' && (
+              <button
+                type="button"
+                onClick={usarPuntoActual}
+                className="inline-flex items-center gap-2 h-11 px-4 rounded-xl border border-miaa-bruma text-miaa-marino font-semibold hover:bg-miaa-bruma/40"
+              >
+                <Check size={18} aria-hidden="true" /> Usar este punto
+              </button>
+            )}
+          </div>
 
-          <MapaUbicacion valor={ubicacion} onChange={moverPunto} onFuera={puntoFuera} />
+          <MapaUbicacion
+            valor={ubicacion}
+            onChange={moverPunto}
+            onFuera={puntoFuera}
+            // El círculo solo tiene sentido si el punto salió del GPS (no si lo marcaron a mano)
+            precision={gps.fase !== 'fuera' && 'precision' in gps ? gps.precision : undefined}
+          />
 
           <div className="mt-2 space-y-1 text-sm" role="status" aria-live="polite">
             <AvisoGps estado={gps} />
