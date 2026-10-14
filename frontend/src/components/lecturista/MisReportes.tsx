@@ -1,10 +1,46 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Plus, RefreshCw } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { CloudOff, LoaderCircle, Plus, RefreshCw, Send, Trash2, X } from 'lucide-react';
 import { reportesApi, leerError } from '../../services/reportesApi';
 import type { ReporteResumen } from '../../types/reporte';
 import { obtenerUsuario } from '../../utils/sesion';
+import { fechaRelativa } from '../../utils/catalogos';
+import { useColaReportes } from '../../hooks/useColaReportes';
+import type { ReportePendiente } from '../../utils/colaReportes';
 import { ListaReportes } from '../reportes/ListaReportes';
+
+/** Un reporte guardado en el celular, esperando señal. */
+function Pendiente({ p, onDescartar }: { p: ReportePendiente; onDescartar: () => void }) {
+  const [confirmando, setConfirmando] = useState(false);
+  const d = p.datos;
+  return (
+    <li className="rounded-xl bg-white border border-[#f3d98b] p-3 sm:p-4">
+      <p className="font-bold text-miaa-marino">{d.calle} #{d.numeroExterior}, {d.colonia}</p>
+      <p className="text-sm text-slate-600 line-clamp-1">{d.descripcion}</p>
+      <p className="mt-1 text-xs text-slate-500">
+        Guardado {fechaRelativa(p.guardadoEn)} · {d.fotos.length} {d.fotos.length === 1 ? 'foto' : 'fotos'}
+      </p>
+      {p.error && (
+        <p className="mt-2 rounded-lg bg-red-50 px-2.5 py-1.5 text-sm text-red-800">
+          El servidor no lo aceptó: {p.error}
+        </p>
+      )}
+      <div className="mt-2">
+        {confirmando ? (
+          <span className="inline-flex items-center gap-1 text-sm">
+            <span className="font-semibold text-slate-700">¿Descartarlo? Se pierde.</span>
+            <button type="button" onClick={onDescartar} className="h-9 px-2.5 rounded-lg font-bold text-white bg-red-700 hover:bg-red-800">Sí</button>
+            <button type="button" onClick={() => setConfirmando(false)} className="h-9 px-2.5 rounded-lg font-semibold text-slate-700 hover:bg-slate-100">No</button>
+          </span>
+        ) : (
+          <button type="button" onClick={() => setConfirmando(true)} className="inline-flex items-center gap-1.5 h-9 px-2 -ml-2 rounded-lg text-sm font-semibold text-red-700 hover:bg-red-50">
+            <Trash2 size={14} aria-hidden="true" /> Descartar
+          </button>
+        )}
+      </div>
+    </li>
+  );
+}
 
 /** Los reportes que subió el lecturista, del más nuevo al más viejo. Sin filtros. */
 export function MisReportes() {
@@ -13,6 +49,18 @@ export function MisReportes() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [recarga, setRecarga] = useState(0);
+  const { pendientes, enviando, enviarAhora, descartar } = useColaReportes();
+  const location = useLocation();
+  const estado = location.state as { guardadoSinConexion?: boolean; borrado?: string } | null;
+  const [aviso, setAviso] = useState<string | null>(
+    estado?.guardadoSinConexion
+      ? 'Sin señal: tu reporte se guardó en el celular y se enviará solo cuando vuelva la conexión.'
+      : estado?.borrado
+        ? `Se borró el reporte ${estado.borrado}.`
+        : null,
+  );
+  // Cuando cambia el número de pendientes (p. ej. se enviaron solos), recargamos la lista
+  const numPendientes = pendientes.length;
 
   useEffect(() => {
     let ignorar = false; // si el componente se desmonta, no pintamos una respuesta vieja
@@ -22,7 +70,7 @@ export function MisReportes() {
       .catch((err) => { if (!ignorar) setError(leerError(err).mensaje); })
       .finally(() => { if (!ignorar) setCargando(false); });
     return () => { ignorar = true; };
-  }, [recarga]);
+  }, [recarga, numPendientes]);
 
   const recargar = () => {
     setCargando(true);
@@ -51,6 +99,40 @@ export function MisReportes() {
           <Plus size={20} aria-hidden="true" /> Nuevo reporte
         </Link>
       </section>
+
+      {aviso && (
+        <div className="flex items-start gap-3 p-4 rounded-2xl bg-[#d3fbf2] text-[#0b6b58]" role="status">
+          <p className="flex-1 font-medium">{aviso}</p>
+          <button type="button" onClick={() => setAviso(null)} aria-label="Cerrar aviso" className="size-8 grid place-items-center rounded-lg hover:bg-white/50">
+            <X size={18} aria-hidden="true" />
+          </button>
+        </div>
+      )}
+
+      {pendientes.length > 0 && (
+        <section className="rounded-2xl bg-[#fff8e1] border border-[#f3d98b] p-4 sm:p-5" aria-labelledby="titulo-pendientes">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 id="titulo-pendientes" className="flex items-center gap-2 text-lg font-extrabold text-[#7a5600]">
+                <CloudOff size={20} aria-hidden="true" /> Pendientes de enviar <span className="cifras">{pendientes.length}</span>
+              </h2>
+              <p className="text-sm text-[#7a5600]">Guardados en este celular. Se envían solos cuando hay señal.</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => enviarAhora()}
+              disabled={enviando}
+              className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-miaa-marino text-white text-sm font-bold hover:bg-blue-800 disabled:opacity-60"
+            >
+              {enviando ? <LoaderCircle size={16} className="animate-spin" aria-hidden="true" /> : <Send size={16} aria-hidden="true" />}
+              {enviando ? 'Enviando…' : 'Enviar ahora'}
+            </button>
+          </div>
+          <ul className="mt-3 space-y-2">
+            {pendientes.map((p) => <Pendiente key={p.clienteId} p={p} onDescartar={() => descartar(p.clienteId)} />)}
+          </ul>
+        </section>
+      )}
 
       <div className="flex items-end justify-between gap-3">
         <div>

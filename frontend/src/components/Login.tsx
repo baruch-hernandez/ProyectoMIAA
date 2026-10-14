@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, LoaderCircle } from 'lucide-react';
+import { Eye, EyeOff, LoaderCircle, Lock, Timer } from 'lucide-react';
 import api from '../services/api';
 import { leerError } from '../services/reportesApi';
-import { guardarSesion, rutaInicio } from '../utils/sesion';
+import { guardarSesion, rutaInicio, leerAvisoLogin } from '../utils/sesion';
 import type { RolUsuario } from '../utils/sesion';
 import { Marca } from './Marca';
 
@@ -12,6 +12,15 @@ interface LoginResponse {
   id: number;
   nombre: string;
   rol: RolUsuario;
+  debeCambiarPassword: boolean;
+  avisoPrivacidadPendiente: boolean;
+}
+
+/** 125 → "2:05" */
+function formatoEspera(segundos: number): string {
+  const m = Math.floor(segundos / 60);
+  const s = segundos % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
 }
 
 /** Olas decorativas del panel marino (dibujo propio, no es el logo de MIAA). */
@@ -34,26 +43,64 @@ export const Login: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [verPassword, setVerPassword] = useState(false);
-  const [error, setError] = useState('');
+  // Si la sesión anterior terminó por algo (p. ej. "tu cuenta fue dada de baja"), se muestra aquí
+  const [error, setError] = useState(() => leerAvisoLogin() ?? '');
   const [loading, setLoading] = useState(false);
+  // Protección contra fuerza bruta: el backend responde 429 (demasiados intentos desde este equipo)
+  // o 423 (cuenta bloqueada) con los segundos que hay que esperar.
+  const [codigoError, setCodigoError] = useState<string | undefined>();
+  const [esperaHasta, setEsperaHasta] = useState<number | null>(null);
+  const [ahora, setAhora] = useState(() => Date.now());
   const navigate = useNavigate();
+
+  // Cuenta regresiva mientras haya que esperar
+  useEffect(() => {
+    if (esperaHasta === null) return;
+    const reloj = window.setInterval(() => {
+      const n = Date.now();
+      setAhora(n);
+      if (n >= esperaHasta) {
+        setEsperaHasta(null);
+        setError('Ya puedes volver a intentar.');
+        setCodigoError('LISTO');
+      }
+    }, 1000);
+    return () => window.clearInterval(reloj);
+  }, [esperaHasta]);
+
+  const segundosRestantes = esperaHasta === null ? 0 : Math.max(0, Math.ceil((esperaHasta - ahora) / 1000));
+  // Solo el rate limit (429) bloquea el botón: con la cuenta bloqueada (423) el servidor
+  // vuelve a decir que espere, y si el admin la desbloquea puede entrar de inmediato.
+  const botonEnEspera = codigoError === 'DEMASIADOS_INTENTOS' && segundosRestantes > 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (botonEnEspera) return;
     setError('');
+    setCodigoError(undefined);
+    setEsperaHasta(null);
     setLoading(true);
 
     try {
       const response = await api.post<LoginResponse>('/auth/login', { username, password });
-      const { token, id, nombre, rol } = response.data;
+      const { token, id, nombre, rol, debeCambiarPassword, avisoPrivacidadPendiente } = response.data;
+      const usuario = { id, nombre, rol, debeCambiarPassword, avisoPrivacidadPendiente };
 
       // Se guarda también el id (antes se perdía y todo caía al id 2)
-      guardarSesion(token, { id, nombre, rol });
+      guardarSesion(token, usuario);
 
-      // Cada rol tiene su pantalla de inicio (ver utils/sesion.ts)
-      navigate(rutaInicio(rol), { replace: true });
+      // Cada rol tiene su pantalla de inicio; si tiene requisitos pendientes
+      // (contraseña temporal o aviso de privacidad), primero va a resolverlos.
+      navigate(rutaInicio(rol, usuario), { replace: true });
     } catch (err) {
-      setError(leerError(err).mensaje);
+      const { mensaje, codigo, segundos } = leerError(err);
+      setError(mensaje);
+      setCodigoError(codigo);
+      if ((codigo === 'DEMASIADOS_INTENTOS' || codigo === 'CUENTA_BLOQUEADA') && segundos) {
+        const n = Date.now();
+        setAhora(n);
+        setEsperaHasta(n + segundos * 1000);
+      }
     } finally {
       setLoading(false);
     }
@@ -84,7 +131,26 @@ export const Login: React.FC = () => {
           <h2 className="text-2xl font-extrabold text-miaa-marino">Inicia sesión</h2>
           <p className="mt-1 text-sm text-slate-600">Uso exclusivo para personal de MIAA.</p>
 
-          {error && (
+          {error && codigoError === 'LISTO' && (
+            <div className="mt-5 p-3 rounded-xl bg-[#d3fbf2] text-[#0b6b58] text-sm font-medium" role="status">
+              {error}
+            </div>
+          )}
+          {error && (codigoError === 'CUENTA_BLOQUEADA' || codigoError === 'DEMASIADOS_INTENTOS') && (
+            <div className="mt-5 p-3 rounded-xl bg-amber-50 border border-amber-300 text-[#6b4a00] text-sm flex gap-2.5" role="alert">
+              {codigoError === 'CUENTA_BLOQUEADA'
+                ? <Lock size={18} className="shrink-0 mt-0.5" aria-hidden="true" />
+                : <Timer size={18} className="shrink-0 mt-0.5" aria-hidden="true" />}
+              <div>
+                <p className="font-semibold">{codigoError === 'CUENTA_BLOQUEADA' ? 'Cuenta bloqueada' : 'Demasiados intentos'}</p>
+                <p>{error}</p>
+                {segundosRestantes > 0 && (
+                  <p className="mt-1 font-semibold cifras" aria-live="off">Tiempo restante: {formatoEspera(segundosRestantes)}</p>
+                )}
+              </div>
+            </div>
+          )}
+          {error && !['LISTO', 'CUENTA_BLOQUEADA', 'DEMASIADOS_INTENTOS'].includes(codigoError ?? '') && (
             <div className="mt-5 p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm" role="alert">
               {error}
             </div>
@@ -136,11 +202,11 @@ export const Login: React.FC = () => {
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || botonEnEspera}
               className="w-full h-12 rounded-xl bg-miaa-marino text-white font-bold text-base hover:bg-blue-800 active:bg-blue-900 disabled:opacity-60 inline-flex items-center justify-center gap-2 transition-colors"
             >
               {loading && <LoaderCircle size={18} className="animate-spin" aria-hidden="true" />}
-              {loading ? 'Entrando…' : 'Entrar'}
+              {loading ? 'Entrando…' : botonEnEspera ? `Espera ${formatoEspera(segundosRestantes)}` : 'Entrar'}
             </button>
           </form>
         </div>

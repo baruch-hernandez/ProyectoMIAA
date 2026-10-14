@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Camera, ChevronRight, MapPin, MessageSquareText, UserRound } from 'lucide-react';
+import { Camera, ChevronRight, MapPin, MessageSquareText, Pencil, UserRound } from 'lucide-react';
 import type { ReporteResumen } from '../../types/reporte';
 import { fechaRelativa } from '../../utils/catalogos';
 
@@ -36,6 +36,11 @@ export function ListaReportes({ reportes, enlace, mostrarAutor = false }: Props)
                   </span>
                 )}
                 <span>{fechaRelativa(r.fechaCreacion)}</span>
+                {r.editado && (
+                  <span className="inline-flex items-center gap-1 font-semibold text-miaa-azul">
+                    <Pencil size={12} aria-hidden="true" /> Editado
+                  </span>
+                )}
                 <span className="inline-flex items-center gap-1" aria-label={`${r.totalFotos} fotos`}>
                   <Camera size={13} aria-hidden="true" /> <span className="cifras">{r.totalFotos}</span>
                 </span>

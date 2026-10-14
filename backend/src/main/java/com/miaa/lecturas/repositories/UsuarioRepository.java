@@ -15,4 +15,13 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     // SELECT * FROM usuarios WHERE rol = ? ORDER BY nombre
     List<Usuario> findByRolOrderByNombreAsc(String rol);
+
+    // Para no repetir usuario ni correo (sin importar mayúsculas)
+    boolean existsByUsernameIgnoreCase(String username);
+
+    boolean existsByUsernameIgnoreCaseAndIdNot(String username, Long id);
+
+    boolean existsByEmailIgnoreCase(String email);
+
+    boolean existsByEmailIgnoreCaseAndIdNot(String email, Long id);
 }

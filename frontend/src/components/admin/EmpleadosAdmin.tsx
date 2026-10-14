@@ -1,12 +1,19 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronRight, MapPin, RefreshCw } from 'lucide-react';
+import { ChevronRight, MapPin, RefreshCw, UserPlus } from 'lucide-react';
 import { usuariosApi } from '../../services/usuariosApi';
 import { leerError } from '../../services/reportesApi';
 import type { Empleado, EmpleadosRespuesta } from '../../types/reporte';
 import { fechaRelativa, formatoFecha } from '../../utils/catalogos';
 
-function EstadoEmpleado({ activo }: { activo: boolean }) {
+function EstadoEmpleado({ activo, habilitado = true }: { activo: boolean; habilitado?: boolean }) {
+  if (!habilitado) {
+    return (
+      <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-red-50 px-2.5 py-1 text-xs font-bold text-red-700">
+        <span className="size-1.5 rounded-full bg-red-600" aria-hidden="true" /> Dado de baja
+      </span>
+    );
+  }
   return activo ? (
     <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-[#d3fbf2] px-2.5 py-1 text-xs font-bold text-[#0b6b58]">
       <span className="size-1.5 rounded-full bg-miaa-menta" aria-hidden="true" /> Activo
@@ -85,17 +92,22 @@ export function EmpleadosAdmin() {
             {dias != null
               ? <>Un lecturista está <strong className="text-miaa-marino">activo</strong> si inició sesión o subió un reporte en los últimos <span className="cifras font-semibold">{dias}</span> días.</>
               : 'Revisa quién está activo y quién no.'}{' '}
-            Toca a un lecturista para ver <strong className="text-miaa-marino">dónde está ahorita</strong>.
+            Toca a un lecturista para ver su ficha: <strong className="text-miaa-marino">dónde está ahorita</strong> y su cuenta.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={recargar}
-          disabled={cargando}
-          className="inline-flex items-center gap-2 h-10 px-3 rounded-xl text-sm font-semibold text-miaa-azul hover:bg-white disabled:opacity-50"
-        >
-          <RefreshCw size={16} className={cargando ? 'animate-spin' : ''} aria-hidden="true" /> Actualizar
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={recargar}
+            disabled={cargando}
+            className="inline-flex items-center gap-2 h-10 px-3 rounded-xl text-sm font-semibold text-miaa-azul hover:bg-white disabled:opacity-50"
+          >
+            <RefreshCw size={16} className={cargando ? 'animate-spin' : ''} aria-hidden="true" /> Actualizar
+          </button>
+          <Link to="/admin/empleados/nuevo" className="inline-flex items-center gap-2 h-10 px-4 rounded-xl bg-miaa-marino text-white text-sm font-bold hover:bg-blue-800">
+            <UserPlus size={16} aria-hidden="true" /> Nuevo empleado
+          </Link>
+        </div>
       </div>
 
       {datos && (
@@ -103,7 +115,7 @@ export function EmpleadosAdmin() {
           {[
             { etiqueta: 'Empleados', valor: empleados.length, clase: 'text-miaa-marino' },
             { etiqueta: 'Activos', valor: activos, clase: 'text-[#0b6b58]' },
-            { etiqueta: 'Inactivos', valor: empleados.length - activos, clase: 'text-slate-700' },
+            { etiqueta: 'Inactivos', valor: empleados.filter((e) => e.habilitado && !e.activo).length, clase: 'text-slate-700' },
           ].map(({ etiqueta, valor, clase }) => (
             <div key={etiqueta} className="rounded-2xl bg-white border border-slate-200 px-4 py-3">
               <dt className="text-xs font-semibold text-slate-500">{etiqueta}</dt>
@@ -151,7 +163,7 @@ export function EmpleadosAdmin() {
                       <Link to={`/admin/empleados/${e.id}`} className="block font-bold text-miaa-marino hover:underline">{e.nombre}</Link>
                       <span className="text-xs text-slate-500">{e.username}</span>
                     </td>
-                    <td className="px-5 py-3.5"><EstadoEmpleado activo={e.activo} /></td>
+                    <td className="px-5 py-3.5"><EstadoEmpleado activo={e.activo} habilitado={e.habilitado} /></td>
                     <td className="px-5 py-3.5"><EnLinea enLinea={e.enLinea} /></td>
                     <td className="px-5 py-3.5 text-slate-700">{textoInactividad(e)}</td>
                     <td className="px-5 py-3.5 text-slate-700"><Cuando iso={e.ultimoAcceso} /></td>
@@ -175,7 +187,7 @@ export function EmpleadosAdmin() {
                     <p className="text-xs text-slate-500">{e.username}</p>
                     <p className="mt-1"><EnLinea enLinea={e.enLinea} /></p>
                   </div>
-                  <EstadoEmpleado activo={e.activo} />
+                  <EstadoEmpleado activo={e.activo} habilitado={e.habilitado} />
                 </div>
                 <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
                   <dt className="text-slate-500">Actividad</dt>

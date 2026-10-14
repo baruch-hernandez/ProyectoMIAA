@@ -3,6 +3,7 @@ package com.miaa.lecturas.exceptions;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -58,6 +59,17 @@ public class GlobalExceptionHandler {
         int status = ex.getStatusCode().value();
         String mensaje = ex.getReason() != null ? ex.getReason() : "Error " + status;
         return ResponseEntity.status(status).body(ApiError.de(status, mensaje));
+    }
+
+    /**
+     * La BD rechazó un dato repetido (columna UNIQUE). Pasa, por ejemplo, si el mismo
+     * reporte guardado sin conexión se envía dos veces al mismo tiempo.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiError> duplicado(DataIntegrityViolationException ex) {
+        log.warn("Dato duplicado o inválido para la BD: {}", ex.getMostSpecificCause().getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiError.de(409, "Ese registro ya existe o choca con otro. Actualiza e intenta de nuevo."));
     }
 
     @ExceptionHandler(AccessDeniedException.class)

@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { ClipboardList, LogOut, MapPin, MapPinOff, Plus } from 'lucide-react';
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { ClipboardList, KeyRound, LogOut, MapPin, MapPinOff, Plus } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cerrarSesion, obtenerUsuario } from '../../utils/sesion';
 import { ubicacionApi } from '../../services/ubicacionApi';
 import type { EstadoUbicacion } from '../../hooks/useCompartirUbicacion';
 import { useCompartirUbicacion } from '../../hooks/useCompartirUbicacion';
+import { useColaReportes } from '../../hooks/useColaReportes';
 import { Marca } from '../Marca';
 
 interface Destino {
@@ -96,6 +97,8 @@ export function LecturistaLayout() {
   const navigate = useNavigate();
   const usuario = obtenerUsuario();
   const estadoUbicacion = useCompartirUbicacion();
+  // Envía solos los reportes guardados sin conexión (al abrir, al volver la red, cada minuto)
+  useColaReportes({ automatico: true });
 
   const salir = async () => {
     // Avisar que deja de compartir (máx. 1.5 s: si no hay red, salimos de todos modos)
@@ -136,6 +139,10 @@ export function LecturistaLayout() {
               <span className="block text-sm font-bold text-miaa-marino">{usuario?.nombre}</span>
               <span className="block text-xs text-slate-500">Lecturista</span>
             </span>
+            <Link to="/cuenta/password" aria-label="Cambiar contraseña" title="Cambiar contraseña"
+              className="grid place-items-center size-10 rounded-xl text-slate-500 hover:text-miaa-marino hover:bg-slate-100">
+              <KeyRound size={18} aria-hidden="true" />
+            </Link>
             <button
               type="button"
               onClick={salir}

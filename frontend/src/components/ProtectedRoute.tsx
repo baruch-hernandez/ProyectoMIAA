@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { obtenerToken, obtenerUsuario, rutaInicio } from '../utils/sesion';
+import { obtenerToken, obtenerUsuario, rutaInicio, RUTA_REQUISITOS, tieneRequisitosPendientes } from '../utils/sesion';
 import type { RolUsuario } from '../utils/sesion';
 
 interface ProtectedRouteProps {
@@ -12,7 +12,7 @@ interface ProtectedRouteProps {
 
 /**
  * Protege rutas en el FRONT. Ojo: esto solo es comodidad visual; cualquiera
- * puede editar su localStorage. La seguridad REAL la pone el backend con el JWT.
+ * puede editar su sessionStorage. La seguridad REAL la pone el backend con el JWT.
  */
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRole, allowedRoles }) => {
   const token = obtenerToken();
@@ -23,7 +23,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRole, all
     return <Navigate to="/" replace />;
   }
 
-  // 2. Con sesión pero sin el rol requerido → a la pantalla de SU rol
+  // 2. Le falta cambiar su contraseña temporal o aceptar el aviso → a resolverlo primero
+  //    (el backend tampoco le deja hacer nada más: responde 403 REQUISITO_PENDIENTE)
+  if (tieneRequisitosPendientes(usuario)) {
+    return <Navigate to={RUTA_REQUISITOS} replace />;
+  }
+
+  // 3. Con sesión pero sin el rol requerido → a la pantalla de SU rol
   const permitidos = allowedRoles ?? (allowedRole ? [allowedRole] : undefined);
   if (permitidos && !permitidos.includes(usuario.rol)) {
     return <Navigate to={rutaInicio(usuario.rol)} replace />;

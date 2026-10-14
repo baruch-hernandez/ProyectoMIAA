@@ -69,6 +69,12 @@ public class UbicacionService {
         ubicacionRepository.findById(yo.id()).ifPresent(u -> u.setCompartiendo(false));
     }
 
+    /** El admin dio de baja al empleado: que deje de verse "en línea" al instante. */
+    @Transactional
+    public void marcarDesconectado(Long empleadoId) {
+        ubicacionRepository.findById(empleadoId).ifPresent(u -> u.setCompartiendo(false));
+    }
+
     /** ADMIN: dónde está un empleado. */
     @Transactional(readOnly = true)
     public UbicacionEmpleadoDTO deEmpleado(Long empleadoId) {

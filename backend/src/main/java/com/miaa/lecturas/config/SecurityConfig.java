@@ -1,5 +1,8 @@
 package com.miaa.lecturas.config;
 
+import com.miaa.lecturas.repositories.UsuarioRepository;
+import com.miaa.lecturas.services.CuentaService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -18,6 +21,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -30,8 +34,18 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    /** Rate limit del login: máximo N intentos por IP cada X segundos (application.properties). */
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http, JwtUtils jwtUtils) throws Exception {
+    public LimitadorPorVentana limitadorLogin(@Value("${miaa.login.max-por-ip:10}") int maximo,
+                                              @Value("${miaa.login.ventana-segundos:60}") long ventanaSegundos) {
+        return new LimitadorPorVentana(maximo, ventanaSegundos * 1000);
+    }
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http, JwtUtils jwtUtils,
+                                           UsuarioRepository usuarioRepository,
+                                           CuentaService cuentaService,
+                                           LimitadorPorVentana limitadorLogin) throws Exception {
         http
                 // API con JWT: no hay cookies de sesión, así que CSRF no aplica.
                 .csrf(csrf -> csrf.disable())
@@ -53,16 +67,23 @@ public class SecurityConfig {
                                 escribirError(res, 401, "Tu sesión no es válida o expiró. Inicia sesión de nuevo."))
                         .accessDeniedHandler((req, res, ex) ->
                                 escribirError(res, 403, "No tienes permiso para esta acción.")))
-                // Nuestro filtro corre antes que el de usuario/contraseña de Spring.
-                .addFilterBefore(new JwtAuthFilter(jwtUtils), UsernamePasswordAuthenticationFilter.class);
+                // Nuestros filtros corren antes que el de usuario/contraseña de Spring, en este orden:
+                // 1) rate limit del login, 2) validación del JWT.
+                .addFilterBefore(new LimiteLoginFilter(limitadorLogin), UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(new JwtAuthFilter(jwtUtils, usuarioRepository, cuentaService),
+                        UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
+    /** Orígenes del front que pueden llamar a la API (miaa.cors.origenes, separados por coma). */
+    @Value("${miaa.cors.origenes:http://localhost:5173,http://localhost:3000}")
+    private String[] origenesPermitidos;
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:3000"));
+        configuration.setAllowedOrigins(Arrays.stream(origenesPermitidos).map(String::trim).filter(o -> !o.isEmpty()).toList());
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
         configuration.setAllowCredentials(true);

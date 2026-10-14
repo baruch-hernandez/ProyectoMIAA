@@ -1,5 +1,5 @@
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { ClipboardList, LogOut, Users } from 'lucide-react';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { ClipboardList, KeyRound, LogOut, Users } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cerrarSesion, obtenerUsuario } from '../../utils/sesion';
 import { Marca } from '../Marca';
@@ -64,6 +64,9 @@ export function AdminLayout() {
         <div className="p-4 border-t border-white/10">
           <p className="text-xs text-miaa-bruma">Conectado como</p>
           <p className="mt-0.5 text-sm font-semibold truncate">{usuario?.nombre ?? 'Administrador'}</p>
+          <Link to="/admin/password" className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-miaa-bruma hover:text-white">
+            <KeyRound size={13} aria-hidden="true" /> Cambiar contraseña
+          </Link>
           <button
             type="button"
             onClick={salir}
@@ -78,6 +81,10 @@ export function AdminLayout() {
       <header className="lg:hidden sticky top-0 z-30 bg-miaa-marino text-white">
         <div className="px-4 h-16 flex items-center justify-between">
           <Marca tono="oscuro" />
+          <div className="flex items-center gap-1">
+          <Link to="/admin/password" aria-label="Cambiar contraseña" className="grid place-items-center size-10 rounded-xl text-miaa-bruma hover:bg-white/10 hover:text-white">
+            <KeyRound size={18} aria-hidden="true" />
+          </Link>
           <button
             type="button"
             onClick={salir}
@@ -85,6 +92,7 @@ export function AdminLayout() {
           >
             <LogOut size={18} aria-hidden="true" /> Salir
           </button>
+          </div>
         </div>
         <nav className="px-4 flex gap-1" aria-label="Principal">
           {DESTINOS.map(({ to, texto, icono: Icono, end }) => (

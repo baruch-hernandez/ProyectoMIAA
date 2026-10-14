@@ -9,6 +9,7 @@ import { formatoFecha } from '../../utils/catalogos';
 import { dentroDeAguascalientes, PROPS_MAPA_AGS } from '../../utils/limiteAgs';
 import { CapaLimiteAgs } from '../mapa/CapaLimiteAgs';
 import '../mapa/iconosLeaflet';
+import { CuentaEmpleadoPanel } from './CuentaEmpleadoPanel';
 
 /** Cada cuánto pregunta el admin (solo mientras esta pantalla esté abierta y visible). */
 const CONSULTA_MS = 5_000;
@@ -32,7 +33,7 @@ function Seguir({ lat, lng, activo }: { lat: number; lng: number; activo: boolea
 }
 
 /**
- * Ubicación EN VIVO de un lecturista (solo ADMIN).
+ * Ficha de un lecturista (solo ADMIN): su cuenta y su ubicación EN VIVO.
  * Pregunta al backend cada 5 s; si la pestaña está oculta, deja de preguntar
  * (no tiene caso gastar peticiones) y al volver pregunta de inmediato.
  */
@@ -151,6 +152,8 @@ export function UbicacionEmpleado() {
           )}
         </div>
       </header>
+
+      <CuentaEmpleadoPanel id={id} />
 
       {!pos ? (
         <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-white/60 p-10 text-center">

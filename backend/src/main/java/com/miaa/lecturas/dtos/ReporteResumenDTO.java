@@ -16,7 +16,8 @@ public record ReporteResumenDTO(
         Long autorId,
         LocalDateTime fechaCreacion,
         long totalFotos,
-        long totalNotas) {
+        long totalNotas,
+        boolean editado) {
 
     private static final int LARGO_VISTA_PREVIA = 180;
 
@@ -34,6 +35,7 @@ public record ReporteResumenDTO(
                 r.getCreadoPor().getId(),
                 r.getFechaCreacion(),
                 totalFotos,
-                totalNotas);
+                totalNotas,
+                r.getFechaEdicion() != null);
     }
 }

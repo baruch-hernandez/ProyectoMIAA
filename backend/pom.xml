@@ -18,7 +18,6 @@
 
     <properties>
         <java.version>17</java.version>
-        <!-- Lombok más reciente: la que trae Spring Boot 3.2.3 (1.18.30) falla con JDK nuevos -->
         <lombok.version>1.18.48</lombok.version>
     </properties>
 

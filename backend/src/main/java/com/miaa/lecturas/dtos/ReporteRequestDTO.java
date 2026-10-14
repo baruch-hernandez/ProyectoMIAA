@@ -62,5 +62,10 @@ public record ReporteRequestDTO(
 
         // @Valid: también valida cada foto de la lista con las reglas de FotoRequestDTO
         @Size(max = 3, message = "Máximo 3 fotos")
-        List<@Valid FotoRequestDTO> fotos) {
+        List<@Valid FotoRequestDTO> fotos,
+
+        // Id que genera el CELULAR (UUID). Si el reporte se guardó sin conexión y luego se
+        // reintenta el envío, el servidor lo reconoce y no lo duplica. Opcional.
+        @Pattern(regexp = "[0-9a-fA-F-]{36}", message = "clienteId debe ser un UUID")
+        String clienteId) implements DatosReporte {
 }

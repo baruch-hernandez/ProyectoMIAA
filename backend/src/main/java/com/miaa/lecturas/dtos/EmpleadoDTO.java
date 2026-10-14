@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
  * @param activo          true si tuvo actividad en los últimos N días (miaa.empleados.dias-inactivo)
  * @param diasSinActividad días desde la última actividad (null si nunca ha entrado)
  * @param enLinea         true si ahorita está compartiendo su ubicación (app abierta y con red)
+ * @param habilitado      false si el admin lo dio de baja (ya no puede entrar)
  */
 public record EmpleadoDTO(
         Long id,
@@ -20,5 +21,6 @@ public record EmpleadoDTO(
         LocalDateTime ultimaActividad,
         boolean activo,
         Long diasSinActividad,
-        boolean enLinea) {
+        boolean enLinea,
+        boolean habilitado) {
 }

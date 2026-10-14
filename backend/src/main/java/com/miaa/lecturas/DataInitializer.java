@@ -1,8 +1,10 @@
 package com.miaa.lecturas;
 
+import com.miaa.lecturas.entities.Rol;
 import com.miaa.lecturas.entities.Usuario;
 import com.miaa.lecturas.repositories.UsuarioRepository;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -19,6 +21,7 @@ import org.springframework.stereotype.Component;
  * ⚠️ Solo para desarrollo. En producción los usuarios se dan de alta desde un panel.
  */
 @Component
+@Order(1) // después de CatalogoRoles: los roles ya existen
 public class DataInitializer implements CommandLineRunner {
 
     private final UsuarioRepository usuarioRepository;
@@ -31,8 +34,8 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        asegurarUsuario("admin", "Administrador MIAA", "admin@miaa.gob.mx", "admin123", "ADMIN");
-        asegurarUsuario("lecturista1", "Juan Pérez", "juan.perez@miaa.gob.mx", "123456", "LECTURISTA");
+        asegurarUsuario("admin", "Administrador MIAA", "admin@miaa.gob.mx", "admin123", Rol.ADMIN);
+        asegurarUsuario("lecturista1", "Juan Pérez", "juan.perez@miaa.gob.mx", "123456", Rol.LECTURISTA);
 
         System.out.println("✅ Usuarios de prueba listos (contraseñas con BCrypt):");
         System.out.println("   - Admin:      admin / admin123");
@@ -56,6 +59,9 @@ public class DataInitializer implements CommandLineRunner {
                     nuevo.setEmail(email);
                     nuevo.setPassword(passwordEncoder.encode(password));
                     nuevo.setRol(rol);
+                    nuevo.setHabilitado(true);
+                    nuevo.setDebeCambiarPassword(false); // usuarios de prueba: sin cambio forzado
+                    nuevo.setFechaAlta(java.time.LocalDateTime.now());
                     usuarioRepository.save(nuevo);
                 });
     }

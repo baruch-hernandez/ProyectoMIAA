@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { cerrarSesion, obtenerToken } from '../utils/sesion';
+import { cerrarSesion, guardarAvisoLogin, obtenerToken, RUTA_REQUISITOS } from '../utils/sesion';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8500',
@@ -20,17 +20,23 @@ api.interceptors.request.use((config) => {
 });
 
 // ---------- Después de cada respuesta: si el token ya no sirve, al login ----------
-// El backend responde 401 cuando el JWT venció (24 h) o es inválido.
+// El backend responde 401 cuando el JWT venció (24 h), es inválido o la cuenta fue dada de baja.
+// 403 con codigo REQUISITO_PENDIENTE: debe cambiar su contraseña o aceptar el aviso.
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     const esLogin = String(error?.config?.url ?? '').includes('/auth/login');
+    const status = error?.response?.status;
+    const codigo = error?.response?.data?.codigo;
 
-    if (error?.response?.status === 401 && !esLogin) {
+    if (status === 401 && !esLogin) {
+      if (codigo === 'CUENTA_DESHABILITADA') guardarAvisoLogin(error.response.data.message);
       cerrarSesion();
       if (window.location.pathname !== '/') {
         window.location.href = '/';
       }
+    } else if (status === 403 && codigo === 'REQUISITO_PENDIENTE' && window.location.pathname !== RUTA_REQUISITOS) {
+      window.location.href = RUTA_REQUISITOS;
     }
     return Promise.reject(error);
   },

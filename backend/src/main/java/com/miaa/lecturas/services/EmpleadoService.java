@@ -58,6 +58,8 @@ public class EmpleadoService {
                     LocalDateTime ultimoReporte = s != null ? (LocalDateTime) s[2] : null;
                     return armar(u, total, ultimoReporte, ahora, diasInactivo, enLinea.getOrDefault(u.getId(), false));
                 })
+                // Los dados de baja al final (mismo orden por nombre dentro de cada grupo)
+                .sorted(java.util.Comparator.comparing(e -> !e.habilitado()))
                 .toList();
         return new EmpleadosDTO(diasInactivo, empleados);
     }
@@ -67,9 +69,10 @@ public class EmpleadoService {
                              LocalDateTime ahora, int diasInactivo, boolean enLinea) {
         LocalDateTime ultimaActividad = masReciente(u.getUltimoAcceso(), ultimoReporte);
         Long dias = ultimaActividad == null ? null : Math.max(0, Duration.between(ultimaActividad, ahora).toDays());
-        boolean activo = ultimaActividad != null && ultimaActividad.isAfter(ahora.minusDays(diasInactivo));
+        // Un empleado dado de baja nunca cuenta como activo
+        boolean activo = u.estaHabilitado() && ultimaActividad != null && ultimaActividad.isAfter(ahora.minusDays(diasInactivo));
         return new EmpleadoDTO(u.getId(), u.getNombre(), u.getUsername(), u.getUltimoAcceso(),
-                ultimoReporte, totalReportes, ultimaActividad, activo, dias, enLinea);
+                ultimoReporte, totalReportes, ultimaActividad, activo, dias, enLinea, u.estaHabilitado());
     }
 
     private static LocalDateTime masReciente(LocalDateTime a, LocalDateTime b) {

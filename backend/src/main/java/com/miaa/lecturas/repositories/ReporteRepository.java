@@ -39,6 +39,14 @@ public interface ReporteRepository extends JpaRepository<Reporte, Long> {
             """)
     Optional<Reporte> buscarConAutor(@Param("id") Long id);
 
+    /** Para reconocer un reporte reenviado (guardado sin conexión) y no duplicarlo. */
+    @Query("""
+            SELECT r FROM Reporte r
+              JOIN FETCH r.creadoPor
+            WHERE r.clienteId = :clienteId
+            """)
+    Optional<Reporte> buscarPorClienteId(@Param("clienteId") String clienteId);
+
     /** [reporteId, número de fotos] — para la lista, sin traer las imágenes. */
     @Query("SELECT f.reporte.id, COUNT(f) FROM FotoReporte f WHERE f.reporte.id IN :ids GROUP BY f.reporte.id")
     List<Object[]> contarFotos(@Param("ids") Collection<Long> ids);

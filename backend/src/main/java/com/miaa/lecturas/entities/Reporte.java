@@ -65,6 +65,10 @@ public class Reporte {
     private Double latitud;
     private Double longitud;
 
+    /** Id que generó el celular (UUID): evita duplicados al reenviar un reporte guardado sin conexión. */
+    @Column(name = "cliente_id", length = 36, unique = true)
+    private String clienteId;
+
     // ---------- El reporte ----------
     @Column(nullable = false, columnDefinition = "TEXT")
     private String descripcion;
@@ -90,6 +94,10 @@ public class Reporte {
 
     @Column(name = "fecha_actualizacion", nullable = false)
     private LocalDateTime fechaActualizacion;
+
+    /** Cuándo el lecturista corrigió domicilio o descripción (null = nunca). El admin lo ve como "Editado". */
+    @Column(name = "fecha_edicion")
+    private LocalDateTime fechaEdicion;
 
     @PrePersist
     void alCrear() {

@@ -1,10 +1,12 @@
 package com.miaa.lecturas.services;
 
 import com.miaa.lecturas.config.UsuarioPrincipal;
+import com.miaa.lecturas.dtos.DatosReporte;
 import com.miaa.lecturas.dtos.FotoDTO;
 import com.miaa.lecturas.dtos.FotoRequestDTO;
 import com.miaa.lecturas.dtos.NotaDTO;
 import com.miaa.lecturas.dtos.ReporteDetalleDTO;
+import com.miaa.lecturas.dtos.ReporteEdicionDTO;
 import com.miaa.lecturas.dtos.ReporteRequestDTO;
 import com.miaa.lecturas.dtos.ReporteResumenDTO;
 import com.miaa.lecturas.entities.FotoReporte;
@@ -15,6 +17,7 @@ import com.miaa.lecturas.repositories.FotoReporteRepository;
 import com.miaa.lecturas.repositories.NotaReporteRepository;
 import com.miaa.lecturas.repositories.ReporteRepository;
 import com.miaa.lecturas.repositories.UsuarioRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -36,6 +40,8 @@ import java.util.Set;
  *
  * Quién puede hacer qué:
  *  - LECTURISTA: sube reportes, ve SOLO los suyos, les agrega notas y quita/pone fotos.
+ *    Puede CORREGIR o BORRAR su reporte solo en las primeras N horas (configurable):
+ *    después queda fijo como evidencia.
  *  - ADMIN: ve TODOS los reportes, pero solo para consultar (no los cambia).
  */
 @Service
@@ -57,19 +63,22 @@ public class ReporteService {
     private final UsuarioRepository usuarioRepository;
     private final LimiteAguascalientes limiteAgs;
     private final ValidadorFotos validadorFotos;
+    private final int horasParaModificar;
 
     public ReporteService(ReporteRepository reporteRepository,
                           FotoReporteRepository fotoRepository,
                           NotaReporteRepository notaRepository,
                           UsuarioRepository usuarioRepository,
                           LimiteAguascalientes limiteAgs,
-                          ValidadorFotos validadorFotos) {
+                          ValidadorFotos validadorFotos,
+                          @Value("${miaa.reportes.horas-para-modificar:24}") int horasParaModificar) {
         this.reporteRepository = reporteRepository;
         this.fotoRepository = fotoRepository;
         this.notaRepository = notaRepository;
         this.usuarioRepository = usuarioRepository;
         this.limiteAgs = limiteAgs;
         this.validadorFotos = validadorFotos;
+        this.horasParaModificar = horasParaModificar;
     }
 
     // =====================================================================
@@ -78,27 +87,26 @@ public class ReporteService {
 
     @Transactional
     public ReporteDetalleDTO crear(UsuarioPrincipal yo, ReporteRequestDTO req) {
-        if (!MUNICIPIOS_SET.contains(req.municipio())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Municipio no válido: " + req.municipio());
+        // ¿Ya lo habíamos recibido? Pasa si el celular lo guardó sin conexión, lo envió,
+        // y la respuesta se perdió antes de llegarle: al reintentar, NO se duplica.
+        if (req.clienteId() != null) {
+            Optional<Reporte> previo = reporteRepository.buscarPorClienteId(req.clienteId());
+            if (previo.isPresent()) {
+                if (!esAutor(yo, previo.get())) {
+                    throw new ResponseStatusException(HttpStatus.CONFLICT, "Ese identificador de reporte ya se usó.");
+                }
+                return aDetalle(previo.get(), notaRepository.buscarPorReporte(previo.get().getId()), yo);
+            }
         }
-        validarUbicacion(req.latitud(), req.longitud());
+        validarDatos(req);
         List<FotoRequestDTO> fotos = req.fotos() == null ? List.of() : req.fotos();
         if (fotos.size() > MAX_FOTOS) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Máximo " + MAX_FOTOS + " fotos por reporte");
         }
 
         Reporte r = new Reporte();
-        r.setCalle(req.calle().trim());
-        r.setNumeroExterior(req.numeroExterior().trim());
-        r.setNumeroInterior(textoOpcional(req.numeroInterior()));
-        r.setColonia(req.colonia().trim());
-        r.setCodigoPostal(req.codigoPostal());
-        r.setMunicipio(req.municipio());
-        r.setReferencias(textoOpcional(req.referencias()));
-        r.setNumeroContrato(textoOpcional(req.numeroContrato()));
-        r.setLatitud(req.latitud());
-        r.setLongitud(req.longitud());
-        r.setDescripcion(req.descripcion().trim());
+        aplicarDatos(r, req);
+        r.setClienteId(req.clienteId());
         r.setCreadoPor(usuarioActual(yo));
         // Si UNA foto no pasa, se lanza la excepción y la transacción se deshace completa:
         // no queda un reporte a medias.
@@ -106,6 +114,26 @@ public class ReporteService {
 
         Reporte guardado = reporteRepository.save(r);
         return aDetalle(guardado, List.of(), yo);
+    }
+
+    // =====================================================================
+    // Corregir o borrar (LECTURISTA, solo el suyo y a tiempo)
+    // =====================================================================
+
+    @Transactional
+    public ReporteDetalleDTO editar(UsuarioPrincipal yo, Long id, ReporteEdicionDTO req) {
+        Reporte r = obtenerParaModificar(yo, id);
+        validarDatos(req);
+        aplicarDatos(r, req);
+        r.setFechaEdicion(LocalDateTime.now()); // el admin verá "Editado"
+        return aDetalle(r, notaRepository.buscarPorReporte(id), yo);
+    }
+
+    @Transactional
+    public void borrar(UsuarioPrincipal yo, Long id) {
+        Reporte r = obtenerParaModificar(yo, id);
+        // CascadeType.ALL en fotos y notas: se borran junto con el reporte
+        reporteRepository.delete(r);
     }
 
     // =====================================================================
@@ -191,6 +219,22 @@ public class ReporteService {
         return r;
     }
 
+    /** Corregir o borrar: además de ser el autor, debe estar dentro de la ventana de tiempo. */
+    private Reporte obtenerParaModificar(UsuarioPrincipal yo, Long id) {
+        Reporte r = obtenerParaEditar(yo, id);
+        if (!dentroDeVentana(r.getFechaCreacion(), LocalDateTime.now(), horasParaModificar)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Ya pasaron las " + horasParaModificar + " h para corregir o borrar este reporte. "
+                            + "Puedes agregarle una nota con la corrección.");
+        }
+        return r;
+    }
+
+    /** Lógica pura (se prueba sin BD): ¿todavía está a tiempo? */
+    static boolean dentroDeVentana(LocalDateTime creado, LocalDateTime ahora, int horas) {
+        return creado != null && ahora.isBefore(creado.plusHours(horas));
+    }
+
     private static boolean esAutor(UsuarioPrincipal yo, Reporte r) {
         return Objects.equals(r.getCreadoPor().getId(), yo.id());
     }
@@ -198,6 +242,28 @@ public class ReporteService {
     private Usuario usuarioActual(UsuarioPrincipal yo) {
         return usuarioRepository.findById(yo.id())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Tu usuario ya no existe"));
+    }
+
+    private void validarDatos(DatosReporte d) {
+        if (!MUNICIPIOS_SET.contains(d.municipio())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Municipio no válido: " + d.municipio());
+        }
+        validarUbicacion(d.latitud(), d.longitud());
+    }
+
+    /** Copia domicilio, ubicación y descripción (sirve igual para crear y para editar). */
+    private static void aplicarDatos(Reporte r, DatosReporte d) {
+        r.setCalle(d.calle().trim());
+        r.setNumeroExterior(d.numeroExterior().trim());
+        r.setNumeroInterior(textoOpcional(d.numeroInterior()));
+        r.setColonia(d.colonia().trim());
+        r.setCodigoPostal(d.codigoPostal());
+        r.setMunicipio(d.municipio());
+        r.setReferencias(textoOpcional(d.referencias()));
+        r.setNumeroContrato(textoOpcional(d.numeroContrato()));
+        r.setLatitud(d.latitud());
+        r.setLongitud(d.longitud());
+        r.setDescripcion(d.descripcion().trim());
     }
 
     private FotoReporte crearFoto(FotoRequestDTO req) {
@@ -275,8 +341,11 @@ public class ReporteService {
                 r.getCreadoPor().getNombre(),
                 r.getFechaCreacion(),
                 r.getFechaActualizacion(),
+                r.getFechaEdicion(),
                 r.getFotos().stream().map(FotoDTO::desde).toList(),
                 notas.stream().map(NotaDTO::desde).toList(),
-                esAutor(yo, r));
+                esAutor(yo, r),
+                esAutor(yo, r) && dentroDeVentana(r.getFechaCreacion(), LocalDateTime.now(), horasParaModificar),
+                esAutor(yo, r) && r.getFechaCreacion() != null ? r.getFechaCreacion().plusHours(horasParaModificar) : null);
     }
 }

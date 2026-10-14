@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
-import { ArrowLeft, Camera, CircleCheck, Eye, LoaderCircle, MapPin, Send, X } from 'lucide-react';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, Camera, CircleCheck, Eye, LoaderCircle, MapPin, Pencil, Send, Trash2, X } from 'lucide-react';
 import { reportesApi, leerError } from '../../services/reportesApi';
 import type { Foto, ReporteDetalle } from '../../types/reporte';
 import { formatoFecha, fechaRelativa } from '../../utils/catalogos';
@@ -26,11 +26,16 @@ interface Props {
 export function DetalleReporte({ volverA }: Props) {
   const id = Number(useParams().id);
   const location = useLocation();
-  const recienCreado = Boolean((location.state as { recienCreado?: boolean } | null)?.recienCreado);
+  const navigate = useNavigate();
+  const estadoNav = location.state as { recienCreado?: boolean; editado?: boolean } | null;
+  const recienCreado = Boolean(estadoNav?.recienCreado || estadoNav?.editado);
 
   const [reporte, setReporte] = useState<ReporteDetalle | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [mostrarAviso, setMostrarAviso] = useState(recienCreado);
+  const [confirmandoBorrar, setConfirmandoBorrar] = useState(false);
+  const [borrando, setBorrando] = useState(false);
+  const [errorBorrar, setErrorBorrar] = useState<string | null>(null);
 
   const [nota, setNota] = useState('');
   const [errorNota, setErrorNota] = useState<string | null>(null);
@@ -111,6 +116,19 @@ export function DetalleReporte({ volverA }: Props) {
 
   const cerrarVisor = useCallback(() => setFotoAbierta(null), []);
 
+  /** Borrar el reporte (solo el autor, en las primeras 24 h; el backend lo vuelve a revisar). */
+  const borrar = async () => {
+    setBorrando(true);
+    setErrorBorrar(null);
+    try {
+      await reportesApi.borrar(id);
+      navigate(volverA.to, { replace: true, state: { borrado: reporte?.folio } });
+    } catch (err) {
+      setErrorBorrar(leerError(err).mensaje);
+      setBorrando(false);
+    }
+  };
+
   const volver = (
     <Link to={volverA.to} className="inline-flex items-center gap-1.5 h-10 text-sm font-semibold text-miaa-azul hover:text-miaa-marino">
       <ArrowLeft size={18} aria-hidden="true" /> {volverA.texto}
@@ -151,7 +169,9 @@ export function DetalleReporte({ volverA }: Props) {
         <div className="flex items-start gap-3 p-4 rounded-2xl bg-[#d3fbf2] text-[#0b6b58]" role="status">
           <CircleCheck size={22} className="shrink-0" aria-hidden="true" />
           <p className="flex-1">
-            <span className="font-bold">Reporte enviado.</span> Su folio es <span className="cifras font-bold">{r.folio}</span>.
+            {estadoNav?.editado
+              ? <span className="font-bold">Cambios guardados.</span>
+              : <><span className="font-bold">Reporte enviado.</span> Su folio es <span className="cifras font-bold">{r.folio}</span>.</>}
           </p>
           <button type="button" onClick={() => setMostrarAviso(false)} aria-label="Cerrar aviso" className="size-8 grid place-items-center rounded-lg hover:bg-white/50">
             <X size={18} aria-hidden="true" />
@@ -173,7 +193,40 @@ export function DetalleReporte({ volverA }: Props) {
         </h1>
         <p className="mt-2 text-miaa-marino/80">
           Subido por <span className="font-bold text-miaa-marino">{r.autor}</span> {fechaRelativa(r.fechaCreacion)}
+          {r.fechaEdicion && (
+            <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-white/70 px-2 py-0.5 align-middle text-xs font-bold text-miaa-marino" title={formatoFecha(r.fechaEdicion)}>
+              <Pencil size={11} aria-hidden="true" /> Editado {fechaRelativa(r.fechaEdicion)}
+            </span>
+          )}
         </p>
+
+        {/* Corregir o borrar: solo el autor y en las primeras horas (después queda como evidencia) */}
+        {r.puedeModificar && (
+          <div className="mt-4 pt-4 border-t border-miaa-azul/15">
+            <div className="flex flex-wrap items-center gap-2">
+              <Link to={`/reportes/${r.id}/editar`} className="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl bg-white text-sm font-bold text-miaa-marino hover:bg-blue-50">
+                <Pencil size={15} aria-hidden="true" /> Corregir datos
+              </Link>
+              {confirmandoBorrar ? (
+                <span className="inline-flex flex-wrap items-center gap-1.5 text-sm">
+                  <span className="font-semibold text-red-800">¿Borrar este reporte con sus fotos y notas?</span>
+                  <button type="button" onClick={borrar} disabled={borrando} className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl font-bold text-white bg-red-700 hover:bg-red-800 disabled:opacity-60">
+                    {borrando && <LoaderCircle size={15} className="animate-spin" aria-hidden="true" />} Sí, borrar
+                  </button>
+                  <button type="button" onClick={() => setConfirmandoBorrar(false)} className="h-10 px-3 rounded-xl font-semibold text-slate-700 hover:bg-white/70">No</button>
+                </span>
+              ) : (
+                <button type="button" onClick={() => setConfirmandoBorrar(true)} className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl text-sm font-semibold text-red-700 hover:bg-red-50">
+                  <Trash2 size={15} aria-hidden="true" /> Borrar
+                </button>
+              )}
+            </div>
+            {r.modificableHasta && (
+              <p className="mt-2 text-xs text-miaa-marino/70">Puedes corregirlo o borrarlo hasta el {formatoFecha(r.modificableHasta)}</p>
+            )}
+            {errorBorrar && <p className="mt-2 text-sm text-red-700" role="alert">{errorBorrar}</p>}
+          </div>
+        )}
       </header>
 
       <div className="grid gap-5 lg:grid-cols-[1.15fr_1fr] items-start">

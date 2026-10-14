@@ -44,7 +44,12 @@ export interface ReporteRequest {
   longitud: number | null;
   descripcion: string;
   fotos: FotoNueva[];
+  /** UUID que genera el celular: si se reenvía (sin conexión), el servidor no lo duplica */
+  clienteId?: string;
 }
+
+/** PUT /reportes/{id}  ↔  ReporteEdicionDTO.java (sin fotos: se cambian aparte) */
+export type ReporteEdicion = Omit<ReporteRequest, 'fotos' | 'clienteId'>;
 
 /** GET /reportes y /reportes/mios  ↔  ReporteResumenDTO.java */
 export interface ReporteResumen {
@@ -59,6 +64,7 @@ export interface ReporteResumen {
   fechaCreacion: string;
   totalFotos: number;
   totalNotas: number;
+  editado: boolean;
 }
 
 /** ↔ NotaDTO.java */
@@ -88,10 +94,16 @@ export interface ReporteDetalle {
   autor: string;
   fechaCreacion: string;
   fechaActualizacion: string;
+  /** Cuándo se corrigió domicilio o descripción (null = nunca) */
+  fechaEdicion: string | null;
   fotos: Foto[];
   notas: Nota[];
   /** true solo para quien lo subió (puede agregar notas y quitar/poner fotos) */
   puedeEditar: boolean;
+  /** true si además sigue a tiempo de corregirlo o borrarlo */
+  puedeModificar: boolean;
+  /** Hasta cuándo puede corregirlo o borrarlo */
+  modificableHasta: string | null;
 }
 
 /** GET /usuarios/empleados  ↔  EmpleadoDTO.java */
@@ -107,6 +119,8 @@ export interface Empleado {
   diasSinActividad: number | null;
   /** Ahorita está compartiendo su ubicación (app abierta y con red) */
   enLinea: boolean;
+  /** false = el admin lo dio de baja */
+  habilitado: boolean;
 }
 
 /** GET /usuarios/empleados  ↔  EmpleadosDTO.java */
@@ -139,3 +153,43 @@ export interface UbicacionEmpleado {
   segundosDesdeUltima: number | null;
   segundosParaEnLinea: number;
 }
+
+// ---------------------------------------------------------------- cuentas
+
+/** GET /usuarios/yo  ↔  CuentaDTO.java */
+export interface Cuenta {
+  id: number;
+  nombre: string;
+  username: string;
+  email: string | null;
+  rol: 'ADMIN' | 'LECTURISTA';
+  debeCambiarPassword: boolean;
+  avisoPrivacidadPendiente: boolean;
+  /** Versión vigente del aviso (la que se debe aceptar) */
+  avisoPrivacidadVersion: string;
+}
+
+/** GET /usuarios/empleados/{id}  ↔  CuentaEmpleadoDTO.java */
+export interface CuentaEmpleado {
+  id: number;
+  nombre: string;
+  username: string;
+  email: string | null;
+  habilitado: boolean;
+  debeCambiarPassword: boolean;
+  fechaAlta: string | null;
+  ultimoAcceso: string | null;
+  avisoPrivacidadFecha: string | null;
+  /** Bloqueada por intentos fallidos hasta esta hora (null = no) */
+  bloqueadoHasta: string | null;
+}
+
+/** POST /usuarios/empleados  ↔  NuevoEmpleadoDTO.java */
+export interface NuevoEmpleado {
+  nombre: string;
+  username: string;
+  email: string;
+  passwordTemporal: string;
+}
+
+export type EdicionEmpleado = Omit<NuevoEmpleado, 'passwordTemporal'>;

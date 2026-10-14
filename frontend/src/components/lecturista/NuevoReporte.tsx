@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useEffectEvent, useReducer, useRef, useState } from 'react';
-import type { ChangeEvent, FormEvent, ReactNode } from 'react';
+import type { ChangeEvent, FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Camera, CircleCheck, LoaderCircle, LocateFixed, MapPin, RotateCcw, TriangleAlert } from 'lucide-react';
-import { reportesApi, leerError } from '../../services/reportesApi';
+import { ArrowLeft, Camera, CircleCheck, LoaderCircle, LocateFixed, RotateCcw, TriangleAlert } from 'lucide-react';
+import { esErrorDeRed, reportesApi, leerError } from '../../services/reportesApi';
 import type { Coordenadas, ReporteRequest } from '../../types/reporte';
 import { MUNICIPIOS } from '../../utils/catalogos';
+import { guardarPendiente } from '../../utils/colaReportes';
+import { obtenerUsuario } from '../../utils/sesion';
+import { uuid } from '../../utils/uuid';
 import type { FotoPreparada } from '../../utils/fotos';
 import { LADO_CORTO_MIN, LADO_LARGO_MIN, prepararFoto, textoHoraFoto } from '../../utils/fotos';
 import { direccionDesdeCoordenadas } from '../../services/geocodificacion';
@@ -12,6 +15,8 @@ import type { CampoGps, DireccionGps } from '../../utils/direccionGps';
 import { aplicarDireccion, camposLlenables, esCampoGps } from '../../utils/direccionGps';
 import { dentroDeAguascalientes } from '../../utils/limiteAgs';
 import { MapaUbicacion } from '../mapa/MapaUbicacion';
+import { Campo, Paso } from '../reportes/Formulario';
+import { claseInput } from '../../utils/estilos';
 import { MiniaturaFoto } from '../reportes/MiniaturaFoto';
 import { VisorFoto } from '../reportes/VisorFoto';
 
@@ -47,55 +52,6 @@ const VACIO: CamposTexto = {
   numeroContrato: '',
   descripcion: '',
 };
-
-const claseInput =
-  'w-full h-12 px-4 rounded-xl border border-slate-300 bg-white text-base text-slate-900 placeholder:text-slate-400 focus:border-miaa-cielo focus:outline-none focus:ring-4 focus:ring-miaa-cielo/20 aria-[invalid=true]:border-red-500 data-[gps=true]:bg-[#f2fbff] data-[gps=true]:border-miaa-cielo';
-
-/** Bloque numerado del formulario. Los números sí aplican: es un proceso en orden. */
-function Paso({ numero, titulo, ayuda, children }: { numero: number; titulo: string; ayuda?: string; children: ReactNode }) {
-  return (
-    <section className="rounded-2xl bg-white border border-slate-200 p-5 sm:p-6" aria-labelledby={`paso-${numero}`}>
-      <div className="flex items-start gap-3 mb-5">
-        <span className="cifras grid place-items-center size-8 shrink-0 rounded-full bg-miaa-marino text-white text-sm font-bold" aria-hidden="true">
-          {numero}
-        </span>
-        <div>
-          <h2 id={`paso-${numero}`} className="text-lg font-extrabold text-miaa-marino leading-8">{titulo}</h2>
-          {ayuda && <p className="text-sm text-slate-600">{ayuda}</p>}
-        </div>
-      </div>
-      {children}
-    </section>
-  );
-}
-
-/** Etiqueta + control + error del servidor para ese campo. */
-function Campo({ id, etiqueta, opcional, deGps, error, children, className = '' }: {
-  id: string;
-  etiqueta: string;
-  opcional?: boolean;
-  /** true = lo llenó el GPS y el usuario aún no lo ha tocado */
-  deGps?: boolean;
-  error?: string;
-  children: ReactNode;
-  className?: string;
-}) {
-  return (
-    <div className={className}>
-      <label htmlFor={id} className="block text-sm font-semibold text-miaa-marino mb-1.5">
-        {etiqueta}
-        {opcional && <span className="font-normal text-slate-500"> (opcional)</span>}
-        {deGps && (
-          <span className="ml-2 inline-flex items-center gap-0.5 rounded-full bg-[#e0f6ff] px-1.5 py-px align-middle text-[11px] font-bold text-[#035e86]">
-            <MapPin size={11} aria-hidden="true" /> GPS
-          </span>
-        )}
-      </label>
-      {children}
-      {error && <p id={`${id}-error`} className="mt-1.5 text-sm text-red-700">{error}</p>}
-    </div>
-  );
-}
 
 // ---------- Estado de los campos de texto ----------
 // Un reducer porque tres cosas cambian JUNTAS: los valores, qué campos editó la
@@ -194,6 +150,9 @@ export function NuevoReporte() {
   });
   const [ubicacion, setUbicacion] = useState<Coordenadas | null>(null);
   const [fotos, setFotos] = useState<FotoPreparada[]>([]);
+  // Id de ESTE reporte, generado en el celular. Si se guarda sin conexión y se reenvía,
+  // el servidor lo reconoce y no lo duplica.
+  const [clienteId] = useState(uuid);
   const [errorFoto, setErrorFoto] = useState<string | null>(null);
   const [fotoAbierta, setFotoAbierta] = useState<FotoPreparada | null>(null);
 
@@ -364,17 +323,42 @@ export function NuevoReporte() {
     setErrorGeneral(null);
     setEnviando(true);
 
+    // Las llaves deben coincidir con ReporteRequestDTO.java
+    const datos = {
+      ...form,
+      latitud: ubicacion?.lat ?? null,
+      longitud: ubicacion?.lng ?? null,
+      // ancho/alto no se mandan: la resolución la mide el servidor
+      fotos: fotos.map(({ datos: d, fechaCaptura, origenFecha }) => ({ datos: d, fechaCaptura, origenFecha })),
+      clienteId,
+    };
+
+    /** Sin señal: se guarda en el celular y se envía solo cuando vuelva la conexión. */
+    const guardarParaDespues = async () => {
+      try {
+        await guardarPendiente({ clienteId, usuarioId: obtenerUsuario()!.id, guardadoEn: new Date().toISOString(), datos, intentos: 0 });
+        navigate('/reportes', { replace: true, state: { guardadoSinConexion: true } });
+      } catch {
+        setErrorGeneral('No hay conexión y no se pudo guardar en el celular. Intenta de nuevo cuando tengas señal.');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    };
+
+    // Si el celular ya sabe que no tiene red, ni lo intentamos
+    if (!navigator.onLine) {
+      await guardarParaDespues();
+      setEnviando(false);
+      return;
+    }
+
     try {
-      // Las llaves deben coincidir con ReporteRequestDTO.java
-      const creado = await reportesApi.crear({
-        ...form,
-        latitud: ubicacion?.lat ?? null,
-        longitud: ubicacion?.lng ?? null,
-        // ancho/alto no se mandan: la resolución la mide el servidor
-        fotos: fotos.map(({ datos, fechaCaptura, origenFecha }) => ({ datos, fechaCaptura, origenFecha })),
-      });
+      const creado = await reportesApi.crear(datos);
       navigate(`/reportes/${creado.id}`, { replace: true, state: { recienCreado: true } });
     } catch (err) {
+      if (esErrorDeRed(err)) {
+        await guardarParaDespues();
+        return;
+      }
       const { mensaje, errores: porCampo } = leerError(err);
       setErrorGeneral(mensaje);
       setErrores(porCampo);

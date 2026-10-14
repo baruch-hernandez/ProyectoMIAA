@@ -17,7 +17,7 @@ interface MarcaProps {
  */
 export function Marca({ tono = 'claro', className = '' }: MarcaProps) {
   const [sinImagen, setSinImagen] = useState(false);
-  const src = tono === 'oscuro' ? '/logo-miaa-blanco.png' : '/logo-miaa.png';
+  const src = tono === 'oscuro' ? '/frontend/public/miaaLogo.png' : '/frontend/public/miaaLogo.png';
 
   if (!sinImagen) {
     return (
