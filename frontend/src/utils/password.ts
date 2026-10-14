@@ -14,7 +14,7 @@ export function cumplePolitica(password: string): boolean {
   return reglasPassword(password).every((r) => r.ok);
 }
 const LETRAS = 'abcdefghijlkmnpqrstuvwxyz';
-const DIGITOS = '0123456789';
+const DIGITOS = '0notificador1789';
 
 function alAzar(conjunto: string, cuantos: number): string {
   const valores = crypto.getRandomValues(new Uint32Array(cuantos)); // aleatorio de verdad, no Math.random
