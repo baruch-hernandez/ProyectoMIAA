@@ -33,7 +33,7 @@ function Seguir({ lat, lng, activo }: { lat: number; lng: number; activo: boolea
 }
 
 /**
- * Ficha de un lecturista (solo ADMIN): su cuenta y su ubicación EN VIVO.
+ * Ficha de un notificador (solo ADMIN): su cuenta y su ubicación EN VIVO.
  * Pregunta al backend cada 5 s; si la pestaña está oculta, deja de preguntar
  * (no tiene caso gastar peticiones) y al volver pregunta de inmediato.
  */

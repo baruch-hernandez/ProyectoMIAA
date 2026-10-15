@@ -11,7 +11,7 @@ const LATIDO_MS = 20_000;
 const hayGeolocalizacion = typeof navigator !== 'undefined' && 'geolocation' in navigator;
 
 /**
- * Mientras el lecturista tenga la app ABIERTA, comparte su ubicación con el admin.
+ * Mientras el notificador tenga la app ABIERTA, comparte su ubicación con el admin.
  *
  *  - watchPosition: el navegador avisa cada vez que cambia la posición.
  *  - Se manda al backend como máximo cada 10 s. Si se movió antes, NO se descarta: se

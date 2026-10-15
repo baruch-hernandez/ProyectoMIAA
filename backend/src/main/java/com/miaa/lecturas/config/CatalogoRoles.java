@@ -13,7 +13,8 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 /**
- * Al arrancar: llena la tabla "roles" y crea la llave foránea usuarios.rol → roles.clave.
+ * Al arrancar: llena la tabla "roles", pasa los usuarios del rol viejo LECTURISTA al nuevo
+ * NOTIFICADOR y crea la llave foránea usuarios.rol → roles.clave.
  *
  * ¿Por qué aquí y no con Hibernate (ddl-auto=update)? Hibernate crearía la llave foránea
  * ANTES de que existan los roles, y en una base con usuarios fallaría. Aquí primero se llena
@@ -27,6 +28,8 @@ public class CatalogoRoles implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(CatalogoRoles.class);
     static final String NOMBRE_LLAVE = "fk_usuarios_rol";
+    /** Clave que tenía el rol de campo antes de llamarse NOTIFICADOR. */
+    static final String CLAVE_VIEJA = "LECTURISTA";
 
     private final RolRepository rolRepository;
     private final JdbcTemplate jdbc;
@@ -39,7 +42,8 @@ public class CatalogoRoles implements CommandLineRunner {
     @Override
     public void run(String... args) {
         asegurarRol(Rol.ADMIN, "Administrador", "Consulta los reportes y administra a los empleados.");
-        asegurarRol(Rol.LECTURISTA, "Lecturista", "Empleado de campo (notificador): sube reportes de domicilios.");
+        asegurarRol(Rol.NOTIFICADOR, "Notificador", "Empleado de campo: sube reportes de domicilios.");
+        migrarClaveVieja();
         asegurarLlaveForanea();
     }
 
@@ -47,6 +51,25 @@ public class CatalogoRoles implements CommandLineRunner {
     private void asegurarRol(String clave, String nombre, String descripcion) {
         if (!rolRepository.existsById(clave)) {
             rolRepository.save(new Rol(clave, nombre, descripcion));
+        }
+    }
+
+    /**
+     * LECTURISTA → NOTIFICADOR en las bases que ya existían. Es seguro correrlo en cada arranque:
+     * si ya no hay nadie con la clave vieja, no cambia nada.
+     * Orden: el rol nuevo ya existe (asegurarRol) → se mueven los usuarios → se borra el viejo.
+     * Así la llave foránea nunca queda apuntando a un rol que no existe.
+     */
+    private void migrarClaveVieja() {
+        try {
+            int movidos = jdbc.update("UPDATE usuarios SET rol = ? WHERE rol = ?", Rol.NOTIFICADOR, CLAVE_VIEJA);
+            int borrados = jdbc.update("DELETE FROM roles WHERE clave = ?", CLAVE_VIEJA);
+            if (movidos > 0 || borrados > 0) {
+                log.info("Rol renombrado {} → {}: {} usuario(s) actualizados", CLAVE_VIEJA, Rol.NOTIFICADOR, movidos);
+            }
+        } catch (DataAccessException e) {
+            log.warn("No se pudo migrar el rol {} → {}: {}", CLAVE_VIEJA, Rol.NOTIFICADOR,
+                    e.getMostSpecificCause().getMessage());
         }
     }
 

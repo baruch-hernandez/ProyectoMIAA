@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import com.miaa.lecturas.entities.Disponibilidad;
 import com.miaa.lecturas.repositories.UsuarioRepository;
 import com.miaa.lecturas.entities.Usuario;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service 
 public class PresenciaService {

@@ -39,7 +39,7 @@ import java.util.Set;
  *  - El servicio DECIDE: quién puede ver/cambiar qué y qué datos son válidos.
  *
  * Quién puede hacer qué:
- *  - LECTURISTA: sube reportes, ve SOLO los suyos, les agrega notas y quita/pone fotos.
+ *  - NOTIFICADOR: sube reportes, ve SOLO los suyos, les agrega notas y quita/pone fotos.
  *    Puede CORREGIR o BORRAR su reporte solo en las primeras N horas (configurable):
  *    después queda fijo como evidencia.
  *  - ADMIN: ve TODOS los reportes, pero solo para consultar (no los cambia).
@@ -82,7 +82,7 @@ public class ReporteService {
     }
 
     // =====================================================================
-    // Subir un reporte (LECTURISTA)
+    // Subir un reporte (NOTIFICADOR)
     // =====================================================================
 
     @Transactional
@@ -117,7 +117,7 @@ public class ReporteService {
     }
 
     // =====================================================================
-    // Corregir o borrar (LECTURISTA, solo el suyo y a tiempo)
+    // Corregir o borrar (NOTIFICADOR, solo el suyo y a tiempo)
     // =====================================================================
 
     @Transactional
@@ -140,7 +140,7 @@ public class ReporteService {
     // Consultar
     // =====================================================================
 
-    /** LECTURISTA: solo los reportes que él subió, del más nuevo al más viejo. */
+    /** NOTIFICADOR: solo los reportes que él subió, del más nuevo al más viejo. */
     @Transactional(readOnly = true)
     public List<ReporteResumenDTO> mios(UsuarioPrincipal yo) {
         return aResumenes(reporteRepository.buscarDeUsuario(yo.id()));
@@ -214,7 +214,7 @@ public class ReporteService {
         Reporte r = obtenerParaVer(yo, id);
         if (!esAutor(yo, r)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                    "Solo el lecturista que subió el reporte puede modificarlo.");
+                    "Solo el notificador que subió el reporte puede modificarlo.");
         }
         return r;
     }

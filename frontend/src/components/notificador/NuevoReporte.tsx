@@ -93,7 +93,7 @@ function reducirForm(estado: EstadoForm, accion: AccionForm): EstadoForm {
   }
 }
 
-/** Una línea que dice en qué va el GPS y qué debe revisar el lecturista. */
+/** Una línea que dice en qué va el GPS y qué debe revisar el notificador. */
 function AvisoGps({ estado }: { estado: EstadoGps }) {
   const precision = 'precision' in estado ? estado.precision : undefined;
   // Mientras se afina no asustamos: la precisión todavía puede mejorar

@@ -3,7 +3,7 @@ package com.miaa.lecturas.dtos;
 import java.time.LocalDateTime;
 
 /**
- * Cómo ve el ADMIN a cada empleado (lecturista).
+ * Cómo ve el ADMIN a cada empleado (notificador).
  *
  * @param ultimaActividad lo más reciente entre su último inicio de sesión y su último reporte
  * @param activo          true si tuvo actividad en los últimos N días (miaa.empleados.dias-inactivo)

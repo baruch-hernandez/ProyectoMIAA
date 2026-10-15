@@ -5,11 +5,11 @@ import { AdminLayout } from './components/admin/AdminLayout';
 import { ReportesAdmin } from './components/admin/ReportesAdmin';
 import { EmpleadosAdmin } from './components/admin/EmpleadosAdmin';
 import { UbicacionEmpleado } from './components/admin/UbicacionEmpleado';
-import { LecturistaLayout } from './components/lecturista/LecturistaLayout';
-import { MisReportes } from './components/lecturista/MisReportes';
-import { NuevoReporte } from './components/lecturista/NuevoReporte';
+import { NotificadorLayout } from './components/notificador/NotificadorLayout';
+import { MisReportes } from './components/notificador/MisReportes';
+import { NuevoReporte } from './components/notificador/NuevoReporte';
 import { DetalleReporte } from './components/reportes/DetalleReporte';
-import { EditarReporte } from './components/lecturista/EditarReporte';
+import { EditarReporte } from './components/notificador/EditarReporte';
 import { NuevoEmpleado } from './components/admin/NuevoEmpleado';
 import { RequisitosCuenta } from './components/cuenta/RequisitosCuenta';
 import { CambiarPassword } from './components/cuenta/CambiarPassword';
@@ -36,9 +36,9 @@ function App() {
           </Route>
         </Route>
 
-        {/* LECTURISTA (el empleado de campo): sube reportes y les da seguimiento */}
-        <Route element={<ProtectedRoute allowedRole="LECTURISTA" />}>
-          <Route element={<LecturistaLayout />}>
+        {/* NOTIFICADOR (el empleado de campo): sube reportes y les da seguimiento */}
+        <Route element={<ProtectedRoute allowedRole="NOTIFICADOR" />}>
+          <Route element={<NotificadorLayout />}>
             <Route path="/reportes" element={<MisReportes />} />
             <Route path="/reportes/nuevo" element={<NuevoReporte />} />
             <Route path="/reportes/:id" element={<DetalleReporte volverA={{ to: '/reportes', texto: 'Mis reportes' }} />} />

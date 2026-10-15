@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Un reporte que sube un lecturista sobre un domicilio.
+ * Un reporte que sube un notificador sobre un domicilio.
  *
  * Por indicación de MIAA, un reporte es solo: el DOMICILIO, la DESCRIPCIÓN, las FOTOS
  * y las NOTAS. No tiene categoría, prioridad, estado ni persona asignada.
@@ -95,7 +95,7 @@ public class Reporte {
     @Column(name = "fecha_actualizacion", nullable = false)
     private LocalDateTime fechaActualizacion;
 
-    /** Cuándo el lecturista corrigió domicilio o descripción (null = nunca). El admin lo ve como "Editado". */
+    /** Cuándo el notificador corrigió domicilio o descripción (null = nunca). El admin lo ve como "Editado". */
     @Column(name = "fecha_edicion")
     private LocalDateTime fechaEdicion;
 

@@ -13,11 +13,11 @@ import type { ReporteRequest } from '../types/reporte';
 
 export interface ReportePendiente {
   clienteId: string;
-  /** De quién es (si otro lecturista entra en el mismo celular, no se mezclan) */
+  /** De quién es (si otro notificador entra en el mismo celular, no se mezclan) */
   usuarioId: number;
   guardadoEn: string; // ISO
   datos: ReporteRequest;
-  /** El SERVIDOR lo rechazó (no fue la red): no se reintenta solo, el lecturista decide */
+  /** El SERVIDOR lo rechazó (no fue la red): no se reintenta solo, el notificador decide */
   error?: string;
   intentos: number;
 }

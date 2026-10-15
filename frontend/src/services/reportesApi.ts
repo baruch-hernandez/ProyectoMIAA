@@ -4,7 +4,7 @@ import api from './api';
 import type { Foto, FotoNueva, Nota, ReporteDetalle, ReporteEdicion, ReporteRequest, ReporteResumen } from '../types/reporte';
 
 export const reportesApi = {
-  /** LECTURISTA: sus reportes */
+  /** NOTIFICADOR: sus reportes */
   mios: async () => (await api.get<ReporteResumen[]>('/reportes/mios')).data,
 
   /** ADMIN: los de todos los empleados */

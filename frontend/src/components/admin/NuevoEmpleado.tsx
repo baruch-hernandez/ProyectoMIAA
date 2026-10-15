@@ -17,7 +17,7 @@ function sugerirUsuario(nombre: string): string {
   return partes.slice(0, 2).join('.').slice(0, 30);
 }
 
-/** Alta de un lecturista. El admin le da una contraseña TEMPORAL que deberá cambiar al entrar. */
+/** Alta de un notificador. El admin le da una contraseña TEMPORAL que deberá cambiar al entrar. */
 export function NuevoEmpleado() {
   const [nombre, setNombre] = useState('');
   const [username, setUsername] = useState('');
@@ -77,7 +77,7 @@ export function NuevoEmpleado() {
         <ArrowLeft size={18} aria-hidden="true" /> Empleados
       </Link>
       <h1 className="mt-1 text-3xl font-extrabold text-miaa-marino">Nuevo empleado</h1>
-      <p className="mt-1 text-slate-600">Se da de alta como lecturista. Al entrar por primera vez creará su propia contraseña.</p>
+      <p className="mt-1 text-slate-600">Se da de alta como notificador. Al entrar por primera vez creará su propia contraseña.</p>
 
       {creado ? (
         <section className="mt-6 rounded-2xl bg-white border border-slate-200 p-5 sm:p-6 space-y-4" role="status">

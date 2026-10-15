@@ -51,7 +51,7 @@ public class EmpleadoService {
 
         Map<Long, Boolean> enLinea = ubicacionService.enLineaPorEmpleado();
         LocalDateTime ahora = LocalDateTime.now();
-        List<EmpleadoDTO> empleados = usuarioRepository.findByRolOrderByNombreAsc("LECTURISTA").stream()
+        List<EmpleadoDTO> empleados = usuarioRepository.findByRolOrderByNombreAsc("NOTIFICADOR").stream()
                 .map(u -> {
                     Object[] s = stats.get(u.getId());
                     long total = s != null ? (Long) s[1] : 0L;

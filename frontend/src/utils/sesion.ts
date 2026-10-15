@@ -1,7 +1,7 @@
 // Todo lo de la sesión en UN solo lugar. Antes cada componente leía localStorage
 // a su manera (unos 'usuario', otros 'user'), y por eso el id se perdía.
 
-export type RolUsuario = 'ADMIN' | 'LECTURISTA';
+export type RolUsuario = 'ADMIN' | 'NOTIFICADOR';
 
 export interface UsuarioSesion {
   id: number;
@@ -46,7 +46,11 @@ export function obtenerToken(): string | null {
 export function obtenerUsuario(): UsuarioSesion | null {
   try {
     const crudo = almacen.getItem(LLAVE_USUARIO);
-    return crudo ? (JSON.parse(crudo) as UsuarioSesion) : null;
+    if (!crudo) return null;
+    const usuario = JSON.parse(crudo) as UsuarioSesion;
+    // Sesiones abiertas antes del cambio de nombre del rol (LECTURISTA → NOTIFICADOR)
+    if ((usuario.rol as string) === 'LECTURISTA') usuario.rol = 'NOTIFICADOR';
+    return usuario;
   } catch {
     return null; // JSON corrupto: lo tratamos como "sin sesión"
   }
@@ -91,8 +95,8 @@ export function rutaInicio(rol: RolUsuario | string | undefined, usuario: Usuari
   switch (rol) {
     case 'ADMIN':
       return '/admin';
-    case 'LECTURISTA':
-      // El lecturista es el empleado de campo: entra a sus reportes.
+    case 'NOTIFICADOR':
+      // El notificador es el empleado de campo: entra a sus reportes.
       return '/reportes';
     default:
       return '/';

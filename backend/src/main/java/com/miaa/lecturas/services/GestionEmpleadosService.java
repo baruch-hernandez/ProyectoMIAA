@@ -14,7 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDateTime;
 
 /**
- * El ADMIN administra las cuentas de los LECTURISTAS: alta, edición, baja/reactivación
+ * El ADMIN administra las cuentas de los NOTIFICADORES: alta, edición, baja/reactivación
  * y restablecer contraseña. (A otros administradores no los toca desde aquí.)
  *
  * Decisiones:
@@ -39,7 +39,7 @@ public class GestionEmpleadosService {
 
     @Transactional(readOnly = true)
     public CuentaEmpleadoDTO obtener(Long id) {
-        return aDTO(cargarLecturista(id));
+        return aDTO(cargarNotificador(id));
     }
 
     @Transactional
@@ -58,7 +58,7 @@ public class GestionEmpleadosService {
         u.setNombre(req.nombre().trim());
         u.setUsername(username);
         u.setEmail(email);
-        u.setRol("LECTURISTA");
+        u.setRol("NOTIFICADOR");
         u.setPassword(passwordEncoder.encode(req.passwordTemporal()));
         u.setHabilitado(true);
         u.setDebeCambiarPassword(true);
@@ -68,7 +68,7 @@ public class GestionEmpleadosService {
 
     @Transactional
     public CuentaEmpleadoDTO editar(Long id, EdicionEmpleadoDTO req) {
-        Usuario u = cargarLecturista(id);
+        Usuario u = cargarNotificador(id);
         String username = req.username().trim();
         String email = textoOpcional(req.email());
         if (usuarioRepository.existsByUsernameIgnoreCaseAndIdNot(username, id)) {
@@ -85,7 +85,7 @@ public class GestionEmpleadosService {
 
     @Transactional
     public CuentaEmpleadoDTO restablecerPassword(Long id, String passwordTemporal) {
-        Usuario u = cargarLecturista(id);
+        Usuario u = cargarNotificador(id);
         PoliticaPassword.validar(passwordTemporal);
         u.setPassword(passwordEncoder.encode(passwordTemporal));
         u.setDebeCambiarPassword(true);
@@ -96,14 +96,14 @@ public class GestionEmpleadosService {
     /** Quita el bloqueo por intentos fallidos sin esperar a que venza. */
     @Transactional
     public CuentaEmpleadoDTO desbloquear(Long id) {
-        Usuario u = cargarLecturista(id);
+        Usuario u = cargarNotificador(id);
         BloqueoPorIntentos.desbloquear(u);
         return aDTO(u);
     }
 
     @Transactional
     public CuentaEmpleadoDTO cambiarHabilitado(Long id, boolean habilitado) {
-        Usuario u = cargarLecturista(id);
+        Usuario u = cargarNotificador(id);
         u.setHabilitado(habilitado);
         if (!habilitado) {
             // Deja de aparecer "en línea" de inmediato (su sesión se corta en su siguiente petición)
@@ -112,9 +112,9 @@ public class GestionEmpleadosService {
         return aDTO(u);
     }
 
-    private Usuario cargarLecturista(Long id) {
+    private Usuario cargarNotificador(Long id) {
         return usuarioRepository.findById(id)
-                .filter(u -> "LECTURISTA".equals(u.getRol()))
+                .filter(u -> "NOTIFICADOR".equals(u.getRol()))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ese empleado no existe"));
     }
 

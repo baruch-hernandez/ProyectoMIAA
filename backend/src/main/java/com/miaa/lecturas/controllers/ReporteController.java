@@ -29,7 +29,7 @@ import java.util.List;
 /**
  * Reportes de domicilios.
  *
- *  LECTURISTA
+ *  NOTIFICADOR
  *   POST   /reportes                         subir un reporte (con clienteId no se duplica al reenviar)
  *   PUT    /reportes/{id}                    corregir domicilio/descripción (primeras 24 h)
  *   DELETE /reportes/{id}                    borrarlo (primeras 24 h)
@@ -40,7 +40,7 @@ import java.util.List;
  *  ADMIN (solo consulta)
  *   GET    /reportes                         los reportes de todos los empleados
  *  AMBOS
- *   GET    /reportes/{id}                    detalle (el lecturista solo los suyos)
+ *   GET    /reportes/{id}                    detalle (el notificador solo los suyos)
  *
  * @PreAuthorize dice QUÉ ROL entra; ReporteService decide sobre QUÉ reporte.
  * Los nombres en @PathVariable("id") van explícitos para que funcione aunque el IDE
@@ -57,7 +57,7 @@ public class ReporteController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('LECTURISTA')")
+    @PreAuthorize("hasRole('NOTIFICADOR')")
     @ResponseStatus(HttpStatus.CREATED)
     public ReporteDetalleDTO crear(@AuthenticationPrincipal UsuarioPrincipal yo,
                                    @Valid @RequestBody ReporteRequestDTO request) {
@@ -65,7 +65,7 @@ public class ReporteController {
     }
 
     @GetMapping("/mios")
-    @PreAuthorize("hasRole('LECTURISTA')")
+    @PreAuthorize("hasRole('NOTIFICADOR')")
     public List<ReporteResumenDTO> mios(@AuthenticationPrincipal UsuarioPrincipal yo) {
         return reporteService.mios(yo);
     }
@@ -83,7 +83,7 @@ public class ReporteController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('LECTURISTA')")
+    @PreAuthorize("hasRole('NOTIFICADOR')")
     public ReporteDetalleDTO editar(@AuthenticationPrincipal UsuarioPrincipal yo,
                                     @PathVariable("id") Long id,
                                     @Valid @RequestBody ReporteEdicionDTO request) {
@@ -91,14 +91,14 @@ public class ReporteController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('LECTURISTA')")
+    @PreAuthorize("hasRole('NOTIFICADOR')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void borrar(@AuthenticationPrincipal UsuarioPrincipal yo, @PathVariable("id") Long id) {
         reporteService.borrar(yo, id);
     }
 
     @PostMapping("/{id}/notas")
-    @PreAuthorize("hasRole('LECTURISTA')")
+    @PreAuthorize("hasRole('NOTIFICADOR')")
     @ResponseStatus(HttpStatus.CREATED)
     public NotaDTO agregarNota(@AuthenticationPrincipal UsuarioPrincipal yo,
                                @PathVariable("id") Long id,
@@ -107,7 +107,7 @@ public class ReporteController {
     }
 
     @PostMapping("/{id}/fotos")
-    @PreAuthorize("hasRole('LECTURISTA')")
+    @PreAuthorize("hasRole('NOTIFICADOR')")
     @ResponseStatus(HttpStatus.CREATED)
     public FotoDTO agregarFoto(@AuthenticationPrincipal UsuarioPrincipal yo,
                                @PathVariable("id") Long id,
@@ -116,7 +116,7 @@ public class ReporteController {
     }
 
     @DeleteMapping("/{id}/fotos/{fotoId}")
-    @PreAuthorize("hasRole('LECTURISTA')")
+    @PreAuthorize("hasRole('NOTIFICADOR')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void borrarFoto(@AuthenticationPrincipal UsuarioPrincipal yo,
                            @PathVariable("id") Long id,

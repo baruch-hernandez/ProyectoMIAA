@@ -1,7 +1,7 @@
 import api from './api';
 import type { UbicacionNueva } from '../types/reporte';
 
-/** El lecturista comparte SU ubicación (el backend saca quién es del token). */
+/** El notificador comparte SU ubicación (el backend saca quién es del token). */
 export const ubicacionApi = {
   enviar: async (u: UbicacionNueva) => {
     await api.post('/ubicacion', u);

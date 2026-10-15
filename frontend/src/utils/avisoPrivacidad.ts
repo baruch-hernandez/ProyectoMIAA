@@ -1,4 +1,4 @@
-// Texto del aviso de privacidad que acepta cada LECTURISTA la primera vez que entra.
+// Texto del aviso de privacidad que acepta cada NOTIFICADOR la primera vez que entra.
 //
 // ⚠️ BORRADOR: lo debe revisar y completar el área jurídica de MIAA. Cambia los textos
 // entre [corchetes]. Cuando el texto cambie, sube también la VERSIÓN aquí Y en

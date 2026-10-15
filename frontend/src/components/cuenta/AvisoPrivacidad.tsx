@@ -6,7 +6,7 @@ import type { Cuenta } from '../../types/reporte';
 import { AVISO_ES_BORRADOR, AVISO_PRIVACIDAD, VERSION_AVISO } from '../../utils/avisoPrivacidad';
 
 /**
- * El lecturista lee el aviso y lo acepta. El backend guarda la fecha y la versión;
+ * El notificador lee el aviso y lo acepta. El backend guarda la fecha y la versión;
  * si MIAA cambia el texto (y la versión), se le vuelve a pedir.
  */
 export function AvisoPrivacidad({ onAceptado }: { onAceptado: (cuenta: Cuenta) => void }) {

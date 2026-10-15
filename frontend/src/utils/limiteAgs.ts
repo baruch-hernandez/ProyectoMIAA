@@ -133,7 +133,7 @@ export function dentroDeAguascalientes({ lat, lng }: Coordenadas): boolean {
 }
 
 // ---------------------------------------------------------------- para los mapas
-// (Lo usan el mapa del lecturista y el del administrador: un solo lugar = mismo límite.)
+// (Lo usan el mapa del notificador y el del administrador: un solo lugar = mismo límite.)
 
 const MARGEN_MAPA = 0.12; // ~13 km: deja ver un poco alrededor del borde
 

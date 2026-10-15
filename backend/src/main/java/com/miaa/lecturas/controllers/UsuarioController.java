@@ -62,7 +62,7 @@ public class UsuarioController {
 
     /**
      * GET /usuarios/empleados/{id}/ubicacion (solo ADMIN)
-     * Última ubicación del lecturista y si está en línea. El mapa del admin lo consulta cada 5 s.
+     * Última ubicación del notificador y si está en línea. El mapa del admin lo consulta cada 5 s.
      */
     @GetMapping("/empleados/{id}/ubicacion")
     public UbicacionEmpleadoDTO ubicacion(@PathVariable("id") Long id) {

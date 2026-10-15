@@ -53,7 +53,7 @@ function textoInactividad(e: Empleado): string {
 }
 
 /**
- * Estado de cada empleado (lecturista): ACTIVO si inició sesión o subió un reporte en los
+ * Estado de cada empleado (notificador): ACTIVO si inició sesión o subió un reporte en los
  * últimos N días. Lo calcula el backend (EmpleadoService); aquí solo se muestra.
  */
 export function EmpleadosAdmin() {
@@ -90,9 +90,9 @@ export function EmpleadosAdmin() {
           <h1 className="text-3xl font-extrabold text-miaa-marino">Empleados</h1>
           <p className="mt-1 text-slate-600 max-w-xl">
             {dias != null
-              ? <>Un lecturista está <strong className="text-miaa-marino">activo</strong> si inició sesión o subió un reporte en los últimos <span className="cifras font-semibold">{dias}</span> días.</>
+              ? <>Un notificador está <strong className="text-miaa-marino">activo</strong> si inició sesión o subió un reporte en los últimos <span className="cifras font-semibold">{dias}</span> días.</>
               : 'Revisa quién está activo y quién no.'}{' '}
-            Toca a un lecturista para ver su ficha: <strong className="text-miaa-marino">dónde está ahorita</strong> y su cuenta.
+            Toca a un notificador para ver su ficha: <strong className="text-miaa-marino">dónde está ahorita</strong> y su cuenta.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -136,7 +136,7 @@ export function EmpleadosAdmin() {
         <div className="h-64 rounded-2xl bg-white/70 animate-pulse" aria-busy="true" aria-label="Cargando empleados" />
       ) : datos && empleados.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-white/60 p-10 text-center">
-          <p className="font-bold text-miaa-marino">No hay lecturistas registrados.</p>
+          <p className="font-bold text-miaa-marino">No hay notificadores registrados.</p>
         </div>
       ) : datos && (
         <>

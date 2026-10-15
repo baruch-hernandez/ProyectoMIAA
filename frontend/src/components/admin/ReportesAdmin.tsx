@@ -69,7 +69,7 @@ export function ReportesAdmin() {
       ) : reportes.length === 0 && !error ? (
         <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-white/60 p-10 text-center">
           <p className="font-bold text-miaa-marino">Todavía no hay reportes.</p>
-          <p className="mt-1 text-sm text-slate-600">Aquí aparecerán los que suban los lecturistas desde campo.</p>
+          <p className="mt-1 text-sm text-slate-600">Aquí aparecerán los que suban los notificadores desde campo.</p>
         </div>
       ) : (
         <ListaReportes reportes={reportes} enlace={(id) => `/admin/reportes/${id}`} mostrarAutor />

@@ -8,7 +8,8 @@ import lombok.*;
 @Table(name = "usuarios")
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
+// Sin @AllArgsConstructor: nadie lo usa (siempre new Usuario() + setters) y con él la extensión
+// de Java de VS Code marca el error falso "Flexible Constructor Bodies" (bug de Lombok + JDT).
 public class Usuario {
 
     @Id
@@ -22,14 +23,14 @@ public class Usuario {
     private String email;
 
     // WRITE_ONLY: Jackson puede LEERLO de un JSON que llega, pero NUNCA lo escribe
-    // en las respuestas. Antes, GET /rutas regresaba la contraseña del lecturista.
+    // en las respuestas. Antes, GET /rutas regresaba la contraseña del notificador.
     // (Lo ideal a futuro: no regresar entidades, sino DTOs.)
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @ToString.Exclude
     private String password;
 
     /**
-     * Clave del rol: ADMIN o LECTURISTA. Es llave foránea a la tabla "roles" (ver
+     * Clave del rol: ADMIN o NOTIFICADOR. Es llave foránea a la tabla "roles" (ver
      * Rol y DataInitializer).
      */
     @Column(name = "rol", length = 30)

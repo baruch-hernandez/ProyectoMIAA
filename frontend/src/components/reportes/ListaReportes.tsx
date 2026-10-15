@@ -7,7 +7,7 @@ interface Props {
   reportes: ReporteResumen[];
   /** A dónde lleva cada reporte, p. ej. (id) => `/reportes/${id}` */
   enlace: (id: number) => string;
-  /** El admin ve de quién es cada reporte; el lecturista no lo necesita (todos son suyos). */
+  /** El admin ve de quién es cada reporte; el notificador no lo necesita (todos son suyos). */
   mostrarAutor?: boolean;
 }
 

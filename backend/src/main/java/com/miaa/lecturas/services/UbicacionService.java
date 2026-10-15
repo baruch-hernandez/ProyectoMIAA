@@ -19,10 +19,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Ubicación en vivo de los lecturistas.
+ * Ubicación en vivo de los notificadores.
  *
  * Cómo funciona ("casi tiempo real" sin WebSockets):
- *  1. El celular del lecturista manda su posición cada ~20 s (POST /ubicacion).
+ *  1. El celular del notificador manda su posición cada ~20 s (POST /ubicacion).
  *  2. El admin, mientras tiene abierto el mapa, pregunta cada 5 s (GET .../ubicacion).
  *  3. "En línea" = el servidor recibió algo en los últimos N segundos y no cerró sesión.
  *     Si el celular se queda sin red, deja de llegar → pasa solo a "sin conexión".
@@ -42,7 +42,7 @@ public class UbicacionService {
         this.segundosEnLinea = segundosEnLinea;
     }
 
-    /** LECTURISTA: guarda (sobrescribe) su última ubicación. */
+    /** NOTIFICADOR: guarda (sobrescribe) su última ubicación. */
     @Transactional
     public void actualizar(UsuarioPrincipal yo, UbicacionRequestDTO req) {
         Instant ahora = Instant.now();
@@ -62,7 +62,7 @@ public class UbicacionService {
         ubicacionRepository.save(u);
     }
 
-    /** LECTURISTA: cerró sesión → deja de aparecer en línea (se conserva el último punto). */
+    /** NOTIFICADOR: cerró sesión → deja de aparecer en línea (se conserva el último punto). */
     @Transactional
     public void dejarDeCompartir(UsuarioPrincipal yo) {
         // Sin save(): la entidad está administrada y JPA guarda el cambio solo (dirty checking).
@@ -79,7 +79,7 @@ public class UbicacionService {
     @Transactional(readOnly = true)
     public UbicacionEmpleadoDTO deEmpleado(Long empleadoId) {
         Usuario empleado = usuarioRepository.findById(empleadoId)
-                .filter(u -> "LECTURISTA".equals(u.getRol()))
+                .filter(u -> "NOTIFICADOR".equals(u.getRol()))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ese empleado no existe"));
         UbicacionEmpleado u = ubicacionRepository.findById(empleadoId).orElse(null);
         return armar(empleado, u, Instant.now(), segundosEnLinea);

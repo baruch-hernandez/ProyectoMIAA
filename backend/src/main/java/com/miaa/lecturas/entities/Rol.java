@@ -11,11 +11,12 @@ import lombok.Setter;
 /**
  * Catálogo de roles (tabla "roles").
  *
- * usuarios.rol guarda la CLAVE del rol ("ADMIN", "LECTURISTA") y es llave foránea a roles.clave.
- * Se eligió una clave de texto (y no un id numérico) para no tocar los usuarios que ya existen
- * ni los @PreAuthorize("hasRole('ADMIN')"): el valor de la columna no cambia.
+ * usuarios.rol guarda la CLAVE del rol ("ADMIN", "NOTIFICADOR") y es llave foránea a roles.clave.
+ * Se eligió una clave de texto (y no un id numérico) para que se lea igual en la base, en el
+ * JWT y en los @PreAuthorize("hasRole('ADMIN')").
  *
- * DataInitializer llena este catálogo al arrancar y crea la llave foránea si falta.
+ * CatalogoRoles llena este catálogo al arrancar, crea la llave foránea si falta y pasa a
+ * NOTIFICADOR a los usuarios que tenían la clave vieja LECTURISTA.
  */
 @Entity
 @Table(name = "roles")
@@ -26,8 +27,8 @@ public class Rol {
 
     /** Administrador (jefe): consulta reportes y administra empleados. */
     public static final String ADMIN = "ADMIN";
-    /** Empleado de campo (lecturista / notificador): sube reportes. */
-    public static final String LECTURISTA = "LECTURISTA";
+    /** Empleado de campo (notificador): sube reportes de domicilios. Antes se llamaba LECTURISTA. */
+    public static final String NOTIFICADOR = "NOTIFICADOR";
 
     @Id
     @Column(length = 30)

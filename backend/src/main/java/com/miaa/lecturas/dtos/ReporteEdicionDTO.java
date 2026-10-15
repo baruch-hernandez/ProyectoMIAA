@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 /**
- * PUT /reportes/{id} — el lecturista corrige domicilio, ubicación o descripción de SU reporte
+ * PUT /reportes/{id} — el notificador corrige domicilio, ubicación o descripción de SU reporte
  * (dentro de las primeras horas; ver miaa.reportes.horas-para-modificar). Las fotos se
  * cambian aparte (quitar/poner foto) y no tienen límite de tiempo.
  */

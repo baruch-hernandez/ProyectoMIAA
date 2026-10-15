@@ -170,7 +170,7 @@ export const Login: React.FC = () => {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className={claseInput}
-                placeholder="notificador"
+                placeholder="notificador1"
                 required
               />
             </div>

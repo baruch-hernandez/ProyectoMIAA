@@ -15,14 +15,14 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * El lecturista comparte SU ubicación (nadie puede mandar la de otro: el id sale del token).
+ * El notificador comparte SU ubicación (nadie puede mandar la de otro: el id sale del token).
  *
  *   POST   /ubicacion   { latitud, longitud, precision, fecha }   → 204
  *   DELETE /ubicacion   al cerrar sesión: deja de aparecer "en línea" → 204
  */
 @RestController
 @RequestMapping({ "/ubicacion", "/api/v1/ubicacion" })
-@PreAuthorize("hasRole('LECTURISTA')")
+@PreAuthorize("hasRole('NOTIFICADOR')")
 public class UbicacionController {
 
     private final UbicacionService ubicacionService;

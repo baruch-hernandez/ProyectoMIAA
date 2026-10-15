@@ -7,7 +7,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-/** Bitácora de un reporte: comentarios que agrega el lecturista después de subirlo. */
+/** Bitácora de un reporte: comentarios que agrega el notificador después de subirlo. */
 @Entity
 @Table(name = "notas_reporte", indexes = @Index(name = "idx_notas_reporte", columnList = "reporte_id"))
 @Getter

@@ -74,10 +74,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 return;
             }
 
+            // El rol se toma de la BASE, no del token: si cambia (como LECTURISTA → NOTIFICADOR),
+            // aplica al instante y los tokens que ya estaban emitidos siguen sirviendo.
+            UsuarioPrincipal yo = new UsuarioPrincipal(usuario.id(), usuario.username(), usuario.nombre(),
+                    cuenta.get().getRol());
+
             // "ROLE_" es la convención de Spring para que funcione hasRole('ADMIN')
-            var permisos = List.of(new SimpleGrantedAuthority("ROLE_" + usuario.rol()));
+            var permisos = List.of(new SimpleGrantedAuthority("ROLE_" + yo.rol()));
             SecurityContextHolder.getContext()
-                    .setAuthentication(new UsernamePasswordAuthenticationToken(usuario, null, permisos));
+                    .setAuthentication(new UsernamePasswordAuthenticationToken(yo, null, permisos));
 
             if (cuentaService.tieneRequisitosPendientes(cuenta.get()) && !rutaDeCuenta(request)) {
                 RespuestaJson.error(response, 403,
@@ -90,12 +95,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         chain.doFilter(request, response);
     }
 
-    /** /usuarios/yo/** (con o sin /api/v1): justo lo que se usa para resolver los requisitos. */
+    /**
+     * /usuarios/yo/** (con o sin /api/v1): justo lo que se usa para resolver los requisitos.
+     * También /auth/logout: aunque tenga requisitos pendientes, cerrar sesión siempre debe poder.
+     */
     static boolean rutaDeCuenta(HttpServletRequest request) {
         String ruta = request.getRequestURI().substring(request.getContextPath().length());
         if (ruta.startsWith("/api/v1")) {
             ruta = ruta.substring("/api/v1".length());
         }
-        return ruta.equals("/usuarios/yo") || ruta.startsWith("/usuarios/yo/");
+        return ruta.equals("/usuarios/yo") || ruta.startsWith("/usuarios/yo/") || ruta.equals("/auth/logout");
     }
 }

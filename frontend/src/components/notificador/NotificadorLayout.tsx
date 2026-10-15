@@ -89,11 +89,11 @@ function IndicadorUbicacion({ estado }: { estado: EstadoUbicacion }) {
 }
 
 /**
- * Marco de las pantallas del lecturista.
+ * Marco de las pantallas del notificador.
  *  - Escritorio: menú en la barra superior.
  *  - Celular: barra inferior fija, al alcance del pulgar (se usa en la calle).
  */
-export function LecturistaLayout() {
+export function NotificadorLayout() {
   const navigate = useNavigate();
   const usuario = obtenerUsuario();
   const estadoUbicacion = useCompartirUbicacion();
@@ -137,7 +137,7 @@ export function LecturistaLayout() {
             <IndicadorUbicacion estado={estadoUbicacion} />
             <span className="hidden sm:block text-right leading-tight">
               <span className="block text-sm font-bold text-miaa-marino">{usuario?.nombre}</span>
-              <span className="block text-xs text-slate-500">Lecturista</span>
+              <span className="block text-xs text-slate-500">Notificador</span>
             </span>
             <Link to="/cuenta/password" aria-label="Cambiar contraseña" title="Cambiar contraseña"
               className="grid place-items-center size-10 rounded-xl text-slate-500 hover:text-miaa-marino hover:bg-slate-100">

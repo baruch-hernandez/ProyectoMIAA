@@ -14,7 +14,7 @@ import java.time.Instant;
  * (LFPDPPP) y para "ver dónde está ahorita" basta con la última. Menos datos guardados
  * = menos riesgo si algo se filtra.
  *
- * Se comparte solo mientras el lecturista tiene la app abierta y la sesión iniciada.
+ * Se comparte solo mientras el notificador tiene la app abierta y la sesión iniciada.
  */
 @Entity
 @Table(name = "ubicaciones_empleado")
@@ -46,7 +46,7 @@ public class UbicacionEmpleado {
     @Column(name = "fecha_recibida", nullable = false)
     private Instant fechaRecibida;
 
-    /** false cuando el lecturista cierra sesión: deja de aparecer "en línea" al instante. */
+    /** false cuando el notificador cierra sesión: deja de aparecer "en línea" al instante. */
     @Column(nullable = false)
     private boolean compartiendo;
 }

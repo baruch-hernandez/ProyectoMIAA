@@ -13,12 +13,12 @@ import { VisorFoto } from './VisorFoto';
 const MAX_FOTOS = 3;
 
 interface Props {
-  /** Enlace de regreso: "Mis reportes" para el lecturista, "Reportes" para el admin. */
+  /** Enlace de regreso: "Mis reportes" para el notificador, "Reportes" para el admin. */
   volverA: { to: string; texto: string };
 }
 
 /**
- * Detalle de un reporte. Lo usan el lecturista y el administrador:
+ * Detalle de un reporte. Lo usan el notificador y el administrador:
  *  - Si el backend dice `puedeEditar` (quien lo subió): puede agregar notas y quitar/poner fotos.
  *  - Si no (el admin): solo consulta. Los botones ni se muestran.
  * Ojo: esconder botones es comodidad; quien de verdad lo impide es el backend.

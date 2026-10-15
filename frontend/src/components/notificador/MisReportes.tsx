@@ -42,7 +42,7 @@ function Pendiente({ p, onDescartar }: { p: ReportePendiente; onDescartar: () =>
   );
 }
 
-/** Los reportes que subió el lecturista, del más nuevo al más viejo. Sin filtros. */
+/** Los reportes que subió el notificador, del más nuevo al más viejo. Sin filtros. */
 export function MisReportes() {
   const usuario = obtenerUsuario();
   const [reportes, setReportes] = useState<ReporteResumen[]>([]);

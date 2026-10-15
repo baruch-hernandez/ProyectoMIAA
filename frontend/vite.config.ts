@@ -18,12 +18,36 @@ function httpsDesarrollo() {
 }
 
 // https://vite.dev/config/
-export default defineConfig(({ mode }) => ({
-  plugins: [
-    react(),
-    tailwindcss(),
-  ],
-  server: mode === 'https'
-    ? { https: httpsDesarrollo(), host: true } // host: true → accesible desde el celular en la misma red
-    : undefined,
-}))
+export default defineConfig(({ mode }) => {
+  const conHttps = mode === 'https'
+  // A dónde reenvía Vite las peticiones /api/... (el backend en ESTA misma PC).
+  // Con el perfil "https" del backend es https://; sin él, http://. Se puede cambiar con MIAA_API_DESTINO.
+  const destinoApi = process.env.MIAA_API_DESTINO ?? (conHttps ? 'https://localhost:8500' : 'http://localhost:8500')
+
+  return {
+    plugins: [
+      react(),
+      tailwindcss(),
+    ],
+    server: {
+      ...(conHttps ? { https: httpsDesarrollo() } : {}),
+      host: true, // accesible desde otros equipos y el celular (muestra la URL "Network")
+      // Proxy: el navegador le pide /api/... a Vite (mismo origen que la página) y Vite lo
+      // reenvía al backend. Para el navegador todo es UN solo sitio: no hay CORS, no importa
+      // la IP de la PC y solo se acepta UN certificado (el de esta página).
+      proxy: {
+        '/api': {
+          target: destinoApi,
+          changeOrigin: true,
+          secure: false, // el certificado del backend es autofirmado (solo desarrollo)
+          // El navegador manda "Origin: https://<ip>:5173" incluso a su mismo sitio (en los POST).
+          // Spring lo compararía contra miaa.cors.origenes y podría rechazarlo con 403
+          // "Invalid CORS request". Para el backend esta petición viene de Vite, no de otro sitio.
+          configure: (proxy) => {
+            proxy.on('proxyReq', (peticion) => peticion.removeHeader('origin'))
+          },
+        },
+      },
+    },
+  }
+})

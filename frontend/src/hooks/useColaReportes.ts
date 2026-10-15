@@ -7,8 +7,8 @@ import { obtenerUsuario } from '../utils/sesion';
 const REINTENTO_MS = 60_000;
 
 /**
- * Los reportes guardados sin conexión del lecturista con sesión.
- * Con `automatico` (se usa UNA vez, en LecturistaLayout) además los envía solos:
+ * Los reportes guardados sin conexión del notificador con sesión.
+ * Con `automatico` (se usa UNA vez, en NotificadorLayout) además los envía solos:
  * al abrir la app, al volver la red y cada minuto mientras queden.
  */
 export function useColaReportes({ automatico = false } = {}) {

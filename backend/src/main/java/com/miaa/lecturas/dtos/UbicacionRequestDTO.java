@@ -7,7 +7,7 @@ import jakarta.validation.constraints.PositiveOrZero;
 
 import java.time.Instant;
 
-/** Lo que manda el celular del lecturista cada ~20 s mientras tiene la app abierta. */
+/** Lo que manda el celular del notificador cada ~20 s mientras tiene la app abierta. */
 public record UbicacionRequestDTO(
         @NotNull @DecimalMin("-90") @DecimalMax("90") Double latitud,
         @NotNull @DecimalMin("-180") @DecimalMax("180") Double longitud,

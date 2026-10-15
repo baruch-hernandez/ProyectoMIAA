@@ -39,9 +39,9 @@ public class CuentaService {
         return versionAviso;
     }
 
-    /** El aviso aplica a los LECTURISTAS: son a quienes se les toman ubicación y fotos. */
+    /** El aviso aplica a los NOTIFICADORES: son a quienes se les toman ubicación y fotos. */
     public boolean avisoPendiente(Usuario u) {
-        return "LECTURISTA".equals(u.getRol()) && !versionAviso.equals(u.getAvisoPrivacidadVersion());
+        return "NOTIFICADOR".equals(u.getRol()) && !versionAviso.equals(u.getAvisoPrivacidadVersion());
     }
 
     public boolean tieneRequisitosPendientes(Usuario u) {

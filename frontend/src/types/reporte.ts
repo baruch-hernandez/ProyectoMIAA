@@ -162,7 +162,7 @@ export interface Cuenta {
   nombre: string;
   username: string;
   email: string | null;
-  rol: 'ADMIN' | 'LECTURISTA';
+  rol: 'ADMIN' | 'NOTIFICADOR';
   debeCambiarPassword: boolean;
   avisoPrivacidadPendiente: boolean;
   /** Versión vigente del aviso (la que se debe aceptar) */

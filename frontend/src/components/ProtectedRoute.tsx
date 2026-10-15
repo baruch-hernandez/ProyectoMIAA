@@ -6,7 +6,7 @@ import type { RolUsuario } from '../utils/sesion';
 interface ProtectedRouteProps {
   /** Un solo rol permitido (como se usaba antes). */
   allowedRole?: RolUsuario;
-  /** Varios roles permitidos, p. ej. ['ADMIN', 'LECTURISTA']. */
+  /** Varios roles permitidos, p. ej. ['ADMIN', 'NOTIFICADOR']. */
   allowedRoles?: RolUsuario[];
 }
 

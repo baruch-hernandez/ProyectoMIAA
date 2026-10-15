@@ -2,7 +2,7 @@ package com.miaa.lecturas.dtos;
 
 import java.time.LocalDateTime;
 
-/** Datos de la cuenta de un lecturista, como los ve el ADMIN en su ficha. */
+/** Datos de la cuenta de un notificador, como los ve el ADMIN en su ficha. */
 public record CuentaEmpleadoDTO(
         Long id,
         String nombre,

@@ -6,14 +6,14 @@
 -- =====================================================================
 
 CREATE TABLE roles (
-    clave        VARCHAR(30)  PRIMARY KEY,          -- 'ADMIN', 'LECTURISTA'
+    clave        VARCHAR(30)  PRIMARY KEY,          -- 'ADMIN', 'NOTIFICADOR'
     nombre       VARCHAR(60)  NOT NULL,             -- nombre para mostrar
     descripcion  VARCHAR(255)
 );
 
 INSERT INTO roles (clave, nombre, descripcion) VALUES
-    ('ADMIN',      'Administrador', 'Consulta los reportes y administra a los empleados.'),
-    ('LECTURISTA', 'Lecturista',    'Empleado de campo (notificador): sube reportes de domicilios.');
+    ('ADMIN',       'Administrador', 'Consulta los reportes y administra a los empleados.'),
+    ('NOTIFICADOR', 'Notificador',   'Empleado de campo: sube reportes de domicilios.');
 
 CREATE TABLE usuarios (
     id                        BIGSERIAL    PRIMARY KEY,
@@ -29,9 +29,13 @@ CREATE TABLE usuarios (
     fecha_alta                TIMESTAMP,
     ultimo_acceso             TIMESTAMP,
     intentos_fallidos         INTEGER,            -- contraseñas incorrectas seguidas (bloqueo, tarea 1.6)
-    bloqueado_hasta           TIMESTAMP           -- NULL o pasada = no bloqueada
+    bloqueado_hasta           TIMESTAMP,          -- NULL o pasada = no bloqueada
+    ultima_conexion           TIMESTAMP,          -- último latido (presencia, tarea 2.4)
+    conectado                 BOOLEAN             -- FALSE al cerrar sesión
 );
 
--- Si algún día renombran el rol (p. ej. a "Notificador") SOLO para mostrarlo:
---   UPDATE roles SET nombre = 'Notificador' WHERE clave = 'LECTURISTA';
--- Cambiar la CLAVE ('LECTURISTA' → 'NOTIFICADOR') implica tocar el código (@PreAuthorize, front).
+-- El rol de campo antes se llamaba LECTURISTA. CatalogoRoles lo migra solo al arrancar;
+-- a mano sería (en este orden, por la llave foránea):
+--   INSERT INTO roles VALUES ('NOTIFICADOR', 'Notificador', 'Empleado de campo: sube reportes de domicilios.');
+--   UPDATE usuarios SET rol = 'NOTIFICADOR' WHERE rol = 'LECTURISTA';
+--   DELETE FROM roles WHERE clave = 'LECTURISTA';

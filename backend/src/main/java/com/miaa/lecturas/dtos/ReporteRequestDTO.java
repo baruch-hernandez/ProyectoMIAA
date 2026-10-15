@@ -10,7 +10,7 @@ import jakarta.validation.constraints.Size;
 import java.util.List;
 
 /**
- * Lo que manda el lecturista para subir un reporte: domicilio, descripción y fotos.
+ * Lo que manda el notificador para subir un reporte: domicilio, descripción y fotos.
  * (Sin categoría, prioridad ni estado: MIAA pidió que el reporte sea solo eso.)
  *
  * Si algo no cumple, Spring responde 400 y GlobalExceptionHandler arma

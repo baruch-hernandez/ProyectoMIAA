@@ -35,11 +35,11 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) {
         asegurarUsuario("admin", "Administrador MIAA", "admin@miaa.gob.mx", "admin123", Rol.ADMIN);
-        asegurarUsuario("notificador1", "Juan Pérez", "juan.perez@miaa.gob.mx", "notificador1", Rol.LECTURISTA);
+        asegurarUsuario("notificador1", "Juan Pérez", "juan.perez@miaa.gob.mx", "notificador1", Rol.NOTIFICADOR);
 
         System.out.println("✅ Usuarios de prueba listos (contraseñas con BCrypt):");
         System.out.println("   - Admin:      admin / admin123");
-        System.out.println("   - Lecturista: notificador / notificador1");
+        System.out.println("   - Notificador: notificador1 / notificador1");
     }
 
     private void asegurarUsuario(String username, String nombre, String email, String password, String rol) {

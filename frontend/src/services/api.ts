@@ -1,9 +1,15 @@
 import axios from 'axios';
 import { cerrarSesion, guardarAvisoLogin, obtenerToken, RUTA_REQUISITOS } from '../utils/sesion';
 
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8500',
-});
+const URL_API: string = import.meta.env.VITE_API_URL || 'http://localhost:8500';
+
+// RNF-03: en producción la API debe ir por HTTPS. Si alguien compila con una URL http://,
+// el navegador bloquearía las peticiones (contenido mixto) o mandaría contraseñas sin cifrar.
+if (import.meta.env.PROD && URL_API.startsWith('http://')) {
+  console.error(`[MIAA] VITE_API_URL usa http:// (${URL_API}). En producción debe ser https://`);
+}
+
+const api = axios.create({ baseURL: URL_API });
 
 // ---------- Antes de cada petición: agregar el token ----------
 api.interceptors.request.use((config) => {
