@@ -24,7 +24,7 @@ $ips = Get-NetIPAddress -AddressFamily IPv4 |
     Select-Object -ExpandProperty IPAddress
 $san = @('dns:localhost', 'ip:127.0.0.1') + ($ips | ForEach-Object { "ip:$_" })
 
-keytool -genkeypair -alias miaa -keyalg RSA -keysize 2048 -validity 365 `
+keytool -genkeypair -alias miaa -keyalg RSA -keysize 2048 -validity 3650 `
     -storetype PKCS12 -keystore $archivo -storepass $password -keypass $password `
     -dname 'CN=localhost, OU=Desarrollo, O=MIAA, C=MX' -ext ('SAN=' + ($san -join ','))
 

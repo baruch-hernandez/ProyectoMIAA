@@ -47,28 +47,21 @@ public class SecurityConfig {
                                            CuentaService cuentaService,
                                            LimitadorPorVentana limitadorLogin) throws Exception {
         http
-                // API con JWT: no hay cookies de sesión, así que CSRF no aplica.
                 .csrf(csrf -> csrf.disable())
+                // Habilitar CORS usando el Bean corsConfigurationSource definido abajo
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                // Cada petición trae su token; el servidor no guarda sesiones.
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // preflight de CORS
+                        // Permitir todas las peticiones preliminares OPTIONS sin autenticación
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/auth/**", "/api/v1/auth/**", "/api/auth/**").permitAll()
-                        // Sin esto, cualquier error interno se "disfraza" de 401.
                         .requestMatchers("/error").permitAll()
-                        // Todo lo demás (reportes y empleados) es solo para los roles que existen.
-                        // Qué ROL entra a cada endpoint: @PreAuthorize en los controladores.
-                        // Qué REPORTE puede ver o cambiar cada quien: ReporteService.
                         .anyRequest().hasAnyRole("ADMIN", "LECTURISTA"))
-                // Respuestas JSON (en vez de vacías) para que el front pueda mostrar el motivo.
                 .exceptionHandling(e -> e
                         .authenticationEntryPoint((req, res, ex) ->
                                 escribirError(res, 401, "Tu sesión no es válida o expiró. Inicia sesión de nuevo."))
                         .accessDeniedHandler((req, res, ex) ->
                                 escribirError(res, 403, "No tienes permiso para esta acción.")))
-                // Nuestros filtros corren antes que el de usuario/contraseña de Spring, en este orden:
-                // 1) rate limit del login, 2) validación del JWT.
                 .addFilterBefore(new LimiteLoginFilter(limitadorLogin), UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(new JwtAuthFilter(jwtUtils, usuarioRepository, cuentaService),
                         UsernamePasswordAuthenticationFilter.class);
@@ -83,10 +76,21 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.stream(origenesPermitidos).map(String::trim).filter(o -> !o.isEmpty()).toList());
+        
+        // Permitir explícitamente localhost y 127.0.0.1 tanto en HTTP como HTTPS
+        configuration.setAllowedOrigins(List.of(
+            "https://localhost:5173",
+            "http://localhost:5173",
+            "https://127.0.0.1:5173",
+            "http://127.0.0.1:5173",
+            "http://localhost:3000"
+        ));
+        
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+        configuration.setAllowedHeaders(List.of("*")); // Acepta todas las cabeceras estándar y personalizadas
+        configuration.setExposedHeaders(List.of("Authorization", "Content-Type"));
         configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L); // Guarda en caché la respuesta preflight por 1 hora
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

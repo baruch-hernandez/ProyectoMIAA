@@ -19,7 +19,7 @@ export const AVISO_PRIVACIDAD: SeccionAviso[] = [
   {
     titulo: '¿Quién es responsable de tus datos?',
     parrafos: [
-      '[Razón social de MIAA], con domicilio en [domicilio de MIAA], es responsable del tratamiento de los datos personales que se recaban a través de esta aplicación.',
+      'El Modelo Integral de Aguas de Aguascalientes, Organismo Público Descentralizado del Municipio de Aguascalientes, en lo sucesivo MIAA, con domicilio en el ala sur del Centro de Atención Municipal (CAM) del municipio de Aguascalientes, en Avenida López Mateos 214, zona centro de la ciudad de Aguascalientes, Ags.; es responsable del tratamiento de los datos personales que se recaban a través de esta aplicación.',
     ],
   },
   {
