@@ -28,23 +28,36 @@ public class Usuario {
     @ToString.Exclude
     private String password;
 
-    /** Clave del rol: ADMIN o LECTURISTA. Es llave foránea a la tabla "roles" (ver Rol y DataInitializer). */
+    /**
+     * Clave del rol: ADMIN o LECTURISTA. Es llave foránea a la tabla "roles" (ver
+     * Rol y DataInitializer).
+     */
     @Column(name = "rol", length = 30)
     private String rol;
 
-    /** Último inicio de sesión. Junto con el último reporte dice si el empleado está activo. */
+    /**
+     * Último inicio de sesión. Junto con el último reporte dice si el empleado está
+     * activo.
+     */
     @Column(name = "ultimo_acceso")
     private java.time.LocalDateTime ultimoAcceso;
 
     // ---------- Cuenta ----------
-    // Se usan Boolean (con mayúscula) y no boolean: las filas que ya existían quedan en
+    // Se usan Boolean (con mayúscula) y no boolean: las filas que ya existían
+    // quedan en
     // NULL al agregar la columna, y un boolean primitivo no acepta NULL.
 
-    /** null o true = puede entrar. false = dado de baja (NO se borra: sus reportes se conservan). */
+    /**
+     * null o true = puede entrar. false = dado de baja (NO se borra: sus reportes
+     * se conservan).
+     */
     @Column(name = "habilitado")
     private Boolean habilitado;
 
-    /** true = entró con una contraseña temporal y debe cambiarla antes de usar la app. */
+    /**
+     * true = entró con una contraseña temporal y debe cambiarla antes de usar la
+     * app.
+     */
     @Column(name = "debe_cambiar_password")
     private Boolean debeCambiarPassword;
 
@@ -60,11 +73,16 @@ public class Usuario {
 
     // ---------- Protección contra fuerza bruta (ver BloqueoPorIntentos) ----------
 
-    /** Contraseñas incorrectas seguidas desde el último acceso correcto (null = 0). */
+    /**
+     * Contraseñas incorrectas seguidas desde el último acceso correcto (null = 0).
+     */
     @Column(name = "intentos_fallidos")
     private Integer intentosFallidos;
 
-    /** Hasta cuándo está bloqueada por intentos fallidos (null o fecha pasada = no está bloqueada). */
+    /**
+     * Hasta cuándo está bloqueada por intentos fallidos (null o fecha pasada = no
+     * está bloqueada).
+     */
     @Column(name = "bloqueado_hasta")
     private java.time.LocalDateTime bloqueadoHasta;
 
@@ -76,4 +94,10 @@ public class Usuario {
     public boolean tieneQueCambiarPassword() {
         return Boolean.TRUE.equals(debeCambiarPassword);
     }
+
+    @Column(name = "ultima_conexion")
+    private java.time.LocalDateTime ultimaConexion;
+
+    @Column(name = "conectado")
+    private Boolean conectado;
 }

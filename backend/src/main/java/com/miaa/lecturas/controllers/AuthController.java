@@ -1,6 +1,10 @@
 package com.miaa.lecturas.controllers;
 
 import com.miaa.lecturas.config.JwtUtils;
+import com.miaa.lecturas.config.UsuarioPrincipal;
+import com.miaa.lecturas.services.PresenciaService;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import com.miaa.lecturas.dtos.AuthResponseDTO;
 import com.miaa.lecturas.dtos.LoginRequestDTO;
 import com.miaa.lecturas.entities.Usuario;
@@ -29,6 +33,7 @@ public class AuthController {
     private final JwtUtils jwtUtils;
     private final CuentaService cuentaService;
     private final BloqueoPorIntentos bloqueo;
+    private final PresenciaService presenciaService;
 
     // Inyección por constructor (en vez de @Autowired en campos): más fácil de probar
     // y deja claro qué necesita la clase para funcionar.
@@ -36,12 +41,14 @@ public class AuthController {
                           PasswordEncoder passwordEncoder,
                           JwtUtils jwtUtils,
                           CuentaService cuentaService,
-                          BloqueoPorIntentos bloqueo) {
+                          BloqueoPorIntentos bloqueo,
+                          PresenciaService presenciaService) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtils = jwtUtils;
         this.cuentaService = cuentaService;
         this.bloqueo = bloqueo;
+        this.presenciaService = presenciaService;
     }
 
     @PostMapping("/login")
@@ -107,7 +114,7 @@ public class AuthController {
         // Registrar el acceso: con esto el admin sabe si el empleado está activo
         usuario.setUltimoAcceso(ahora);
         usuarioRepository.save(usuario);
-
+        presenciaService.vidaChecar(usuario.getId());
         // 4. Token JWT real (antes era el texto fijo "token-miaa-session-<id>")
         AuthResponseDTO response = new AuthResponseDTO(
                 jwtUtils.generarToken(usuario),
@@ -119,7 +126,7 @@ public class AuthController {
 
         return ResponseEntity.ok(response);
     }
-
+    
     private static boolean estaVacio(String s) {
         return s == null || s.isBlank();
     }
@@ -139,5 +146,12 @@ public class AuthController {
     /** Mismo formato JSON de error que el resto de la API: { status, message } */
     private static ResponseEntity<Map<String, Object>> error(HttpStatus status, String mensaje) {
         return ResponseEntity.status(status).body(Map.of("status", status.value(), "message", mensaje));
+    }
+    @PostMapping("/logout")
+    @ResponseStatus(HttpStatus.NO_CONTENT)   // 204: todo bien, sin cuerpo
+    public void logout(@AuthenticationPrincipal UsuarioPrincipal yo) {
+        if (yo != null) {                    // null si el token ya venció o no vino: no hay nada que hacer
+            presenciaService.desconectar(yo.id());
+        }
     }
 }

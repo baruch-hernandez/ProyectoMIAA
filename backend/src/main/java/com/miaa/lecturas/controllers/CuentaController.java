@@ -5,13 +5,17 @@ import com.miaa.lecturas.dtos.AceptarAvisoDTO;
 import com.miaa.lecturas.dtos.CambioPasswordDTO;
 import com.miaa.lecturas.dtos.CuentaDTO;
 import com.miaa.lecturas.services.CuentaService;
+import com.miaa.lecturas.services.PresenciaService;
 import jakarta.validation.Valid;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -26,10 +30,12 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping({ "/usuarios/yo", "/api/v1/usuarios/yo" })
 public class CuentaController {
 
+    private final PresenciaService presenciaService;
     private final CuentaService cuentaService;
 
-    public CuentaController(CuentaService cuentaService) {
+    public CuentaController(CuentaService cuentaService, PresenciaService presenciaService) {
         this.cuentaService = cuentaService;
+        this.presenciaService = presenciaService;
     }
 
     @GetMapping
@@ -48,4 +54,10 @@ public class CuentaController {
                                   @Valid @RequestBody AceptarAvisoDTO request) {
         return cuentaService.aceptarAviso(yo, request.version());
     }
+    @SuppressWarnings("null")
+    @PostMapping("/conexion")
+@ResponseStatus(HttpStatus.NO_CONTENT)
+public void checarVida(@AuthenticationPrincipal UsuarioPrincipal user) {
+    presenciaService.vidaChecar(user.id());
+}
 }
