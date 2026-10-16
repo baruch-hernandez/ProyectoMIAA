@@ -8,16 +8,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-/**
- * Catálogo de roles (tabla "roles").
- *
- * usuarios.rol guarda la CLAVE del rol ("ADMIN", "NOTIFICADOR") y es llave foránea a roles.clave.
- * Se eligió una clave de texto (y no un id numérico) para que se lea igual en la base, en el
- * JWT y en los @PreAuthorize("hasRole('ADMIN')").
- *
- * CatalogoRoles llena este catálogo al arrancar, crea la llave foránea si falta y pasa a
- * NOTIFICADOR a los usuarios que tenían la clave vieja LECTURISTA.
- */
 @Entity
 @Table(name = "roles")
 @Getter

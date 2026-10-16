@@ -92,9 +92,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Orígenes permitidos: se leen de miaa.cors.origenes (application*.properties), NO se
-        // escriben aquí. Así cada quien agrega su IP sin tocar el código (acepta comodines,
-        // p. ej. https://192.168.*.*:5173). Con el proxy de Vite ni siquiera hace falta.
+        
         configuration.setAllowedOriginPatterns(Arrays.stream(origenesPermitidos)
                 .map(String::trim)
                 .filter(o -> !o.isEmpty())

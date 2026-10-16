@@ -18,15 +18,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Se ejecuta en CADA petición antes de llegar a los controladores:
- * 1. Extrae y valida el token JWT (Header Authorization: Bearer <token>)
- * (RF-02, Tarea 2.3).
- * 2. Si el token expiró (superó las 24 hrs) o fue alterado, responde 401
- * Unauthorized.
- * 3. Valida en la BD que la cuenta del usuario continúe activa.
- * 4. Carga las autoridades ROLE_ para control de acceso RBAC.
- */
+
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private static final String PREFIJO = "Bearer ";
@@ -55,8 +47,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             try {
                 usuario = jwtUtils.validarToken(token);
             } catch (JwtException | IllegalArgumentException e) {
-                // Tarea 2.3 Paso 3: Si el token expiró o fue alterado, responde HTTP 401
-                // Unauthorized
+
                 SecurityContextHolder.clearContext();
                 RespuestaJson.error(response, HttpServletResponse.SC_UNAUTHORIZED,
                         "Token inválido o expirado.", "TOKEN_INVALIDO");
@@ -71,9 +62,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                         "Tu cuenta fue dada de baja. Habla con tu administrador.", "CUENTA_DESHABILITADA");
                 return;
             }
-
-            // Tarea 2.3 Paso 4: Extrae los datos del usuario y asigna la autoridad basada
-            // en rol
+            
             UsuarioPrincipal yo = new UsuarioPrincipal(usuario.id(), usuario.username(), usuario.nombre(),
                     cuenta.get().getRol());
 

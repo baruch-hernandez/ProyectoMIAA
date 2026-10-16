@@ -48,10 +48,6 @@ public class JwtUtils {
                 .compact();
     }
 
-    /**
-     * Valida firma y expiración y regresa los datos del usuario.
-     * Lanza JwtException si el token fue alterado, venció o está mal formado.
-     */
     public UsuarioPrincipal validarToken(String token) throws JwtException {
         Claims claims = Jwts.parserBuilder()
                 .setSigningKey(llave)
@@ -59,7 +55,6 @@ public class JwtUtils {
                 .parseClaimsJws(token)
                 .getBody();
 
-        // El JSON del token puede traer el número como Integer o Long: lo normalizamos.
         Number id = claims.get("id", Number.class);
         if (id == null) {
             throw new JwtException("El token no trae el id del usuario");

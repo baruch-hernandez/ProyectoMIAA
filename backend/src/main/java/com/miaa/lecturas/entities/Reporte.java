@@ -9,19 +9,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Un reporte que sube un notificador sobre un domicilio.
- *
- * Por indicación de MIAA, un reporte es solo: el DOMICILIO, la DESCRIPCIÓN, las FOTOS
- * y las NOTAS. No tiene categoría, prioridad, estado ni persona asignada.
- *
- * Tablas nuevas ("reportes", "fotos_reporte", "notas_reporte") en vez de reusar "quejas":
- * las columnas viejas (categoria, estado...) son NOT NULL y ddl-auto=update no las borra,
- * así que cualquier INSERT nuevo fallaría.
- *
- * @Getter/@Setter y NO @Data: @Data genera equals/hashCode/toString con las relaciones
- * (fotos → reporte → fotos → ...) y provoca ciclos infinitos.
- */
+
 @Entity
 @Table(name = "reportes", indexes = {
         @Index(name = "idx_reportes_creado_por", columnList = "creado_por_id"),

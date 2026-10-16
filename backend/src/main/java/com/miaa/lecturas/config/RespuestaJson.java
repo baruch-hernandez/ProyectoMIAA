@@ -5,11 +5,8 @@ import org.springframework.http.MediaType;
 
 import java.io.IOException;
 
-/**
- * Escribe un error JSON directo en la respuesta, para los lugares que corren ANTES
- * de los controladores (filtros), donde GlobalExceptionHandler no alcanza.
- * Mismo formato que el resto de la API: { status, message, codigo? }
- */
+
+
 public final class RespuestaJson {
 
     private RespuestaJson() {

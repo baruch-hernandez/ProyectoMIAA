@@ -12,16 +12,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-/**
- * Al arrancar: llena la tabla "roles", pasa los usuarios del rol viejo LECTURISTA al nuevo
- * NOTIFICADOR y crea la llave foránea usuarios.rol → roles.clave.
- *
- * ¿Por qué aquí y no con Hibernate (ddl-auto=update)? Hibernate crearía la llave foránea
- * ANTES de que existan los roles, y en una base con usuarios fallaría. Aquí primero se llena
- * el catálogo y después se agrega la llave, una sola vez.
- *
- * Corre ANTES que DataInitializer (@Order), para que los usuarios de prueba ya tengan su rol.
- */
+
 @Component
 @Order(0)
 public class CatalogoRoles implements CommandLineRunner {
@@ -55,12 +46,6 @@ public class CatalogoRoles implements CommandLineRunner {
         }
     }
 
-    /**
-     * LECTURISTA → NOTIFICADOR en las bases que ya existían. Es seguro correrlo en cada arranque:
-     * si ya no hay nadie con la clave vieja, no cambia nada.
-     * Orden: el rol nuevo ya existe (asegurarRol) → se mueven los usuarios → se borra el viejo.
-     * Así la llave foránea nunca queda apuntando a un rol que no existe.
-     */
     private void migrarClaveVieja() {
         try {
             int movidos = jdbc.update("UPDATE usuarios SET rol = ? WHERE rol = ?", Rol.NOTIFICADOR, CLAVE_VIEJA);

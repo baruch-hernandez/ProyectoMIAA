@@ -10,24 +10,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
-/**
- * "Forzar HTTPS" (RNF-03) cuando Spring Boot atiende el TLS directamente (perfil "https").
- *
- * Con server.ssl.enabled=true, el puerto principal (8500) YA solo habla HTTPS: si alguien le
- * manda HTTP, Tomcat responde 400 "This combination of host and port requires TLS".
- *
- * Esta clase agrega un SEGUNDO puerto (8080 por defecto) que solo sirve para REDIRIGIR:
- *   http://servidor:8080/lo-que-sea  ──302──►  https://servidor:8500/lo-que-sea
- * Así, quien escriba la dirección con http:// en el navegador termina en la versión segura.
- *
- * Cómo lo hace: una "restricción de seguridad" de Tomcat con CONFIDENTIAL sobre /* le dice
- * "estas rutas exigen un canal cifrado". Si la petición llega por el puerto sin cifrar, Tomcat
- * la manda al redirectPort (el de HTTPS) en lugar de atenderla.
- *
- * Solo existe con el perfil "https" (@Profile). Sin ese perfil, la app sigue en HTTP normal
- * para que el equipo pueda desarrollar sin certificado.
- * Para no abrir el puerto de redirección: miaa.https.puerto-redireccion=0
- */
+
+
 @Configuration
 @Profile("https")
 public class RedireccionHttps {
