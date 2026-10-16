@@ -18,7 +18,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
 
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -92,12 +91,13 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Soporta origenes locales estándar
-        configuration.setAllowedOriginPatterns(List.of(
-                "http://localhost:5173",
-                "http://127.0.0.1:5173",
-                "http://localhost:3000",
-                "https://localhost:5173"));
+        // Orígenes permitidos: se leen de miaa.cors.origenes (application*.properties), NO se
+        // escriben aquí. Así cada quien agrega su IP sin tocar el código (acepta comodines,
+        // p. ej. https://192.168.*.*:5173). Con el proxy de Vite ni siquiera hace falta.
+        configuration.setAllowedOriginPatterns(Arrays.stream(origenesPermitidos)
+                .map(String::trim)
+                .filter(o -> !o.isEmpty())
+                .toList());
 
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));

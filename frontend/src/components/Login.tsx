@@ -78,8 +78,9 @@ export const Login: React.FC = () => {
     setLoading(true);
 
     try {
-      // Tarea 2.1: Consumo a la ruta estandarizada /api/v1/auth/login
-      const response = await api.post<LoginResponse>('/api/v1/auth/login', { username, password });
+      // Tarea 2.1: POST /api/v1/auth/login. El "/api/v1" ya lo pone VITE_API_URL (baseURL de api.ts):
+      // si se vuelve a escribir aquí, la URL queda /api/v1/api/v1/auth/login y el backend no la conoce.
+      const response = await api.post<LoginResponse>('/auth/login', { username, password });
       
       const { token, user } = response.data;
       const rol = (user.role as RolUsuario) || 'Empleado';
