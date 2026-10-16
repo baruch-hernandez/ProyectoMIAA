@@ -44,6 +44,7 @@ public class AuthController {
         this.presenciaService = presenciaService;
     }
 
+    @SuppressWarnings("null")
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequestDTO request) {
         if (request == null || estaVacio(request.getUsername()) || estaVacio(request.getPassword())) {
@@ -145,10 +146,12 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.LOCKED).body(cuerpo);
     }
 
+    @SuppressWarnings("null")
     private static ResponseEntity<Map<String, Object>> error(HttpStatus status, String mensaje) {
         return ResponseEntity.status(status).body(Map.of("status", status.value(), "message", mensaje));
     }
 
+    @SuppressWarnings("null")
     @PostMapping("/logout")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void logout(@AuthenticationPrincipal UsuarioPrincipal yo) {

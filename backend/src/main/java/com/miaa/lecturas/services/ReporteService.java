@@ -129,6 +129,7 @@ public class ReporteService {
         return aDetalle(r, notaRepository.buscarPorReporte(id), yo);
     }
 
+    @SuppressWarnings("null")
     @Transactional
     public void borrar(UsuarioPrincipal yo, Long id) {
         Reporte r = obtenerParaModificar(yo, id);
@@ -185,9 +186,11 @@ public class ReporteService {
         return FotoDTO.desde(guardada);
     }
 
+    @SuppressWarnings("null")
     @Transactional
     public void borrarFoto(UsuarioPrincipal yo, Long reporteId, Long fotoId) {
         Reporte r = obtenerParaEditar(yo, reporteId);
+        @SuppressWarnings("null")
         FotoReporte foto = fotoRepository.findById(fotoId)
                 // ¿La foto es de ESTE reporte? Si no, para nosotros "no existe".
                 .filter(f -> Objects.equals(f.getReporte().getId(), reporteId))
@@ -239,6 +242,7 @@ public class ReporteService {
         return Objects.equals(r.getCreadoPor().getId(), yo.id());
     }
 
+    @SuppressWarnings("null")
     private Usuario usuarioActual(UsuarioPrincipal yo) {
         return usuarioRepository.findById(yo.id())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Tu usuario ya no existe"));
@@ -306,6 +310,7 @@ public class ReporteService {
         if (reportes.isEmpty()) {
             return List.of();
         }
+        @SuppressWarnings("null")
         List<Long> ids = reportes.stream().map(Reporte::getId).toList();
         Map<Long, Long> fotos = aMapa(reporteRepository.contarFotos(ids));
         Map<Long, Long> notas = aMapa(reporteRepository.contarNotas(ids));

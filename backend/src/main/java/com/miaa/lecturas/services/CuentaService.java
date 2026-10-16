@@ -81,6 +81,7 @@ public class CuentaService {
         return aDTO(u);
     }
 
+    @SuppressWarnings("null")
     private Usuario cargar(UsuarioPrincipal yo) {
         return usuarioRepository.findById(yo.id())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Tu usuario ya no existe"));

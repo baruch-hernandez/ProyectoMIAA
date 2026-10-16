@@ -48,6 +48,7 @@ public class CatalogoRoles implements CommandLineRunner {
     }
 
     /** Solo lo crea si no existe: si alguien cambió el nombre en la base, se respeta. */
+    @SuppressWarnings("null")
     private void asegurarRol(String clave, String nombre, String descripcion) {
         if (!rolRepository.existsById(clave)) {
             rolRepository.save(new Rol(clave, nombre, descripcion));

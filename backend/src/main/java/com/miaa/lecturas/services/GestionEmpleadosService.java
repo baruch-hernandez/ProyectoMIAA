@@ -112,6 +112,7 @@ public class GestionEmpleadosService {
         return aDTO(u);
     }
 
+    @SuppressWarnings("null")
     private Usuario cargarNotificador(Long id) {
         return usuarioRepository.findById(id)
                 .filter(u -> "NOTIFICADOR".equals(u.getRol()))

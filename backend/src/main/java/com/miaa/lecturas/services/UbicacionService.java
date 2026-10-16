@@ -46,6 +46,7 @@ public class UbicacionService {
     @Transactional
     public void actualizar(UsuarioPrincipal yo, UbicacionRequestDTO req) {
         Instant ahora = Instant.now();
+        @SuppressWarnings("null")
         UbicacionEmpleado u = ubicacionRepository.findById(yo.id()).orElseGet(() -> {
             UbicacionEmpleado nueva = new UbicacionEmpleado();
             nueva.setUsuarioId(yo.id());
@@ -63,6 +64,7 @@ public class UbicacionService {
     }
 
     /** NOTIFICADOR: cerró sesión → deja de aparecer en línea (se conserva el último punto). */
+    @SuppressWarnings("null")
     @Transactional
     public void dejarDeCompartir(UsuarioPrincipal yo) {
         // Sin save(): la entidad está administrada y JPA guarda el cambio solo (dirty checking).
@@ -70,6 +72,7 @@ public class UbicacionService {
     }
 
     /** El admin dio de baja al empleado: que deje de verse "en línea" al instante. */
+    @SuppressWarnings("null")
     @Transactional
     public void marcarDesconectado(Long empleadoId) {
         ubicacionRepository.findById(empleadoId).ifPresent(u -> u.setCompartiendo(false));
@@ -78,14 +81,17 @@ public class UbicacionService {
     /** ADMIN: dónde está un empleado. */
     @Transactional(readOnly = true)
     public UbicacionEmpleadoDTO deEmpleado(Long empleadoId) {
+        @SuppressWarnings("null")
         Usuario empleado = usuarioRepository.findById(empleadoId)
                 .filter(u -> "NOTIFICADOR".equals(u.getRol()))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ese empleado no existe"));
+        @SuppressWarnings("null")
         UbicacionEmpleado u = ubicacionRepository.findById(empleadoId).orElse(null);
         return armar(empleado, u, Instant.now(), segundosEnLinea);
     }
 
     /** Para la tabla de empleados: ¿quién está en línea ahorita? (una sola consulta) */
+    @SuppressWarnings("null")
     @Transactional(readOnly = true)
     public Map<Long, Boolean> enLineaPorEmpleado() {
         Instant ahora = Instant.now();
