@@ -31,9 +31,15 @@ function Cuando({ iso }: { iso: string | null }) {
   return <time dateTime={iso} title={formatoFecha(iso)}>{fechaRelativa(iso)}</time>;
 }
 
-/** Punto verde "En línea" si ahorita comparte su ubicación. */
-function EnLinea({ enLinea }: { enLinea: boolean }) {
-  return enLinea ? (
+/** Cada cuánto se refresca la lista sola, para ver quién se conecta o se va (tipo WhatsApp). */
+const REFRESCO_MS = 5_000;
+
+/**
+ * Disponibilidad tipo WhatsApp (tarea 2.4): punto verde "En línea" si tiene la app abierta;
+ * si no, "Últ. vez hace 5 min" (o "Desconectado" si nunca ha entrado).
+ */
+function Presencia({ empleado: e }: { empleado: Empleado }) {
+  return e.disponibilidad === 'EN_LINEA' ? (
     <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-bold text-[#0b6b58]">
       <span className="relative flex size-2" aria-hidden="true">
         <span className="absolute inline-flex size-full rounded-full bg-miaa-menta opacity-75 animate-ping" />
@@ -42,7 +48,11 @@ function EnLinea({ enLinea }: { enLinea: boolean }) {
       En línea
     </span>
   ) : (
-    <span className="text-xs text-slate-400">Desconectado</span>
+    <span className="whitespace-nowrap text-xs text-slate-500">
+      {e.ultimaConexion
+        ? <>Últ. vez <time dateTime={e.ultimaConexion} title={formatoFecha(e.ultimaConexion)}>{fechaRelativa(e.ultimaConexion)}</time></>
+        : 'Desconectado'}
+    </span>
   );
 }
 
@@ -52,10 +62,7 @@ function textoInactividad(e: Empleado): string {
   return e.diasSinActividad === 1 ? '1 día sin actividad' : `${e.diasSinActividad} días sin actividad`;
 }
 
-/**
- * Estado de cada empleado (notificador): ACTIVO si inició sesión o subió un reporte en los
- * últimos N días. Lo calcula el backend (EmpleadoService); aquí solo se muestra.
- */
+
 export function EmpleadosAdmin() {
   const navigate = useNavigate();
   const [datos, setDatos] = useState<EmpleadosRespuesta | null>(null);
@@ -73,6 +80,12 @@ export function EmpleadosAdmin() {
     return () => { ignorar = true; };
   }, [recarga]);
 
+  // Se actualiza sola cada 30 s (sin el esqueleto de carga: la tabla se queda en pantalla)
+  useEffect(() => {
+    const intervalo = window.setInterval(() => setRecarga((n) => n + 1), REFRESCO_MS);
+    return () => window.clearInterval(intervalo);
+  }, []);
+
   const recargar = () => {
     setCargando(true);
     setError(null);
@@ -81,6 +94,7 @@ export function EmpleadosAdmin() {
 
   const empleados = datos?.empleados ?? [];
   const activos = empleados.filter((e) => e.activo).length;
+  const conectados = empleados.filter((e) => e.disponibilidad === 'EN_LINEA').length;
   const dias = datos?.diasInactivo;
 
   return (
@@ -111,11 +125,12 @@ export function EmpleadosAdmin() {
       </div>
 
       {datos && (
-        <dl className="grid grid-cols-3 gap-3 max-w-lg">
+        <dl className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl">
           {[
             { etiqueta: 'Empleados', valor: empleados.length, clase: 'text-miaa-marino' },
             { etiqueta: 'Activos', valor: activos, clase: 'text-[#0b6b58]' },
             { etiqueta: 'Inactivos', valor: empleados.filter((e) => e.habilitado && !e.activo).length, clase: 'text-slate-700' },
+            { etiqueta: 'En línea', valor: conectados, clase: 'text-[#0b6b58]' },
           ].map(({ etiqueta, valor, clase }) => (
             <div key={etiqueta} className="rounded-2xl bg-white border border-slate-200 px-4 py-3">
               <dt className="text-xs font-semibold text-slate-500">{etiqueta}</dt>
@@ -147,7 +162,7 @@ export function EmpleadosAdmin() {
                 <tr>
                   <th scope="col" className="px-5 py-3 font-semibold">Empleado</th>
                   <th scope="col" className="px-5 py-3 font-semibold">Estado</th>
-                  <th scope="col" className="px-5 py-3 font-semibold">Ahora</th>
+                  <th scope="col" className="px-5 py-3 font-semibold">Disponibilidad</th>
                   <th scope="col" className="px-5 py-3 font-semibold">Última actividad</th>
                   <th scope="col" className="px-5 py-3 font-semibold">Último acceso</th>
                   <th scope="col" className="px-5 py-3 font-semibold">Último reporte</th>
@@ -164,7 +179,7 @@ export function EmpleadosAdmin() {
                       <span className="text-xs text-slate-500">{e.username}</span>
                     </td>
                     <td className="px-5 py-3.5"><EstadoEmpleado activo={e.activo} habilitado={e.habilitado} /></td>
-                    <td className="px-5 py-3.5"><EnLinea enLinea={e.enLinea} /></td>
+                    <td className="px-5 py-3.5"><Presencia empleado={e} /></td>
                     <td className="px-5 py-3.5 text-slate-700">{textoInactividad(e)}</td>
                     <td className="px-5 py-3.5 text-slate-700"><Cuando iso={e.ultimoAcceso} /></td>
                     <td className="px-5 py-3.5 text-slate-700"><Cuando iso={e.ultimoReporte} /></td>
@@ -185,7 +200,7 @@ export function EmpleadosAdmin() {
                   <div>
                     <p className="font-bold text-miaa-marino">{e.nombre}</p>
                     <p className="text-xs text-slate-500">{e.username}</p>
-                    <p className="mt-1"><EnLinea enLinea={e.enLinea} /></p>
+                    <p className="mt-1"><Presencia empleado={e} /></p>
                   </div>
                   <EstadoEmpleado activo={e.activo} habilitado={e.habilitado} />
                 </div>

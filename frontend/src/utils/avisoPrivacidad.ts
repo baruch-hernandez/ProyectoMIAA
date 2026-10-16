@@ -47,7 +47,7 @@ export const AVISO_PRIVACIDAD: SeccionAviso[] = [
   {
     titulo: '¿Con quién los compartimos?',
     parrafos: [
-      '[MIAA debe confirmarlo.] No se comparten con terceros, salvo que lo requiera una autoridad competente conforme a la ley.',
+      'No se comparten con terceros, salvo que lo requiera una autoridad competente conforme a la ley.',
     ],
   },
   {

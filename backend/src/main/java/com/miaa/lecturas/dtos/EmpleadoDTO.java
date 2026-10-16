@@ -2,6 +2,8 @@ package com.miaa.lecturas.dtos;
 
 import java.time.LocalDateTime;
 
+import com.miaa.lecturas.entities.Disponibilidad;
+
 /**
  * Cómo ve el ADMIN a cada empleado (notificador).
  *
@@ -10,6 +12,8 @@ import java.time.LocalDateTime;
  * @param diasSinActividad días desde la última actividad (null si nunca ha entrado)
  * @param enLinea         true si ahorita está compartiendo su ubicación (app abierta y con red)
  * @param habilitado      false si el admin lo dio de baja (ya no puede entrar)
+ * @param disponibilidad
+ * @param ultimaConexion
  */
 public record EmpleadoDTO(
         Long id,
@@ -22,5 +26,8 @@ public record EmpleadoDTO(
         boolean activo,
         Long diasSinActividad,
         boolean enLinea,
-        boolean habilitado) {
+        boolean habilitado,
+        Disponibilidad disponibilidad,
+        LocalDateTime ultimaConexion) {
+
 }

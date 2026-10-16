@@ -2,6 +2,8 @@ package com.miaa.lecturas.services;
 
 import com.miaa.lecturas.dtos.EmpleadoDTO;
 import com.miaa.lecturas.dtos.EmpleadosDTO;
+import com.miaa.lecturas.services.PresenciaService;
+import com.miaa.lecturas.entities.Disponibilidad;
 import com.miaa.lecturas.entities.Usuario;
 import com.miaa.lecturas.repositories.ReporteRepository;
 import com.miaa.lecturas.repositories.UsuarioRepository;
@@ -26,6 +28,7 @@ import java.util.Map;
 @Service
 public class EmpleadoService {
 
+    private final PresenciaService presenciaService;
     private final UsuarioRepository usuarioRepository;
     private final ReporteRepository reporteRepository;
     private final UbicacionService ubicacionService;
@@ -34,11 +37,13 @@ public class EmpleadoService {
     public EmpleadoService(UsuarioRepository usuarioRepository,
                            ReporteRepository reporteRepository,
                            UbicacionService ubicacionService,
+                           PresenciaService presenciaService,
                            @Value("${miaa.empleados.dias-inactivo:7}") int diasInactivo) {
         this.usuarioRepository = usuarioRepository;
         this.reporteRepository = reporteRepository;
         this.ubicacionService = ubicacionService;
         this.diasInactivo = diasInactivo;
+        this.presenciaService = presenciaService;
     }
 
     @Transactional(readOnly = true)
@@ -56,7 +61,7 @@ public class EmpleadoService {
                     Object[] s = stats.get(u.getId());
                     long total = s != null ? (Long) s[1] : 0L;
                     LocalDateTime ultimoReporte = s != null ? (LocalDateTime) s[2] : null;
-                    return armar(u, total, ultimoReporte, ahora, diasInactivo, enLinea.getOrDefault(u.getId(), false));
+                    return armar(u, total, ultimoReporte, ahora, diasInactivo, enLinea.getOrDefault(u.getId(), false), presenciaService.estado(u));
                 })
                 // Los dados de baja al final (mismo orden por nombre dentro de cada grupo)
                 .sorted(java.util.Comparator.comparing(e -> !e.habilitado()))
@@ -64,15 +69,19 @@ public class EmpleadoService {
         return new EmpleadosDTO(diasInactivo, empleados);
     }
 
-    /** Lógica pura (sin BD): fácil de probar con cualquier fecha. */
+    /** Lógica pura (sin BD): fácil de probar con cualquier fecha. 
+     * @param disponibilidad */
     static EmpleadoDTO armar(Usuario u, long totalReportes, LocalDateTime ultimoReporte,
-                             LocalDateTime ahora, int diasInactivo, boolean enLinea) {
+                             LocalDateTime ahora, int diasInactivo, boolean enLinea,
+                             Disponibilidad disponibilidad) {
         LocalDateTime ultimaActividad = masReciente(u.getUltimoAcceso(), ultimoReporte);
         Long dias = ultimaActividad == null ? null : Math.max(0, Duration.between(ultimaActividad, ahora).toDays());
         // Un empleado dado de baja nunca cuenta como activo
         boolean activo = u.estaHabilitado() && ultimaActividad != null && ultimaActividad.isAfter(ahora.minusDays(diasInactivo));
         return new EmpleadoDTO(u.getId(), u.getNombre(), u.getUsername(), u.getUltimoAcceso(),
-                ultimoReporte, totalReportes, ultimaActividad, activo, dias, enLinea, u.estaHabilitado());
+                ultimoReporte, totalReportes, ultimaActividad, activo, dias, enLinea, u.estaHabilitado(),
+                // Un empleado dado de baja nunca sale "en línea"
+                u.estaHabilitado() ? disponibilidad : Disponibilidad.DESCONECTADO, u.getUltimaConexion());
     }
 
     private static LocalDateTime masReciente(LocalDateTime a, LocalDateTime b) {

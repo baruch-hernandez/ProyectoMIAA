@@ -121,7 +121,14 @@ export interface Empleado {
   enLinea: boolean;
   /** false = el admin lo dio de baja */
   habilitado: boolean;
+  /** Tipo WhatsApp: tiene la app abierta (latido en los últimos 60 s) o no. Tarea 2.4 */
+  disponibilidad: Disponibilidad;
+  /** Último latido o inicio de sesión, para el "últ. vez hace 5 min" */
+  ultimaConexion: string | null;
 }
+
+/** ↔ Disponibilidad.java */
+export type Disponibilidad = 'EN_LINEA' | 'DESCONECTADO';
 
 /** GET /usuarios/empleados  ↔  EmpleadosDTO.java */
 export interface EmpleadosRespuesta {

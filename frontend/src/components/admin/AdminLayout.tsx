@@ -3,6 +3,7 @@ import { ClipboardList, KeyRound, LogOut, Users } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cerrarSesion, obtenerUsuario } from '../../utils/sesion';
 import { Marca } from '../Marca';
+import { avisarLogout } from '../../services/presenciaApi';
 
 interface Destino {
   to: string;
@@ -17,17 +18,13 @@ const DESTINOS: Destino[] = [
   { to: '/admin/empleados', texto: 'Empleados', icono: Users },
 ];
 
-/**
- * Marco del panel del administrador.
- *  - Escritorio: menú lateral marino.
- *  - Celular: barra superior con pestañas.
- */
 export function AdminLayout() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const usuario = obtenerUsuario();
 
-  const salir = () => {
+  const salir = async () => {
+    await avisarLogout();
     cerrarSesion();
     navigate('/', { replace: true });
   };

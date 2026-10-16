@@ -2,8 +2,6 @@
 
 export function reglasPassword(nueva: string, confirmacion?: string) {
   const reglas = [
-    // Las MISMAS reglas que el backend (PoliticaPassword.java): si no coinciden, el front
-    // dice "todo bien" y el servidor la rechaza con 400.
     { texto: 'Al menos 6 caracteres', ok: nueva.length >= 6 && nueva.length <= 72 },
     { texto: 'Al menos una letra y un número', ok: /\p{L}/u.test(nueva) && /\d/.test(nueva) },
   ];

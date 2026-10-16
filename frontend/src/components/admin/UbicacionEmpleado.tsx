@@ -107,7 +107,7 @@ export function UbicacionEmpleado() {
       <div className="space-y-4" aria-busy="true">
         {volver}
         <div className="h-24 rounded-3xl bg-white/70 animate-pulse" />
-        <div className="h-[28rem] rounded-2xl bg-white/70 animate-pulse" />
+        <div className="h-112 rounded-2xl bg-white/70 animate-pulse" />
       </div>
     );
   }
@@ -176,7 +176,7 @@ export function UbicacionEmpleado() {
             </p>
           )}
 
-          <div className="h-[28rem] rounded-xl overflow-hidden border border-slate-200 relative z-0">
+          <div className="h-112 rounded-xl overflow-hidden border border-slate-200 relative z-0">
             <MapContainer center={[pos.lat, pos.lng]} zoom={16} scrollWheelZoom {...PROPS_MAPA_AGS} style={{ height: '100%', width: '100%' }}>
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'

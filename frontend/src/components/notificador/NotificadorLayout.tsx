@@ -7,6 +7,8 @@ import { ubicacionApi } from '../../services/ubicacionApi';
 import type { EstadoUbicacion } from '../../hooks/useCompartirUbicacion';
 import { useCompartirUbicacion } from '../../hooks/useCompartirUbicacion';
 import { useColaReportes } from '../../hooks/useColaReportes';
+import { usePresencia } from '../../hooks/usePresencia';
+import { avisarLogout } from '../../services/presenciaApi';
 import { Marca } from '../Marca';
 
 interface Destino {
@@ -99,13 +101,13 @@ export function NotificadorLayout() {
   const estadoUbicacion = useCompartirUbicacion();
   // Envía solos los reportes guardados sin conexión (al abrir, al volver la red, cada minuto)
   useColaReportes({ automatico: true });
+  // "En línea" para el admin mientras la app esté abierta (latido cada 30 s)
+  usePresencia();
 
   const salir = async () => {
-    // Avisar que deja de compartir (máx. 1.5 s: si no hay red, salimos de todos modos)
-    await Promise.race([
-      ubicacionApi.dejarDeCompartir().catch(() => undefined),
-      new Promise((listo) => setTimeout(listo, 1500)),
-    ]);
+    // Avisar al backend que sale (DESCONECTADO) y que deja de compartir su ubicación.
+    // Máximo 1.5 s: si no hay red, salimos de todos modos.
+    await avisarLogout([ubicacionApi.dejarDeCompartir()]);
     cerrarSesion();
     navigate('/', { replace: true });
   };
