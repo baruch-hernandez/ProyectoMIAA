@@ -19,20 +19,13 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Se ejecuta en CADA petición, antes de llegar a los controladores:
- *   1. Busca el header  Authorization: Bearer <token>
- *   2. Si el token es válido, revisa en la BD que la cuenta siga habilitada
- *      (si el admin la dio de baja, el token deja de servir AL INSTANTE, no en 24 h).
- *   3. "Loguea" al usuario solo para esta petición.
- *   4. Si tiene requisitos pendientes (contraseña temporal o aviso de privacidad sin
- *      aceptar), solo lo deja usar /usuarios/yo/** hasta que los resuelva.
- *   Sin token o con token inválido, sigue sin usuario: Spring Security responde 401.
- *
- * Costo: una consulta por petición (por id, con llave primaria). Para este tamaño de
- * sistema es despreciable y vale la pena por poder dar de baja al instante.
- *
- * NO lleva @Component a propósito: se crea en SecurityConfig. Si fuera @Component,
- * Spring Boot lo registraría además como filtro normal del servidor (doble registro).
+ * Se ejecuta en CADA petición antes de llegar a los controladores:
+ * 1. Extrae y valida el token JWT (Header Authorization: Bearer <token>)
+ * (RF-02, Tarea 2.3).
+ * 2. Si el token expiró (superó las 24 hrs) o fue alterado, responde 401
+ * Unauthorized.
+ * 3. Valida en la BD que la cuenta del usuario continúe activa.
+ * 4. Carga las autoridades ROLE_ para control de acceso RBAC.
  */
 public class JwtAuthFilter extends OncePerRequestFilter {
 
@@ -50,42 +43,47 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain chain) throws ServletException, IOException {
+            HttpServletResponse response,
+            FilterChain chain) throws ServletException, IOException {
 
         String header = request.getHeader(HttpHeaders.AUTHORIZATION);
 
         if (header != null && header.startsWith(PREFIJO)) {
+            String token = header.substring(PREFIJO.length());
             UsuarioPrincipal usuario;
+
             try {
-                usuario = jwtUtils.validarToken(header.substring(PREFIJO.length()));
+                usuario = jwtUtils.validarToken(token);
             } catch (JwtException | IllegalArgumentException e) {
-                // Token vencido, alterado o viejo: seguimos sin usuario → 401 en rutas protegidas
+                // Tarea 2.3 Paso 3: Si el token expiró o fue alterado, responde HTTP 401
+                // Unauthorized
                 SecurityContextHolder.clearContext();
-                chain.doFilter(request, response);
+                RespuestaJson.error(response, HttpServletResponse.SC_UNAUTHORIZED,
+                        "Token inválido o expirado.", "TOKEN_INVALIDO");
                 return;
             }
 
             Optional<Usuario> cuenta = usuarioRepository.findById(usuario.id());
             if (cuenta.isEmpty() || !cuenta.get().estaHabilitado()) {
                 SecurityContextHolder.clearContext();
-                RespuestaJson.error(response, 401,
+                RespuestaJson.error(response, HttpServletResponse.SC_UNAUTHORIZED,
                         "Tu cuenta fue dada de baja. Habla con tu administrador.", "CUENTA_DESHABILITADA");
                 return;
             }
 
-            // El rol se toma de la BASE, no del token: si cambia (como LECTURISTA → NOTIFICADOR),
-            // aplica al instante y los tokens que ya estaban emitidos siguen sirviendo.
+            // Tarea 2.3 Paso 4: Extrae los datos del usuario y asigna la autoridad basada
+            // en rol
             UsuarioPrincipal yo = new UsuarioPrincipal(usuario.id(), usuario.username(), usuario.nombre(),
                     cuenta.get().getRol());
 
-            // "ROLE_" es la convención de Spring para que funcione hasRole('ADMIN')
-            var permisos = List.of(new SimpleGrantedAuthority("ROLE_" + yo.rol()));
+            String nombreRol = yo.rol() != null ? yo.rol().toString() : "Empleado";
+            var permisos = List.of(new SimpleGrantedAuthority("ROLE_" + nombreRol));
+
             SecurityContextHolder.getContext()
                     .setAuthentication(new UsernamePasswordAuthenticationToken(yo, null, permisos));
 
             if (cuentaService.tieneRequisitosPendientes(cuenta.get()) && !rutaDeCuenta(request)) {
-                RespuestaJson.error(response, 403,
+                RespuestaJson.error(response, HttpServletResponse.SC_FORBIDDEN,
                         "Antes de continuar cambia tu contraseña temporal o acepta el aviso de privacidad.",
                         "REQUISITO_PENDIENTE");
                 return;
@@ -95,10 +93,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         chain.doFilter(request, response);
     }
 
-    /**
-     * /usuarios/yo/** (con o sin /api/v1): justo lo que se usa para resolver los requisitos.
-     * También /auth/logout: aunque tenga requisitos pendientes, cerrar sesión siempre debe poder.
-     */
     static boolean rutaDeCuenta(HttpServletRequest request) {
         String ruta = request.getRequestURI().substring(request.getContextPath().length());
         if (ruta.startsWith("/api/v1")) {

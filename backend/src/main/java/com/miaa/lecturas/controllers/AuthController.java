@@ -2,22 +2,17 @@ package com.miaa.lecturas.controllers;
 
 import com.miaa.lecturas.config.JwtUtils;
 import com.miaa.lecturas.config.UsuarioPrincipal;
-import com.miaa.lecturas.services.PresenciaService;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import com.miaa.lecturas.dtos.AuthResponseDTO;
 import com.miaa.lecturas.dtos.LoginRequestDTO;
 import com.miaa.lecturas.entities.Usuario;
 import com.miaa.lecturas.repositories.UsuarioRepository;
 import com.miaa.lecturas.services.BloqueoPorIntentos;
 import com.miaa.lecturas.services.CuentaService;
+import com.miaa.lecturas.services.PresenciaService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
@@ -26,6 +21,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping({ "/auth", "/api/v1/auth" })
+@CrossOrigin(origins = "*")
 public class AuthController {
 
     private final UsuarioRepository usuarioRepository;
@@ -35,14 +31,12 @@ public class AuthController {
     private final BloqueoPorIntentos bloqueo;
     private final PresenciaService presenciaService;
 
-    // Inyección por constructor (en vez de @Autowired en campos): más fácil de probar
-    // y deja claro qué necesita la clase para funcionar.
     public AuthController(UsuarioRepository usuarioRepository,
-                          PasswordEncoder passwordEncoder,
-                          JwtUtils jwtUtils,
-                          CuentaService cuentaService,
-                          BloqueoPorIntentos bloqueo,
-                          PresenciaService presenciaService) {
+            PasswordEncoder passwordEncoder,
+            JwtUtils jwtUtils,
+            CuentaService cuentaService,
+            BloqueoPorIntentos bloqueo,
+            PresenciaService presenciaService) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtils = jwtUtils;
@@ -59,7 +53,7 @@ public class AuthController {
 
         String identificador = request.getUsername().trim();
 
-        // 1. Buscar por username o por email
+        // 1. Buscar por username o por email (RF-01)
         Optional<Usuario> usuarioOpt = usuarioRepository.findByUsername(identificador);
         if (usuarioOpt.isEmpty()) {
             usuarioOpt = usuarioRepository.findByEmail(identificador);
@@ -67,8 +61,7 @@ public class AuthController {
 
         LocalDateTime ahora = LocalDateTime.now();
 
-        // 2. ¿Cuenta bloqueada por intentos fallidos? Se revisa ANTES de la contraseña:
-        //    mientras dure el bloqueo, ni la correcta deja entrar (si no, el bloqueo no serviría).
+        // 2. Revisar bloqueo temporal por intentos fallidos (RNF-04)
         if (usuarioOpt.isPresent()) {
             LocalDateTime hasta = bloqueo.bloqueadaHasta(usuarioOpt.get(), ahora);
             if (hasta != null) {
@@ -76,16 +69,14 @@ public class AuthController {
             }
         }
 
-        // 3. Validar contraseña SOLO con BCrypt.
-        //    Mismo mensaje si falla el usuario o la contraseña: así un atacante no sabe
-        //    cuál de los dos existe.
+        // 3. Validar contraseña con BCrypt
         boolean credencialesValidas = usuarioOpt
                 .map(u -> u.getPassword() != null && passwordEncoder.matches(request.getPassword(), u.getPassword()))
                 .orElse(false);
 
         if (!credencialesValidas) {
             if (usuarioOpt.isEmpty()) {
-                return error(HttpStatus.UNAUTHORIZED, "Usuario o contraseña incorrectos.");
+                return error(HttpStatus.UNAUTHORIZED, "Credenciales inválidas.");
             }
             Usuario u = usuarioOpt.get();
             BloqueoPorIntentos.Fallo fallo = bloqueo.registrarFallo(u, ahora);
@@ -93,7 +84,7 @@ public class AuthController {
             if (fallo.bloqueo()) {
                 return cuentaBloqueada(fallo.bloqueadoHasta(), ahora);
             }
-            String mensaje = "Usuario o contraseña incorrectos.";
+            String mensaje = "Credenciales inválidas.";
             if (fallo.intentosRestantes() <= 2) {
                 mensaje += fallo.intentosRestantes() == 1
                         ? " Te queda 1 intento antes de que la cuenta se bloquee."
@@ -103,35 +94,47 @@ public class AuthController {
         }
 
         Usuario usuario = usuarioOpt.get();
-        bloqueo.registrarExito(usuario); // contraseña correcta: el contador vuelve a 0
+        bloqueo.registrarExito(usuario); // Reiniciar contador de intentos
 
-        // Dado de baja: la contraseña era correcta, pero ya no puede entrar
+        // Validar si la cuenta está activa
         if (!usuario.estaHabilitado()) {
-            usuarioRepository.save(usuario); // guarda el contador en 0
+            usuarioRepository.save(usuario);
             return error(HttpStatus.FORBIDDEN, "Tu cuenta está dada de baja. Habla con tu administrador.");
         }
 
-        // Registrar el acceso: con esto el admin sabe si el empleado está activo
+        // Registrar último acceso y presencia
         usuario.setUltimoAcceso(ahora);
         usuarioRepository.save(usuario);
         presenciaService.vidaChecar(usuario.getId());
-        // 4. Token JWT real (antes era el texto fijo "token-miaa-session-<id>")
-        AuthResponseDTO response = new AuthResponseDTO(
-                jwtUtils.generarToken(usuario),
-                usuario.getId(),
-                usuario.getNombre(),
-                usuario.getRol(),
-                usuario.tieneQueCambiarPassword(),
-                cuentaService.avisoPendiente(usuario));
+
+        // Generar token JWT
+        String token = jwtUtils.generarToken(usuario);
+
+        // Mapear rol normalizado ("Administrador" o "Empleado") (RF-02)
+        String rolNombre = usuario.getRol() != null ? usuario.getRol().toString() : "Empleado";
+
+        // 4. Estructura de respuesta adaptada exactamente al requerimiento de la Tarea
+        // 2.1
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("token", token);
+
+        Map<String, Object> userMap = new LinkedHashMap<>();
+        userMap.put("id", usuario.getId());
+        userMap.put("username", usuario.getUsername());
+        userMap.put("role", rolNombre);
+        userMap.put("nombre", usuario.getNombre());
+        userMap.put("tieneQueCambiarPassword", usuario.tieneQueCambiarPassword());
+        userMap.put("avisoPendiente", cuentaService.avisoPendiente(usuario));
+
+        response.put("user", userMap);
 
         return ResponseEntity.ok(response);
     }
-    
+
     private static boolean estaVacio(String s) {
         return s == null || s.isBlank();
     }
 
-    /** 423 Locked: { status, message, codigo: "CUENTA_BLOQUEADA", segundos } */
     private static ResponseEntity<Map<String, Object>> cuentaBloqueada(LocalDateTime hasta, LocalDateTime ahora) {
         long minutos = BloqueoPorIntentos.minutosRestantes(hasta, ahora);
         Map<String, Object> cuerpo = new LinkedHashMap<>();
@@ -143,14 +146,14 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.LOCKED).body(cuerpo);
     }
 
-    /** Mismo formato JSON de error que el resto de la API: { status, message } */
     private static ResponseEntity<Map<String, Object>> error(HttpStatus status, String mensaje) {
         return ResponseEntity.status(status).body(Map.of("status", status.value(), "message", mensaje));
     }
+
     @PostMapping("/logout")
-    @ResponseStatus(HttpStatus.NO_CONTENT)   // 204: todo bien, sin cuerpo
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void logout(@AuthenticationPrincipal UsuarioPrincipal yo) {
-        if (yo != null) {                    // null si el token ya venció o no vino: no hay nada que hacer
+        if (yo != null) {
             presenciaService.desconectar(yo.id());
         }
     }
