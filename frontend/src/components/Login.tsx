@@ -7,23 +7,25 @@ import { guardarSesion, rutaInicio, leerAvisoLogin } from '../utils/sesion';
 import type { RolUsuario } from '../utils/sesion';
 import { Marca } from './Marca';
 
+// Tarea 2.1: Interfaz adaptada a la nueva respuesta JSON estructurada
 interface LoginResponse {
   token: string;
-  id: number;
-  nombre: string;
-  rol: RolUsuario;
-  debeCambiarPassword: boolean;
-  avisoPrivacidadPendiente: boolean;
+  user: {
+    id: number;
+    username: string;
+    role: RolUsuario | string;
+    nombre?: string;
+    tieneQueCambiarPassword?: boolean;
+    avisoPendiente?: boolean;
+  };
 }
 
-/** 125 → "2:05" */
 function formatoEspera(segundos: number): string {
   const m = Math.floor(segundos / 60);
   const s = segundos % 60;
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
-/** Olas decorativas del panel marino (dibujo propio, no es el logo de MIAA). */
 function Olas() {
   return (
     <svg
@@ -43,17 +45,13 @@ export const Login: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [verPassword, setVerPassword] = useState(false);
-  // Si la sesión anterior terminó por algo (p. ej. "tu cuenta fue dada de baja"), se muestra aquí
   const [error, setError] = useState(() => leerAvisoLogin() ?? '');
   const [loading, setLoading] = useState(false);
-  // Protección contra fuerza bruta: el backend responde 429 (demasiados intentos desde este equipo)
-  // o 423 (cuenta bloqueada) con los segundos que hay que esperar.
   const [codigoError, setCodigoError] = useState<string | undefined>();
   const [esperaHasta, setEsperaHasta] = useState<number | null>(null);
   const [ahora, setAhora] = useState(() => Date.now());
   const navigate = useNavigate();
 
-  // Cuenta regresiva mientras haya que esperar
   useEffect(() => {
     if (esperaHasta === null) return;
     const reloj = window.setInterval(() => {
@@ -69,8 +67,6 @@ export const Login: React.FC = () => {
   }, [esperaHasta]);
 
   const segundosRestantes = esperaHasta === null ? 0 : Math.max(0, Math.ceil((esperaHasta - ahora) / 1000));
-  // Solo el rate limit (429) bloquea el botón: con la cuenta bloqueada (423) el servidor
-  // vuelve a decir que espere, y si el admin la desbloquea puede entrar de inmediato.
   const botonEnEspera = codigoError === 'DEMASIADOS_INTENTOS' && segundosRestantes > 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -82,19 +78,28 @@ export const Login: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await api.post<LoginResponse>('/auth/login', { username, password });
-      const { token, id, nombre, rol, debeCambiarPassword, avisoPrivacidadPendiente } = response.data;
-      const usuario = { id, nombre, rol, debeCambiarPassword, avisoPrivacidadPendiente };
+      // Tarea 2.1: Consumo a la ruta estandarizada /api/v1/auth/login
+      const response = await api.post<LoginResponse>('/api/v1/auth/login', { username, password });
+      
+      const { token, user } = response.data;
+      const rol = (user.role as RolUsuario) || 'Empleado';
 
-      // Se guarda también el id (antes se perdía y todo caía al id 2)
-      guardarSesion(token, usuario);
+      const usuarioParaGuardar = {
+        id: user.id,
+        nombre: user.nombre || user.username,
+        rol: rol,
+        debeCambiarPassword: !!user.tieneQueCambiarPassword,
+        avisoPrivacidadPendiente: !!user.avisoPendiente
+      };
 
-      // Cada rol tiene su pantalla de inicio; si tiene requisitos pendientes
-      // (contraseña temporal o aviso de privacidad), primero va a resolverlos.
-      navigate(rutaInicio(rol, usuario), { replace: true });
+      // Tarea 3.1 Paso 5: Almacena el JWT y la sesión del usuario
+      guardarSesion(token, usuarioParaGuardar);
+
+      // Tarea 3.3: Redirección según rol y permisos
+      navigate(rutaInicio(rol, usuarioParaGuardar), { replace: true });
     } catch (err) {
       const { mensaje, codigo, segundos } = leerError(err);
-      setError(mensaje);
+      setError(mensaje || 'No se pudo conectar con el servidor.');
       setCodigoError(codigo);
       if ((codigo === 'DEMASIADOS_INTENTOS' || codigo === 'CUENTA_BLOQUEADA') && segundos) {
         const n = Date.now();
@@ -111,7 +116,6 @@ export const Login: React.FC = () => {
 
   return (
     <div className="min-h-dvh grid lg:grid-cols-[1.1fr_1fr] bg-white">
-      {/* Panel institucional (en celular se vuelve una franja arriba) */}
       <section className="relative overflow-hidden bg-miaa-marino text-white px-6 pt-8 pb-28 lg:px-14 lg:py-14 flex flex-col">
         <Marca tono="oscuro" />
         <div className="relative z-10 mt-10 lg:mt-auto lg:mb-24 max-w-md">
@@ -125,7 +129,6 @@ export const Login: React.FC = () => {
         <Olas />
       </section>
 
-      {/* Formulario */}
       <section className="flex items-center justify-center px-6 py-10 -mt-16 lg:mt-0">
         <div className="w-full max-w-sm bg-white rounded-2xl p-6 lg:p-0 shadow-lg shadow-miaa-marino/10 lg:shadow-none relative z-10">
           <h2 className="text-2xl font-extrabold text-miaa-marino">Inicia sesión</h2>
@@ -170,7 +173,7 @@ export const Login: React.FC = () => {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className={claseInput}
-                placeholder="notificador1"
+                placeholder="admin"
                 required
               />
             </div>

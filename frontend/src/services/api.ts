@@ -1,10 +1,9 @@
 import axios from 'axios';
 import { cerrarSesion, guardarAvisoLogin, obtenerToken, RUTA_REQUISITOS } from '../utils/sesion';
 
+// Cambiar https://localhost:8500 por http://localhost:8090
 const URL_API: string = import.meta.env.VITE_API_URL || 'http://localhost:8500';
 
-// RNF-03: en producción la API debe ir por HTTPS. Si alguien compila con una URL http://,
-// el navegador bloquearía las peticiones (contenido mixto) o mandaría contraseñas sin cifrar.
 if (import.meta.env.PROD && URL_API.startsWith('http://')) {
   console.error(`[MIAA] VITE_API_URL usa http:// (${URL_API}). En producción debe ser https://`);
 }
@@ -15,7 +14,7 @@ const api = axios.create({ baseURL: URL_API });
 api.interceptors.request.use((config) => {
   const token = obtenerToken();
 
-  // NO enviar cabecera Authorization si la petición es para hacer login
+  // NO enviar cabecera Authorization en peticiones de autenticación/login
   if (token && config.url && !config.url.includes('/auth/login')) {
     config.headers.Authorization = `Bearer ${token}`;
   } else {
@@ -26,8 +25,6 @@ api.interceptors.request.use((config) => {
 });
 
 // ---------- Después de cada respuesta: si el token ya no sirve, al login ----------
-// El backend responde 401 cuando el JWT venció (24 h), es inválido o la cuenta fue dada de baja.
-// 403 con codigo REQUISITO_PENDIENTE: debe cambiar su contraseña o aceptar el aviso.
 api.interceptors.response.use(
   (response) => response,
   (error) => {

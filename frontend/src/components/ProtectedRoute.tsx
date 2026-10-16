@@ -1,38 +1,62 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { obtenerToken, obtenerUsuario, rutaInicio, RUTA_REQUISITOS, tieneRequisitosPendientes } from '../utils/sesion';
+import {
+  obtenerToken,
+  obtenerUsuario,
+  cerrarSesion,
+  RUTA_REQUISITOS,
+  tieneRequisitosPendientes,
+  guardarAvisoLogin
+} from '../utils/sesion';
 import type { RolUsuario } from '../utils/sesion';
 
 interface ProtectedRouteProps {
-  /** Un solo rol permitido (como se usaba antes). */
-  allowedRole?: RolUsuario;
-  /** Varios roles permitidos, p. ej. ['ADMIN', 'NOTIFICADOR']. */
-  allowedRoles?: RolUsuario[];
+  /** Un solo rol permitido. */
+  allowedRole?: RolUsuario | string;
+  /** Varios roles permitidos, p. ej. ['ADMIN', 'Administrador']. */
+  allowedRoles?: (RolUsuario | string)[];
 }
 
 /**
- * Protege rutas en el FRONT. Ojo: esto solo es comodidad visual; cualquiera
- * puede editar su sessionStorage. La seguridad REAL la pone el backend con el JWT.
+ * Tarea 3.3: Ruteo Protegido y Redirección por Rol en la Web MIAA.
+ * Garantiza que solo Administradores puedan ingresar al panel Web.
  */
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRole, allowedRoles }) => {
   const token = obtenerToken();
   const usuario = obtenerUsuario();
 
-  // 1. Sin sesión → al login
+  // Tarea 3.3 Paso 2.1: Si no existe JWT, redirige al login
   if (!token || !usuario) {
     return <Navigate to="/" replace />;
   }
 
-  // 2. Le falta cambiar su contraseña temporal o aceptar el aviso → a resolverlo primero
-  //    (el backend tampoco le deja hacer nada más: responde 403 REQUISITO_PENDIENTE)
+  // Normalización del rol del usuario
+  const rolActual = String(usuario.rol).toUpperCase();
+
+  // Tarea 3.3 Paso 3: Bloqueo estricto para Empleados / Notificadores en plataforma Web
+  const esEmpleado = rolActual === 'EMPLEADO' || rolActual === 'NOTIFICADOR' || rolActual === 'LECTURISTA';
+
+  if (esEmpleado) {
+    // Borrar la sesión y guardar el mensaje de restricción
+    cerrarSesion();
+    guardarAvisoLogin(
+      'Acceso denegado. Esta plataforma es únicamente para administradores. Por favor ingresa desde la aplicación móvil.'
+    );
+    return <Navigate to="/" replace />;
+  }
+
+  // Tarea 3.3 Paso 2.2: Redirección por requisitos pendientes
   if (tieneRequisitosPendientes(usuario)) {
     return <Navigate to={RUTA_REQUISITOS} replace />;
   }
 
-  // 3. Con sesión pero sin el rol requerido → a la pantalla de SU rol
+  // Tarea 3.3 Paso 3: Validación por roles permitidos pasados por props
   const permitidos = allowedRoles ?? (allowedRole ? [allowedRole] : undefined);
-  if (permitidos && !permitidos.includes(usuario.rol)) {
-    return <Navigate to={rutaInicio(usuario.rol)} replace />;
+  if (permitidos) {
+    const permitidosUpper = permitidos.map((r) => String(r).toUpperCase());
+    if (!permitidosUpper.includes(rolActual)) {
+      return <Navigate to="/" replace />;
+    }
   }
 
   return <Outlet />;
