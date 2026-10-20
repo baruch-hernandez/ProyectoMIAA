@@ -20,9 +20,10 @@ import java.util.Map;
  * ¿El empleado está ACTIVO o INACTIVO? (lo pidió el administrador)
  *
  * Regla "por actividad": está ACTIVO si inició sesión o subió un reporte en los
- * últimos N días. Si no, INACTIVO. Nadie tiene que marcarlo a mano: se calcula solo.
+ * últimos N días. Si no, INACTIVO. Nadie tiene que marcarlo a mano: se calcula
+ * solo.
  *
- * N se cambia en application.properties:  miaa.empleados.dias-inactivo=7
+ * N se cambia en application.properties: miaa.empleados.dias-inactivo=7
  */
 @Service
 public class EmpleadoService {
@@ -34,10 +35,10 @@ public class EmpleadoService {
     private final int diasInactivo;
 
     public EmpleadoService(UsuarioRepository usuarioRepository,
-                           ReporteRepository reporteRepository,
-                           UbicacionService ubicacionService,
-                           PresenciaService presenciaService,
-                           @Value("${miaa.empleados.dias-inactivo:7}") int diasInactivo) {
+            ReporteRepository reporteRepository,
+            UbicacionService ubicacionService,
+            PresenciaService presenciaService,
+            @Value("${miaa.empleados.dias-inactivo:7}") int diasInactivo) {
         this.usuarioRepository = usuarioRepository;
         this.reporteRepository = reporteRepository;
         this.ubicacionService = ubicacionService;
@@ -60,7 +61,8 @@ public class EmpleadoService {
                     Object[] s = stats.get(u.getId());
                     long total = s != null ? (Long) s[1] : 0L;
                     LocalDateTime ultimoReporte = s != null ? (LocalDateTime) s[2] : null;
-                    return armar(u, total, ultimoReporte, ahora, diasInactivo, enLinea.getOrDefault(u.getId(), false), presenciaService.estado(u));
+                    return armar(u, total, ultimoReporte, ahora, diasInactivo, enLinea.getOrDefault(u.getId(), false),
+                            presenciaService.estado(u));
                 })
                 // Los dados de baja al final (mismo orden por nombre dentro de cada grupo)
                 .sorted(java.util.Comparator.comparing(e -> !e.habilitado()))
@@ -68,15 +70,19 @@ public class EmpleadoService {
         return new EmpleadosDTO(diasInactivo, empleados);
     }
 
-    /** Lógica pura (sin BD): fácil de probar con cualquier fecha. 
-     * @param disponibilidad */
+    /**
+     * Lógica pura (sin BD): fácil de probar con cualquier fecha.
+     * 
+     * @param disponibilidad
+     */
     static EmpleadoDTO armar(Usuario u, long totalReportes, LocalDateTime ultimoReporte,
-                             LocalDateTime ahora, int diasInactivo, boolean enLinea,
-                             Disponibilidad disponibilidad) {
+            LocalDateTime ahora, int diasInactivo, boolean enLinea,
+            Disponibilidad disponibilidad) {
         LocalDateTime ultimaActividad = masReciente(u.getUltimoAcceso(), ultimoReporte);
         Long dias = ultimaActividad == null ? null : Math.max(0, Duration.between(ultimaActividad, ahora).toDays());
         // Un empleado dado de baja nunca cuenta como activo
-        boolean activo = u.estaHabilitado() && ultimaActividad != null && ultimaActividad.isAfter(ahora.minusDays(diasInactivo));
+        boolean activo = u.estaHabilitado() && ultimaActividad != null
+                && ultimaActividad.isAfter(ahora.minusDays(diasInactivo));
         return new EmpleadoDTO(u.getId(), u.getNombre(), u.getUsername(), u.getUltimoAcceso(),
                 ultimoReporte, totalReportes, ultimaActividad, activo, dias, enLinea, u.estaHabilitado(),
                 // Un empleado dado de baja nunca sale "en línea"
@@ -84,8 +90,10 @@ public class EmpleadoService {
     }
 
     private static LocalDateTime masReciente(LocalDateTime a, LocalDateTime b) {
-        if (a == null) return b;
-        if (b == null) return a;
+        if (a == null)
+            return b;
+        if (b == null)
+            return a;
         return a.isAfter(b) ? a : b;
     }
 }
