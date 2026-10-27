@@ -37,8 +37,25 @@ dependencies:
   dio: ^5.11.1
   flutter_secure_storage: ^11.2.0
 
+  # --- Sprint 2: fotos de evidencia (tarea 1.1) ---
+  # Cámara integrada en la app (CameraX en Android)
+  camera: ^0.12.0
+  # Selector de galería (Photo Picker del sistema en Android 13+)
+  image_picker: ^1.2.0
+  # Explorador de archivos del sistema (Storage Access Framework)
+  file_picker: ^13.0.0
+  # Consultar/pedir permisos en tiempo de ejecución y abrir Ajustes
+  permission_handler: ^13.0.2
+  # Carpeta privada de la app para el borrador del reporte
+  path_provider: ^2.1.5
+  # Comprimir/redimensionar y leer EXIF (Dart puro, corre en un isolate)
+  image: ^4.5.4
+
 dev_dependencies:
   flutter_test:
+    sdk: flutter
+  # Pruebas en emulador/celular (tarea 4.3): flutter test integration_test
+  integration_test:
     sdk: flutter
 
   # The "flutter_lints" package below contains a set of recommended lints to

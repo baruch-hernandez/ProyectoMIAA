@@ -3,8 +3,8 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:notificador_miaa/auth/sesion.dart';
-import 'package:notificador_miaa/core/api.dart';
+import 'package:movil/auth/sesion.dart';
+import 'package:movil/core/api.dart';
 
 String _jwtCon(Map<String, dynamic> payload) {
   String parte(Map<String, dynamic> m) => base64Url.encode(utf8.encode(jsonEncode(m))).replaceAll('=', '');

@@ -6,7 +6,9 @@ plugins {
 
 android {
     namespace = "mx.gob.miaa.movil"
-    compileSdk = flutter.compileSdkVersion
+    // permission_handler 13 (permission_handler_android 14) compila contra Android 17 = API 37.
+    // Si Android Studio pide instalar "Android SDK Platform 37", acéptalo (ver LEEME_SPRINT2.md).
+    compileSdk = maxOf(flutter.compileSdkVersion, 37)
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -19,7 +21,9 @@ android {
         applicationId = "mx.gob.miaa.movil"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        // Tarea 1.3: camera_android_camerax pide minSdk 23 y permission_handler_android 24.
+        // Se toma el mayor entre el de Flutter y 24 (Android 7.0), así nunca baja de lo que piden.
+        minSdk = maxOf(flutter.minSdkVersion, 24)
         targetSdk = flutter.targetSdkVersion
         // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION
         // is added automatically by Flutter. (https://developer.android.com/studio/build/configure-apk-splits#configure-APK-versions)

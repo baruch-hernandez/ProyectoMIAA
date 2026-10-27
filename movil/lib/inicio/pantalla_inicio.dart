@@ -4,8 +4,10 @@ import '../auth/sesion.dart';
 import '../core/api.dart';
 import '../diagnostico/pantalla_diagnostico.dart';
 import '../presencia/latido.dart';
+import '../reportes/api_reportes.dart';
+import '../reportes/pantalla_nuevo_reporte.dart';
 
-/// Pantalla de prueba después del login: quién soy (GET /usuarios/yo) y el latido de la 2.4.
+/// Inicio después del login: nuevo reporte (Sprint 2), quién soy (GET /usuarios/yo) y el latido de la 2.4.
 class PantallaInicio extends StatefulWidget {
   const PantallaInicio({super.key, required this.sesion});
 
@@ -91,6 +93,17 @@ class _PantallaInicioState extends State<PantallaInicio> with WidgetsBindingObse
           children: [
             Text('Hola, ${u?.nombre ?? ''}', style: Theme.of(context).textTheme.headlineSmall),
             Text('${u?.username} · ${u?.rol}'),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              key: const Key('btn-nuevo-reporte'),
+              style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(56)),
+              onPressed: () => PantallaNuevoReporte.abrir(
+                context,
+                enviar: (solicitud) => ApiReportes(widget.sesion.api).crear(solicitud),
+              ),
+              icon: const Icon(Icons.add_a_photo),
+              label: const Text('Nuevo reporte'),
+            ),
             const SizedBox(height: 16),
             ListenableBuilder(
               listenable: _latido,
