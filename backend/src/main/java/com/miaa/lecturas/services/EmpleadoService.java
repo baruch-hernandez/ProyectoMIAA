@@ -3,6 +3,7 @@ package com.miaa.lecturas.services;
 import com.miaa.lecturas.dtos.EmpleadoDTO;
 import com.miaa.lecturas.dtos.EmpleadosDTO;
 import com.miaa.lecturas.entities.Disponibilidad;
+import com.miaa.lecturas.entities.Rol;
 import com.miaa.lecturas.entities.Usuario;
 import com.miaa.lecturas.repositories.ReporteRepository;
 import com.miaa.lecturas.repositories.UsuarioRepository;
@@ -56,7 +57,12 @@ public class EmpleadoService {
 
         Map<Long, Boolean> enLinea = ubicacionService.enLineaPorEmpleado();
         LocalDateTime ahora = LocalDateTime.now();
-        List<EmpleadoDTO> empleados = usuarioRepository.findByRolOrderByNombreAsc("NOTIFICADOR").stream()
+        // Notificadores y administradores (el admin ahora da de alta a ambos)
+        List<EmpleadoDTO> empleados = java.util.stream.Stream.concat(
+                        usuarioRepository.findByRolOrderByNombreAsc(Rol.NOTIFICADOR).stream(),
+                        usuarioRepository.findByRolOrderByNombreAsc(Rol.ADMIN).stream())
+                .sorted(java.util.Comparator.comparing(Usuario::getNombre,
+                        java.util.Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
                 .map(u -> {
                     Object[] s = stats.get(u.getId());
                     long total = s != null ? (Long) s[1] : 0L;
@@ -86,7 +92,8 @@ public class EmpleadoService {
         return new EmpleadoDTO(u.getId(), u.getNombre(), u.getUsername(), u.getUltimoAcceso(),
                 ultimoReporte, totalReportes, ultimaActividad, activo, dias, enLinea, u.estaHabilitado(),
                 // Un empleado dado de baja nunca sale "en línea"
-                u.estaHabilitado() ? disponibilidad : Disponibilidad.DESCONECTADO, u.getUltimaConexion());
+                u.estaHabilitado() ? disponibilidad : Disponibilidad.DESCONECTADO, u.getUltimaConexion(),
+                u.getRol());
     }
 
     private static LocalDateTime masReciente(LocalDateTime a, LocalDateTime b) {

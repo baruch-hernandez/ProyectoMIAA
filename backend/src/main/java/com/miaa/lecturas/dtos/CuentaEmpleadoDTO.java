@@ -2,7 +2,7 @@ package com.miaa.lecturas.dtos;
 
 import java.time.LocalDateTime;
 
-/** Datos de la cuenta de un notificador, como los ve el ADMIN en su ficha. */
+/** Datos de la cuenta de un empleado (notificador o administrador), como los ve el ADMIN en su ficha. */
 public record CuentaEmpleadoDTO(
         Long id,
         String nombre,
@@ -14,5 +14,7 @@ public record CuentaEmpleadoDTO(
         LocalDateTime ultimoAcceso,
         LocalDateTime avisoPrivacidadFecha,
         /** Bloqueada por intentos fallidos hasta esta hora (null = no está bloqueada). */
-        LocalDateTime bloqueadoHasta) {
+        LocalDateTime bloqueadoHasta,
+        /** ADMIN o NOTIFICADOR. */
+        String rol) {
 }

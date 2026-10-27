@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-/** PUT /usuarios/empleados/{id} — corregir los datos de un notificador. */
+/** PUT /usuarios/empleados/{id} — corregir los datos de un empleado y, si se quiere, cambiar su rol. */
 public record EdicionEmpleadoDTO(
         @NotBlank(message = "Escribe el nombre")
         @Size(max = 100, message = "Máximo 100 caracteres")
@@ -17,5 +17,9 @@ public record EdicionEmpleadoDTO(
 
         @Email(message = "El correo no es válido")
         @Size(max = 120, message = "Máximo 120 caracteres")
-        String email) {
+        String email,
+
+        /** ADMIN o NOTIFICADOR. Si no viene, se queda el que tiene. */
+        @Pattern(regexp = "ADMIN|NOTIFICADOR", message = "El rol debe ser ADMIN o NOTIFICADOR")
+        String rol) {
 }

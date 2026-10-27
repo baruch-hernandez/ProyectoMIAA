@@ -1,0 +1,4 @@
+Aqui va miaa-dev.pem: el certificado PUBLICO de desarrollo del backend (nunca la llave privada).
+Se genera desde la carpeta backend con:
+  keytool -exportcert -rfc -alias miaa -keystore certificados\miaa-dev.p12 -storepass miaa-dev -file ..\notificador_miaa\assets\dev\miaa-dev.pem
+Solo se usa en modo debug: la app confia en ESE certificado y en ningun otro.

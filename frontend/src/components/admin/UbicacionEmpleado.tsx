@@ -10,6 +10,7 @@ import { dentroDeAguascalientes, PROPS_MAPA_AGS } from '../../utils/limiteAgs';
 import { CapaLimiteAgs } from '../mapa/CapaLimiteAgs';
 import '../mapa/iconosLeaflet';
 import { CuentaEmpleadoPanel } from './CuentaEmpleadoPanel';
+import type { RolUsuario } from '../../utils/sesion';
 
 /** Cada cuánto pregunta el admin (solo mientras esta pantalla esté abierta y visible). */
 const CONSULTA_MS = 5_000;
@@ -33,7 +34,7 @@ function Seguir({ lat, lng, activo }: { lat: number; lng: number; activo: boolea
 }
 
 /**
- * Ficha de un notificador (solo ADMIN): su cuenta y su ubicación EN VIVO.
+ * Ficha de un empleado (solo ADMIN): su cuenta y, si es notificador, su ubicación EN VIVO.
  * Pregunta al backend cada 5 s; si la pestaña está oculta, deja de preguntar
  * (no tiene caso gastar peticiones) y al volver pregunta de inmediato.
  */
@@ -45,6 +46,9 @@ export function UbicacionEmpleado() {
   // Cuándo llegó la última respuesta (para que "hace X s" avance entre consultas)
   const [recibidoEn, setRecibidoEn] = useState(() => Date.now());
   const [ahora, setAhora] = useState(() => Date.now());
+  // Lo avisa CuentaEmpleadoPanel. Los administradores usan el panel web: no comparten ubicación.
+  const [rol, setRol] = useState<RolUsuario | null>(null);
+  const esAdmin = rol === 'ADMIN';
 
   useEffect(() => {
     if (Number.isNaN(id)) return;
@@ -130,7 +134,11 @@ export function UbicacionEmpleado() {
         </div>
 
         <div className="text-right" aria-live="polite">
-          {d.enLinea ? (
+          {esAdmin ? (
+            <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-sm font-bold text-miaa-marino">
+              Administrador
+            </span>
+          ) : d.enLinea ? (
             <span className="inline-flex items-center gap-2 rounded-full bg-[#d3fbf2] px-3 py-1.5 text-sm font-bold text-[#0b6b58]">
               <span className="relative flex size-2.5" aria-hidden="true">
                 <span className="absolute inline-flex size-full rounded-full bg-miaa-menta opacity-75 animate-ping" />
@@ -144,7 +152,7 @@ export function UbicacionEmpleado() {
               {pos ? 'Sin conexión' : 'Sin ubicación'}
             </span>
           )}
-          {segundos != null && d.fechaRecibida && (
+          {!esAdmin && segundos != null && d.fechaRecibida && (
             <p className="mt-1.5 text-sm text-slate-600">
               Última señal <strong className="cifras text-miaa-marino">{haceCuanto(segundos)}</strong>
               <span className="text-slate-400"> · {formatoFecha(d.fechaRecibida)}</span>
@@ -153,9 +161,16 @@ export function UbicacionEmpleado() {
         </div>
       </header>
 
-      <CuentaEmpleadoPanel id={id} />
+      <CuentaEmpleadoPanel id={id} onRol={setRol} />
 
-      {!pos ? (
+      {esAdmin ? (
+        <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-white/60 p-8 text-center">
+          <p className="font-bold text-miaa-marino">{d.nombre} es administrador.</p>
+          <p className="mt-1 text-sm text-slate-600 max-w-md mx-auto">
+            Los administradores trabajan en este panel web, así que no comparten su ubicación.
+          </p>
+        </div>
+      ) : !pos ? (
         <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-white/60 p-10 text-center">
           <p className="font-bold text-miaa-marino">{d.nombre} aún no ha compartido su ubicación.</p>
           <p className="mt-1 text-sm text-slate-600 max-w-md mx-auto">

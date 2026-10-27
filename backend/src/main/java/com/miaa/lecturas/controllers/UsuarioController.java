@@ -1,5 +1,6 @@
 package com.miaa.lecturas.controllers;
 
+import com.miaa.lecturas.config.UsuarioPrincipal;
 import com.miaa.lecturas.dtos.CuentaEmpleadoDTO;
 import com.miaa.lecturas.dtos.EdicionEmpleadoDTO;
 import com.miaa.lecturas.dtos.EmpleadosDTO;
@@ -13,6 +14,7 @@ import com.miaa.lecturas.services.UbicacionService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,9 +28,9 @@ import org.springframework.web.bind.annotation.RestController;
  * Empleados (solo ADMIN). Todo el controlador exige el rol con @PreAuthorize a nivel clase.
  *
  *   GET  /usuarios/empleados                    lista con actividad y "en línea"
- *   POST /usuarios/empleados                    dar de alta (contraseña temporal)
+ *   POST /usuarios/empleados                    dar de alta con su rol (contraseña temporal)
  *   GET  /usuarios/empleados/{id}               datos de su cuenta
- *   PUT  /usuarios/empleados/{id}               editar nombre, usuario, correo
+ *   PUT  /usuarios/empleados/{id}               editar nombre, usuario, correo y rol
  *   POST /usuarios/empleados/{id}/password      restablecer contraseña (temporal)
  *   PUT  /usuarios/empleados/{id}/habilitado    dar de baja / reactivar
  *   POST /usuarios/empleados/{id}/desbloquear   quitar el bloqueo por intentos fallidos
@@ -81,8 +83,9 @@ public class UsuarioController {
     }
 
     @PutMapping("/empleados/{id}")
-    public CuentaEmpleadoDTO editar(@PathVariable("id") Long id, @Valid @RequestBody EdicionEmpleadoDTO request) {
-        return gestionEmpleados.editar(id, request);
+    public CuentaEmpleadoDTO editar(@PathVariable("id") Long id, @Valid @RequestBody EdicionEmpleadoDTO request,
+                                    @AuthenticationPrincipal UsuarioPrincipal yo) {
+        return gestionEmpleados.editar(id, request, yo);
     }
 
     @PostMapping("/empleados/{id}/password")
@@ -92,8 +95,9 @@ public class UsuarioController {
     }
 
     @PutMapping("/empleados/{id}/habilitado")
-    public CuentaEmpleadoDTO cambiarHabilitado(@PathVariable("id") Long id, @Valid @RequestBody HabilitadoDTO request) {
-        return gestionEmpleados.cambiarHabilitado(id, request.habilitado());
+    public CuentaEmpleadoDTO cambiarHabilitado(@PathVariable("id") Long id, @Valid @RequestBody HabilitadoDTO request,
+                                               @AuthenticationPrincipal UsuarioPrincipal yo) {
+        return gestionEmpleados.cambiarHabilitado(id, request.habilitado(), yo);
     }
 
     @PostMapping("/empleados/{id}/desbloquear")

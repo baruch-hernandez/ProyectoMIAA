@@ -28,6 +28,8 @@ public record EmpleadoDTO(
         boolean enLinea,
         boolean habilitado,
         Disponibilidad disponibilidad,
-        LocalDateTime ultimaConexion) {
+        LocalDateTime ultimaConexion,
+        /** ADMIN o NOTIFICADOR. */
+        String rol) {
 
 }

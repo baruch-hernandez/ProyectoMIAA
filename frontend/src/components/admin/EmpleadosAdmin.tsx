@@ -5,6 +5,7 @@ import { usuariosApi } from '../../services/usuariosApi';
 import { leerError } from '../../services/reportesApi';
 import type { Empleado, EmpleadosRespuesta } from '../../types/reporte';
 import { fechaRelativa, formatoFecha } from '../../utils/catalogos';
+import { nombreRol } from '../../utils/roles';
 
 function EstadoEmpleado({ activo, habilitado = true }: { activo: boolean; habilitado?: boolean }) {
   if (!habilitado) {
@@ -52,6 +53,16 @@ function Presencia({ empleado: e }: { empleado: Empleado }) {
       {e.ultimaConexion
         ? <>Últ. vez <time dateTime={e.ultimaConexion} title={formatoFecha(e.ultimaConexion)}>{fechaRelativa(e.ultimaConexion)}</time></>
         : 'Desconectado'}
+    </span>
+  );
+}
+
+/** Etiqueta chica junto al nombre: solo se marca a los administradores (la mayoría son notificadores). */
+function EtiquetaRol({ rol }: { rol: Empleado['rol'] }) {
+  if (rol !== 'ADMIN') return null;
+  return (
+    <span className="ml-1.5 inline-flex items-center rounded-md bg-blue-50 px-1.5 py-0.5 text-[0.7rem] font-bold text-miaa-marino align-middle">
+      {nombreRol(rol)}
     </span>
   );
 }
@@ -104,9 +115,9 @@ export function EmpleadosAdmin() {
           <h1 className="text-3xl font-extrabold text-miaa-marino">Empleados</h1>
           <p className="mt-1 text-slate-600 max-w-xl">
             {dias != null
-              ? <>Un notificador está <strong className="text-miaa-marino">activo</strong> si inició sesión o subió un reporte en los últimos <span className="cifras font-semibold">{dias}</span> días.</>
+              ? <>Un empleado está <strong className="text-miaa-marino">activo</strong> si inició sesión o subió un reporte en los últimos <span className="cifras font-semibold">{dias}</span> días.</>
               : 'Revisa quién está activo y quién no.'}{' '}
-            Toca a un notificador para ver su ficha: <strong className="text-miaa-marino">dónde está ahorita</strong> y su cuenta.
+            Toca a un empleado para ver su ficha: <strong className="text-miaa-marino">dónde está ahorita</strong> y su cuenta.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -151,7 +162,7 @@ export function EmpleadosAdmin() {
         <div className="h-64 rounded-2xl bg-white/70 animate-pulse" aria-busy="true" aria-label="Cargando empleados" />
       ) : datos && empleados.length === 0 ? (
         <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-white/60 p-10 text-center">
-          <p className="font-bold text-miaa-marino">No hay notificadores registrados.</p>
+          <p className="font-bold text-miaa-marino">No hay empleados registrados.</p>
         </div>
       ) : datos && (
         <>
@@ -175,7 +186,10 @@ export function EmpleadosAdmin() {
                   // Toda la fila es clicable con el mouse; el nombre es un enlace real (teclado y lectores de pantalla)
                   <tr key={e.id} onClick={() => navigate(`/admin/empleados/${e.id}`)} className="cursor-pointer hover:bg-blue-50/50 transition-colors">
                     <td className="px-5 py-3.5">
-                      <Link to={`/admin/empleados/${e.id}`} className="block font-bold text-miaa-marino hover:underline">{e.nombre}</Link>
+                      <div>
+                        <Link to={`/admin/empleados/${e.id}`} className="font-bold text-miaa-marino hover:underline">{e.nombre}</Link>
+                        <EtiquetaRol rol={e.rol} />
+                      </div>
                       <span className="text-xs text-slate-500">{e.username}</span>
                     </td>
                     <td className="px-5 py-3.5"><EstadoEmpleado activo={e.activo} habilitado={e.habilitado} /></td>
@@ -198,7 +212,7 @@ export function EmpleadosAdmin() {
                 <Link to={`/admin/empleados/${e.id}`} className="block rounded-2xl bg-white border border-slate-200 p-4 hover:border-miaa-azul transition-colors">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="font-bold text-miaa-marino">{e.nombre}</p>
+                    <p className="font-bold text-miaa-marino">{e.nombre}<EtiquetaRol rol={e.rol} /></p>
                     <p className="text-xs text-slate-500">{e.username}</p>
                     <p className="mt-1"><Presencia empleado={e} /></p>
                   </div>

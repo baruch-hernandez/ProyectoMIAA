@@ -8,14 +8,20 @@ import { formatoFecha } from '../../utils/catalogos';
 import { claseInput } from '../../utils/estilos';
 import { cumplePolitica, generarPasswordTemporal } from '../../utils/password';
 import { Campo } from '../reportes/Formulario';
+import { obtenerUsuario } from '../../utils/sesion';
+import type { RolUsuario } from '../../utils/sesion';
+import { nombreRol } from '../../utils/roles';
+import { SelectorRol } from './SelectorRol';
 
 type Modo = 'ver' | 'editar' | 'password' | 'baja';
 
 /**
- * Cuenta del empleado en su ficha: datos, editar, restablecer contraseña y dar de baja.
+ * Cuenta del empleado en su ficha: datos, rol, editar, restablecer contraseña y dar de baja.
  * Dar de baja NO borra: ya no puede entrar, pero sus reportes se conservan.
+ * El backend impide cambiarse el propio rol, darse de baja a uno mismo y quedarse sin administradores;
+ * aquí solo se esconden esas opciones para no ofrecer algo que va a fallar.
  */
-export function CuentaEmpleadoPanel({ id }: { id: number }) {
+export function CuentaEmpleadoPanel({ id, onRol }: { id: number; onRol?: (rol: RolUsuario) => void }) {
   const [cuenta, setCuenta] = useState<CuentaEmpleado | null>(null);
   const [modo, setModo] = useState<Modo>('ver');
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +29,9 @@ export function CuentaEmpleadoPanel({ id }: { id: number }) {
   const [guardando, setGuardando] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
   // Formularios
-  const [form, setForm] = useState({ nombre: '', username: '', email: '' });
+  const [form, setForm] = useState<{ nombre: string; username: string; email: string; rol: RolUsuario }>(
+    { nombre: '', username: '', email: '', rol: 'NOTIFICADOR' });
+  const esYo = obtenerUsuario()?.id === id;
   const [temporal, setTemporal] = useState('');
   const [temporalDada, setTemporalDada] = useState<string | null>(null);
 
@@ -36,12 +44,18 @@ export function CuentaEmpleadoPanel({ id }: { id: number }) {
     return () => { ignorar = true; };
   }, [id]);
 
+  // Avisar a la ficha qué rol tiene (a los administradores no se les muestra el mapa)
+  const rolActual = cuenta?.rol;
+  useEffect(() => {
+    if (rolActual) onRol?.(rolActual);
+  }, [rolActual, onRol]);
+
   const abrir = (m: Modo) => {
     setError(null);
     setErrores({});
     setAviso(null);
     setTemporalDada(null);
-    if (m === 'editar' && cuenta) setForm({ nombre: cuenta.nombre, username: cuenta.username, email: cuenta.email ?? '' });
+    if (m === 'editar' && cuenta) setForm({ nombre: cuenta.nombre, username: cuenta.username, email: cuenta.email ?? '', rol: cuenta.rol });
     if (m === 'password') setTemporal(generarPasswordTemporal());
     setModo(m);
   };
@@ -105,12 +119,21 @@ export function CuentaEmpleadoPanel({ id }: { id: number }) {
                 </span>
               )}
             </dd>
+            <dt className="text-slate-500">Rol</dt>
+            <dd className="font-semibold text-miaa-marino">
+              {nombreRol(cuenta.rol)}
+              {esYo && <span className="font-normal text-slate-500"> · eres tú</span>}
+            </dd>
             <dt className="text-slate-500">Usuario</dt>
             <dd className="text-slate-800">{cuenta.username}</dd>
             <dt className="text-slate-500">Correo</dt>
             <dd className="text-slate-800">{cuenta.email ?? '—'}</dd>
-            <dt className="text-slate-500">Aviso de privacidad</dt>
-            <dd className="text-slate-800">{cuenta.avisoPrivacidadFecha ? `Aceptado ${formatoFecha(cuenta.avisoPrivacidadFecha)}` : 'Aún no lo acepta'}</dd>
+            {cuenta.rol === 'NOTIFICADOR' && (
+              <>
+                <dt className="text-slate-500">Aviso de privacidad</dt>
+                <dd className="text-slate-800">{cuenta.avisoPrivacidadFecha ? `Aceptado ${formatoFecha(cuenta.avisoPrivacidadFecha)}` : 'Aún no lo acepta'}</dd>
+              </>
+            )}
             {cuenta.fechaAlta && (<><dt className="text-slate-500">Alta</dt><dd className="text-slate-800">{formatoFecha(cuenta.fechaAlta)}</dd></>)}
           </dl>
         </div>
@@ -130,7 +153,7 @@ export function CuentaEmpleadoPanel({ id }: { id: number }) {
             <button type="button" onClick={() => abrir('password')} className={`${botonSecundario} text-miaa-azul hover:bg-blue-50`}>
               <KeyRound size={15} aria-hidden="true" /> Restablecer contraseña
             </button>
-            {cuenta.habilitado ? (
+            {esYo ? null : cuenta.habilitado ? (
               <button type="button" onClick={() => abrir('baja')} className={`${botonSecundario} text-red-700 hover:bg-red-50`}>
                 <UserX size={15} aria-hidden="true" /> Dar de baja
               </button>
@@ -171,6 +194,23 @@ export function CuentaEmpleadoPanel({ id }: { id: number }) {
           <Campo id="ed-email" etiqueta="Correo" opcional error={errores.email}>
             <input id="ed-email" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} maxLength={120} className={claseInput} />
           </Campo>
+          <div className="sm:col-span-2">
+            <SelectorRol
+              id="ed"
+              valor={form.rol}
+              onChange={(rol) => setForm({ ...form, rol })}
+              deshabilitado={esYo}
+              nota={esYo ? 'No puedes cambiar tu propio rol: pídeselo a otro administrador.' : undefined}
+            />
+            {form.rol !== cuenta.rol && (
+              <p className="mt-2 rounded-xl bg-amber-50 border border-amber-300 px-3 py-2 text-sm text-[#6b4a00]" role="note">
+                El cambio aplica <strong>de inmediato</strong>:{' '}
+                {form.rol === 'ADMIN'
+                  ? 'podrá entrar a este panel y administrar a todos los empleados.'
+                  : 'ya no podrá entrar al panel web; usará la app del celular.'}
+              </p>
+            )}
+          </div>
           <div className="sm:col-span-2 flex gap-2">
             <button type="submit" disabled={guardando} className="inline-flex items-center gap-2 h-11 px-5 rounded-xl bg-miaa-marino text-white font-bold hover:bg-blue-800 disabled:opacity-50">
               {guardando && <LoaderCircle size={16} className="animate-spin" aria-hidden="true" />} Guardar

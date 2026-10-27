@@ -1,0 +1,5 @@
+{
+  "API_URL": "https://192.168.1.50:8500/api/v1",
+  "CERT_DEV": "true",
+  "LATIDO_SEGUNDOS": "30"
+}

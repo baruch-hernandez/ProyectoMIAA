@@ -125,6 +125,7 @@ export interface Empleado {
   disponibilidad: Disponibilidad;
   /** Último latido o inicio de sesión, para el "últ. vez hace 5 min" */
   ultimaConexion: string | null;
+  rol: 'ADMIN' | 'NOTIFICADOR';
 }
 
 /** ↔ Disponibilidad.java */
@@ -189,6 +190,7 @@ export interface CuentaEmpleado {
   avisoPrivacidadFecha: string | null;
   /** Bloqueada por intentos fallidos hasta esta hora (null = no) */
   bloqueadoHasta: string | null;
+  rol: 'ADMIN' | 'NOTIFICADOR';
 }
 
 /** POST /usuarios/empleados  ↔  NuevoEmpleadoDTO.java */
@@ -197,6 +199,8 @@ export interface NuevoEmpleado {
   username: string;
   email: string;
   passwordTemporal: string;
+  /** El admin elige: notificador (app de campo) o administrador (panel web) */
+  rol: 'ADMIN' | 'NOTIFICADOR';
 }
 
 export type EdicionEmpleado = Omit<NuevoEmpleado, 'passwordTemporal'>;

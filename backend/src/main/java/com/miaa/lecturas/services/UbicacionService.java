@@ -83,7 +83,7 @@ public class UbicacionService {
     public UbicacionEmpleadoDTO deEmpleado(Long empleadoId) {
         @SuppressWarnings("null")
         Usuario empleado = usuarioRepository.findById(empleadoId)
-                .filter(u -> "NOTIFICADOR".equals(u.getRol()))
+                .filter(u -> u.getRol() != null) // notificadores y administradores (estos casi nunca comparten)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ese empleado no existe"));
         @SuppressWarnings("null")
         UbicacionEmpleado u = ubicacionRepository.findById(empleadoId).orElse(null);

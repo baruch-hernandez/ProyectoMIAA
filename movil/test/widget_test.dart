@@ -1,30 +1,53 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+// Pruebas unitarias rápidas (sin celular ni backend): flutter test
+import 'dart:convert';
 
-import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:notificador_miaa/auth/sesion.dart';
+import 'package:notificador_miaa/core/api.dart';
 
-import 'package:movil/main.dart';
+String _jwtCon(Map<String, dynamic> payload) {
+  String parte(Map<String, dynamic> m) => base64Url.encode(utf8.encode(jsonEncode(m))).replaceAll('=', '');
+  return '${parte({'alg': 'HS256'})}.${parte(payload)}.firma';
+}
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  test('lee el usuario que regresa POST /auth/login', () {
+    final u = Usuario.desdeLogin({
+      'id': 7,
+      'username': 'notificador1',
+      'role': 'NOTIFICADOR',
+      'nombre': 'Juan Pérez',
+      'tieneQueCambiarPassword': false,
+      'avisoPendiente': true,
+    });
+    expect(u.id, 7);
+    expect(u.rol, 'NOTIFICADOR');
+    expect(u.tieneRequisitos, isTrue);
+  });
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+  test('detecta un token vencido por su "exp"', () {
+    final ahora = DateTime(2026, 10, 20, 12);
+    final segundos = ahora.millisecondsSinceEpoch ~/ 1000;
+    expect(tokenVencido(_jwtCon({'exp': segundos + 3600}), ahora: ahora), isFalse);
+    expect(tokenVencido(_jwtCon({'exp': segundos - 1}), ahora: ahora), isTrue);
+    expect(tokenVencido('basura'), isTrue);
+  });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+  test('traduce el error del backend (cuenta bloqueada)', () {
+    final opciones = RequestOptions(path: '/auth/login');
+    final error = ApiError.de(DioException(
+      requestOptions: opciones,
+      type: DioExceptionType.badResponse,
+      response: Response(requestOptions: opciones, statusCode: 423, data: {
+        'status': 423,
+        'message': 'Tu cuenta se bloqueó por demasiados intentos fallidos.',
+        'codigo': 'CUENTA_BLOQUEADA',
+        'segundos': 900,
+      }),
+    ));
+    expect(error.status, 423);
+    expect(error.codigo, 'CUENTA_BLOQUEADA');
+    expect(error.segundos, 900);
   });
 }

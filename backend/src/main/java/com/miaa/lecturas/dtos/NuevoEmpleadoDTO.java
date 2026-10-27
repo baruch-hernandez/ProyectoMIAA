@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-/** POST /usuarios/empleados — el admin da de alta a un notificador con una contraseña TEMPORAL. */
+/** POST /usuarios/empleados — el admin da de alta a un empleado (notificador o administrador) con una contraseña TEMPORAL. */
 public record NuevoEmpleadoDTO(
         @NotBlank(message = "Escribe el nombre")
         @Size(max = 100, message = "Máximo 100 caracteres")
@@ -20,5 +20,9 @@ public record NuevoEmpleadoDTO(
         String email,
 
         @NotBlank(message = "Escribe una contraseña temporal")
-        String passwordTemporal) {
+        String passwordTemporal,
+
+        /** ADMIN o NOTIFICADOR. Si no viene, NOTIFICADOR (el caso más común). */
+        @Pattern(regexp = "ADMIN|NOTIFICADOR", message = "El rol debe ser ADMIN o NOTIFICADOR")
+        String rol) {
 }
