@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 
 import '../fotos/foto_evidencia.dart';
 import '../fotos/procesador_fotos.dart';
+import '../ubicacion/ubicacion.dart';
 import 'almacen_borrador.dart';
 
 /// Los 11 municipios de Aguascalientes (los mismos que valida ReporteService.java).
@@ -92,7 +93,11 @@ class BorradorReporte extends ChangeNotifier {
         if (bytes != null) fotos.add(FotoEvidencia.desdeJson(json, bytes)); // si el archivo ya no está, se omite
       }
       final clienteId = datos['clienteId'] as String? ?? nuevoUuid();
-      return BorradorReporte._(almacen, clienteId, campos, fotos);
+      final borrador = BorradorReporte._(almacen, clienteId, campos, fotos);
+      final u = datos['ubicacion'];
+      if (u is Map) borrador._ubicacion = Ubicacion.desdeJson(u.cast<String, dynamic>());
+      borrador._editadosGps.addAll((datos['editadosGps'] as List? ?? const []).map((e) => e.toString()));
+      return borrador;
     } catch (_) {
       return BorradorReporte.nuevo(almacen);
     }
@@ -102,12 +107,38 @@ class BorradorReporte extends ChangeNotifier {
   final Map<String, String> _campos;
   final List<FotoEvidencia> _fotos;
   String clienteId;
+  Ubicacion? _ubicacion;
+
+  /// Campos del domicilio que el notificador escribió A MANO: el GPS ya no los toca.
+  final Set<String> _editadosGps = {};
   Future<void> _cola = Future.value();
   bool _desechado = false;
 
   List<FotoEvidencia> get fotos => List.unmodifiable(_fotos);
 
   String campo(String nombre) => _campos[nombre] ?? '';
+
+  /// El punto del domicilio (opcional para el backend).
+  Ubicacion? get ubicacion => _ubicacion;
+
+  Set<String> get editadosGps => Set.unmodifiable(_editadosGps);
+
+  void ponerUbicacion(Ubicacion? ubicacion) {
+    _ubicacion = ubicacion;
+    unawaited(_guardar());
+    _avisar();
+  }
+
+  /// El notificador escribió en un campo: el GPS ya no lo vuelve a llenar.
+  void marcarEditado(String nombre) {
+    if (_editadosGps.add(nombre)) unawaited(_guardar());
+  }
+
+  /// "Volver a llenar con el mapa": el GPS vuelve a mandar en todos los campos.
+  void olvidarEditados() {
+    _editadosGps.clear();
+    unawaited(_guardar());
+  }
 
   /// Tarea 2.2: el reporte NO se puede enviar mientras no tenga al menos una foto.
   /// (Los demás campos los valida el formulario al tocar "Enviar".)
@@ -165,6 +196,8 @@ class BorradorReporte extends ChangeNotifier {
       ..clear()
       ..[CampoReporte.municipio] = municipiosAguascalientes.first;
     clienteId = nuevoUuid();
+    _ubicacion = null;
+    _editadosGps.clear();
     await _almacen.limpiar();
     _avisar();
   }
@@ -174,6 +207,8 @@ class BorradorReporte extends ChangeNotifier {
         'version': 1,
         'clienteId': clienteId,
         'campos': Map<String, String>.from(_campos),
+        if (_ubicacion != null) 'ubicacion': _ubicacion!.aJson(),
+        'editadosGps': _editadosGps.toList(),
         'fotos': [for (final f in _fotos) f.aJson()],
       };
 
@@ -186,8 +221,10 @@ class BorradorReporte extends ChangeNotifier {
       final valor = campo(nombre).trim();
       datos[nombre] = valor.isEmpty && CampoReporte.opcionales.contains(nombre) ? null : valor;
     }
-    datos['latitud'] = null; // el GPS llega en otra tarea
-    datos['longitud'] = null;
+    // Opcional: si no hay punto se mandan null (el backend lo acepta). Si viene, el backend
+    // revisa que esté dentro del contorno del estado.
+    datos['latitud'] = _ubicacion?.lat;
+    datos['longitud'] = _ubicacion?.lng;
     datos['clienteId'] = clienteId;
     datos['fotos'] = [
       for (final f in _fotos)

@@ -17,25 +17,48 @@ class DialogoPermiso extends StatelessWidget {
   static const llaveReintentar = Key('btn-reintentar-permiso');
   static const llaveCancelar = Key('btn-cancelar-permiso');
 
-  bool get _esCamara => tipo == TipoPermiso.camara;
-
   /// Si Android ya no va a preguntar, la única salida es Ajustes.
   bool get _soloAjustes => estado == EstadoPermiso.denegadoPermanente || estado == EstadoPermiso.restringido;
+
+  /// Título, para qué sirve, cómo se llama en Ajustes, qué opción marcar e ícono.
+  ({String titulo, String para, String nombre, String opcion, IconData icono}) get _textos => switch (tipo) {
+        TipoPermiso.camara => (
+            titulo: 'Se necesita la cámara',
+            para: 'Con la cámara tomas la foto de evidencia del domicilio o del medidor. '
+                'Sin ella no se puede adjuntar la foto al reporte.',
+            nombre: 'Cámara',
+            opcion: 'Permitir solo mientras se usa la app',
+            icono: Icons.no_photography,
+          ),
+        TipoPermiso.galeria => (
+            titulo: 'Se necesita acceso a tus fotos',
+            para: 'Con este permiso eliges una foto que ya tienes guardada en el celular.',
+            nombre: 'Fotos y videos',
+            opcion: 'Permitir',
+            icono: Icons.hide_image,
+          ),
+        TipoPermiso.ubicacion => (
+            titulo: 'Se necesita tu ubicación',
+            para: 'Con la ubicación se marca solo el domicilio en el mapa y se llena la dirección. '
+                'Sin ella puedes marcar el punto a mano en el mapa.',
+            nombre: 'Ubicación',
+            opcion: 'Permitir solo mientras se usa la app» y activa «Usar ubicación precisa',
+            icono: Icons.location_off,
+          ),
+      };
 
   @override
   Widget build(BuildContext context) {
     final tema = Theme.of(context);
-    final titulo = _esCamara ? 'Se necesita la cámara' : 'Se necesita acceso a tus fotos';
-    final para = _esCamara
-        ? 'Con la cámara tomas la foto de evidencia del domicilio o del medidor. '
-            'Sin ella no se puede adjuntar la foto al reporte.'
-        : 'Con este permiso eliges una foto que ya tienes guardada en el celular.';
-    final nombrePermiso = _esCamara ? 'Cámara' : 'Fotos y videos';
-    final opcion = _esCamara ? 'Permitir solo mientras se usa la app' : 'Permitir';
+    final textos = _textos;
+    final titulo = textos.titulo;
+    final para = textos.para;
+    final nombrePermiso = textos.nombre;
+    final opcion = textos.opcion;
 
     return AlertDialog(
       key: llave,
-      icon: Icon(_esCamara ? Icons.no_photography : Icons.hide_image, size: 36),
+      icon: Icon(textos.icono, size: 36),
       title: Text(titulo),
       content: SingleChildScrollView(
         child: Column(

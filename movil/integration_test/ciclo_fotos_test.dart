@@ -71,6 +71,9 @@ void main() {
         permisos: permisos,
         fuente: fuente,
         abrirCamara: camara.abrir, // procesador = el real (isolate)
+        gps: FuenteGpsFalsa(),
+        geocodificador: GeocodificadorFalso(),
+        ubicarAlAbrir: false,
       ),
     ));
     await tester.pumpAndSettle();

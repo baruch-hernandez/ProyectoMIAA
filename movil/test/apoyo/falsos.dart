@@ -11,6 +11,9 @@ import 'package:movil/permisos/servicio_permisos.dart';
 import 'package:movil/reportes/almacen_borrador.dart';
 import 'package:movil/reportes/borrador_reporte.dart';
 import 'package:movil/reportes/pantalla_nuevo_reporte.dart';
+import 'package:movil/ubicacion/fuente_gps.dart';
+import 'package:movil/ubicacion/geocodificador.dart';
+import 'package:movil/ubicacion/ubicacion.dart';
 
 /// Simula Android: `consultar` nunca dice "permanente" (igual que permission_handler 13);
 /// `solicitar` regresa lo que se le programe en [respuestas].
@@ -104,6 +107,46 @@ class ProcesadorFalso extends ProcesadorFotos {
   }
 }
 
+/// GPS falso: entrega las lecturas que se le den (y nada más).
+class FuenteGpsFalsa implements FuenteGps {
+  FuenteGpsFalsa({List<LecturaGps>? lecturas, this.activo = true, this.precisa = true})
+      : lecturasProgramadas = lecturas ?? [];
+
+  final List<LecturaGps> lecturasProgramadas;
+  bool activo;
+  bool precisa;
+  int ajustesAbiertos = 0;
+
+  @override
+  Future<bool> servicioActivo() async => activo;
+
+  @override
+  Future<bool> abrirAjustesUbicacion() async {
+    ajustesAbiertos++;
+    return true;
+  }
+
+  @override
+  Future<bool> esPrecisa() async => precisa;
+
+  @override
+  Stream<LecturaGps> lecturas() => Stream.fromIterable(lecturasProgramadas);
+}
+
+/// Geocodificador falso: siempre regresa [resultado] y cuenta las consultas.
+class GeocodificadorFalso implements Geocodificador {
+  GeocodificadorFalso([this.resultado = const SinDireccion()]);
+
+  ResultadoGeocodificacion resultado;
+  int consultas = 0;
+
+  @override
+  Future<ResultadoGeocodificacion> direccionDe(double lat, double lng) async {
+    consultas++;
+    return resultado;
+  }
+}
+
 /// PNG válido y pequeño para que Image.memory no falle en las pruebas.
 Uint8List pngDePrueba() => img.encodePng(img.Image(width: 8, height: 6));
 
@@ -143,6 +186,9 @@ Future<BorradorReporte> abrirFormulario(
   CamaraFalsa? camara,
   EnviarReporte? enviar,
   BorradorReporte? borrador,
+  FuenteGps? gps,
+  Geocodificador? geocodificador,
+  bool ubicarAlAbrir = false,
 }) async {
   await tester.binding.setSurfaceSize(const Size(800, 2400));
   addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -162,6 +208,10 @@ Future<BorradorReporte> abrirFormulario(
       fuente: fuente ?? FuenteFalsa(),
       procesador: procesador ?? ProcesadorFalso(),
       abrirCamara: camaraFalsa.abrir,
+      gps: gps ?? FuenteGpsFalsa(),
+      geocodificador: geocodificador ?? GeocodificadorFalso(),
+      ubicarAlAbrir: ubicarAlAbrir,
+      conMosaicos: false, // sin descargar mapas en las pruebas
     ),
   ));
   await tester.pumpAndSettle();

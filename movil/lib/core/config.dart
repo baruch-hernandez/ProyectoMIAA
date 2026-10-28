@@ -15,4 +15,11 @@ class Config {
 
   /// Cada cuánto se avisa "sigo aquí" al backend (tarea 2.4). El backend da 60 s de margen.
   static const latidoSegundos = int.fromEnvironment('LATIDO_SEGUNDOS', defaultValue: 30);
+
+  /// Geocodificador (coordenadas → dirección). Nominatim público solo para desarrollo:
+  /// en producción, un servidor propio de MIAA.
+  static const geocoderUrl = String.fromEnvironment(
+    'GEOCODER_URL',
+    defaultValue: 'https://nominatim.openstreetmap.org',
+  );
 }

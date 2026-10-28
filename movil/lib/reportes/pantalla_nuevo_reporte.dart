@@ -9,6 +9,13 @@ import '../fotos/pantalla_vista_previa.dart';
 import '../fotos/procesador_fotos.dart';
 import '../permisos/dialogo_permiso.dart';
 import '../permisos/servicio_permisos.dart';
+import '../ubicacion/afinador_gps.dart';
+import '../ubicacion/direccion_gps.dart';
+import '../ubicacion/fuente_gps.dart';
+import '../ubicacion/geocodificador.dart';
+import '../ubicacion/mapa_ags.dart';
+import '../ubicacion/pantalla_elegir_ubicacion.dart';
+import '../ubicacion/ubicacion.dart';
 import 'almacen_borrador.dart';
 import 'borrador_reporte.dart';
 
@@ -20,8 +27,8 @@ typedef AbrirCamara = Future<FotoCruda?> Function(BuildContext context);
 
 /// Formulario del reporte de domicilio con sus fotos de evidencia.
 ///
-/// Todo lo que viene "de afuera" (permisos, cámara, galería, procesamiento, envío) entra por
-/// el constructor: así las pruebas usan versiones falsas sin celular ni backend.
+/// Todo lo que viene "de afuera" (permisos, cámara, galería, procesamiento, GPS, mapa, envío)
+/// entra por el constructor: así las pruebas usan versiones falsas sin celular ni backend.
 class PantallaNuevoReporte extends StatefulWidget {
   const PantallaNuevoReporte({
     super.key,
@@ -31,6 +38,10 @@ class PantallaNuevoReporte extends StatefulWidget {
     this.fuente,
     this.procesador = const ProcesadorFotos(),
     this.abrirCamara = PantallaCamara.abrir,
+    this.gps,
+    this.geocodificador,
+    this.ubicarAlAbrir = true,
+    this.conMosaicos = true,
   });
 
   final BorradorReporte borrador;
@@ -42,6 +53,20 @@ class PantallaNuevoReporte extends StatefulWidget {
   final ProcesadorFotos procesador;
   final AbrirCamara abrirCamara;
 
+  /// null = GPS real (geolocator).
+  final FuenteGps? gps;
+
+  /// null = Nominatim (OpenStreetMap).
+  final Geocodificador? geocodificador;
+
+  /// Como la web: al abrir, si ya hay permiso de ubicación y no hay punto, se ubica solo.
+  final bool ubicarAlAbrir;
+
+  /// false en las pruebas: los mapas no descargan mosaicos.
+  final bool conMosaicos;
+
+  static const llaveGpsFormulario = Key('btn-ubicar-gps');
+  static const llaveMapaFormulario = Key('btn-elegir-mapa');
   static const llaveEnviar = Key('btn-enviar-reporte');
   static const llaveAvisoFoto = Key('aviso-falta-foto');
   static const llaveCamara = Key('btn-foto-camara');
@@ -76,14 +101,125 @@ class _PantallaNuevoReporteState extends State<PantallaNuevoReporte> {
   bool _procesando = false;
   bool _enviando = false;
 
+  late final FuenteGps _gps = widget.gps ?? const FuenteGpsDispositivo();
+  late final Geocodificador _geocodificador = widget.geocodificador ?? GeocodificadorNominatim();
+  final _afinador = AfinadorGps();
+  bool _ubicando = false;
+  double? _precisionUbicando;
+
+  /// La última dirección que dio el mapa (para "Volver a llenar").
+  DireccionGps? _sugerencia;
+
   BorradorReporte get _b => widget.borrador;
 
   @override
+  void initState() {
+    super.initState();
+    if (widget.ubicarAlAbrir && _b.ubicacion == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _ubicarSiYaHayPermiso());
+    }
+  }
+
+  @override
   void dispose() {
+    _afinador.cancelar();
     for (final c in _textos.values) {
       c.dispose();
     }
     super.dispose();
+  }
+
+  // ------------------------------------------------------------------ ubicación del domicilio
+
+  /// Al abrir: solo si el permiso YA está dado (no se interrumpe con un diálogo al entrar).
+  Future<void> _ubicarSiYaHayPermiso() async {
+    final estado = await widget.permisos.consultar(TipoPermiso.ubicacion);
+    if (mounted && estado.permitido) await _ubicarConGps();
+  }
+
+  /// «Mi ubicación»: afina el GPS, pone el punto y llena la dirección sin pisar lo escrito a mano.
+  Future<void> _ubicarConGps() async {
+    if (_ubicando) {
+      _afinador.terminar(); // "usar ya" la mejor lectura
+      return;
+    }
+    setState(() {
+      _ubicando = true;
+      _precisionUbicando = null;
+    });
+    final mejor = await ubicarConGps(
+      context,
+      permisos: widget.permisos,
+      gps: _gps,
+      afinador: _afinador,
+      alMejorar: (l) {
+        if (mounted) setState(() => _precisionUbicando = l.precision);
+      },
+    );
+    if (!mounted) return;
+    setState(() => _ubicando = false);
+    if (mejor == null) return;
+    _b.ponerUbicacion(Ubicacion(lat: mejor.lat, lng: mejor.lng, precision: mejor.precision, fuente: FuenteUbicacion.gps));
+    await _llenarDireccion(mejor.lat, mejor.lng);
+  }
+
+  Future<void> _elegirEnMapa() async {
+    _afinador.cancelar();
+    final r = await PantallaElegirUbicacion.abrir(
+      context,
+      inicial: _b.ubicacion,
+      permisos: widget.permisos,
+      gps: _gps,
+      geocodificador: _geocodificador,
+      conMosaicos: widget.conMosaicos,
+    );
+    if (r == null || !mounted) return;
+    _b.ponerUbicacion(r.ubicacion);
+    final direccion = r.direccion;
+    if (direccion != null) {
+      _aplicarDireccion(direccion);
+    } else {
+      await _llenarDireccion(r.ubicacion.lat, r.ubicacion.lng);
+    }
+  }
+
+  Future<void> _llenarDireccion(double lat, double lng) async {
+    try {
+      final r = await _geocodificador.direccionDe(lat, lng);
+      if (!mounted) return;
+      switch (r) {
+        case DireccionEncontrada(:final direccion):
+          _aplicarDireccion(direccion);
+        case SinDireccion():
+          _avisar('El mapa no tiene la dirección de este punto: escríbela a mano.');
+        case FueraDeAgs():
+          _avisar('Según el mapa el punto no es de Aguascalientes: revisa que sea la casa correcta.');
+      }
+    } catch (_) {
+      _avisar('No se pudo obtener la dirección (¿sin internet?). Llénala a mano.');
+    }
+  }
+
+  /// Llena los campos que el notificador NO ha escrito a mano. Con [forzar] los llena todos.
+  void _aplicarDireccion(DireccionGps direccion, {bool forzar = false}) {
+    final cambios = cambiosPorDireccion(direccion, _b.editadosGps, forzar: forzar);
+    cambios.forEach((campo, valor) {
+      _textos[campo]?.text = valor; // el municipio no tiene controlador: es la lista
+      _b.ponerCampo(campo, valor);
+    });
+    if (forzar) _b.olvidarEditados();
+    setState(() => _sugerencia = direccion);
+    final llenos = cambios.values.where((v) => v.isNotEmpty).length;
+    if (llenos > 0) {
+      _avisar(cambios[CampoReporte.numeroExterior]?.isEmpty ?? false
+          ? 'Dirección llenada con el mapa. Escribe el número exterior.'
+          : 'Dirección llenada con el mapa. Revísala.');
+    }
+  }
+
+  void _quitarUbicacion() {
+    _afinador.cancelar();
+    _b.ponerUbicacion(null);
   }
 
   void _avisar(String texto) {
@@ -224,7 +360,10 @@ class _PantallaNuevoReporteState extends State<PantallaNuevoReporte> {
         maxLines: multilinea ? 8 : 1,
         maxLength: multilinea ? largoMaximo : null,
         inputFormatters: [LengthLimitingTextInputFormatter(largoMaximo), ...formatos],
-        onChanged: (v) => _b.ponerCampo(campo, v),
+        onChanged: (v) {
+          if (camposGps.contains(campo)) _b.marcarEditado(campo); // ya no lo pisa el GPS
+          _b.ponerCampo(campo, v);
+        },
         validator: regla == null ? null : (v) => regla((v ?? '').trim()),
       ),
     );
@@ -251,6 +390,18 @@ class _PantallaNuevoReporteState extends State<PantallaNuevoReporte> {
                     completo: _b.completoDeFotos,
                     alAgregar: _agregarFoto,
                     alQuitar: _quitarFoto,
+                  ),
+                  const SizedBox(height: 12),
+                  _SeccionUbicacion(
+                    ubicacion: _b.ubicacion,
+                    ubicando: _ubicando,
+                    precisionUbicando: _precisionUbicando,
+                    haySugerencia: _sugerencia != null,
+                    conMosaicos: widget.conMosaicos,
+                    alGps: _ubicarConGps,
+                    alMapa: _elegirEnMapa,
+                    alQuitar: _quitarUbicacion,
+                    alRellenar: () => _aplicarDireccion(_sugerencia!, forzar: true),
                   ),
                   const SizedBox(height: 20),
                   Text('Domicilio', style: Theme.of(context).textTheme.titleMedium),
@@ -280,14 +431,17 @@ class _PantallaNuevoReporteState extends State<PantallaNuevoReporte> {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: DropdownButtonFormField<String>(
-                      key: const Key('campo-municipio'),
+                      // La llave cambia con el valor: así la lista se redibuja cuando el GPS lo llena
+                      key: ValueKey('campo-municipio-$municipio'),
                       initialValue: municipiosAguascalientes.contains(municipio) ? municipio : municipiosAguascalientes.first,
                       decoration: const InputDecoration(labelText: 'Municipio', border: OutlineInputBorder()),
                       items: [
                         for (final m in municipiosAguascalientes) DropdownMenuItem(value: m, child: Text(m)),
                       ],
                       onChanged: (m) {
-                        if (m != null) _b.ponerCampo(CampoReporte.municipio, m);
+                        if (m == null) return;
+                        _b.marcarEditado(CampoReporte.municipio);
+                        _b.ponerCampo(CampoReporte.municipio, m);
                       },
                     ),
                   ),
@@ -467,6 +621,108 @@ class _Miniatura extends StatelessWidget {
           Text('${foto.origen.etiqueta} · $hora', style: estilo, maxLines: 1, overflow: TextOverflow.ellipsis),
           Text('Hora: ${foto.origenFecha.clave}', style: estilo, maxLines: 1, overflow: TextOverflow.ellipsis),
         ],
+      ),
+    );
+  }
+}
+
+class _SeccionUbicacion extends StatelessWidget {
+  const _SeccionUbicacion({
+    required this.ubicacion,
+    required this.ubicando,
+    required this.precisionUbicando,
+    required this.haySugerencia,
+    required this.conMosaicos,
+    required this.alGps,
+    required this.alMapa,
+    required this.alQuitar,
+    required this.alRellenar,
+  });
+
+  final Ubicacion? ubicacion;
+  final bool ubicando;
+  final double? precisionUbicando;
+  final bool haySugerencia;
+  final bool conMosaicos;
+  final VoidCallback alGps;
+  final VoidCallback alMapa;
+  final VoidCallback alQuitar;
+  final VoidCallback alRellenar;
+
+  @override
+  Widget build(BuildContext context) {
+    final tema = Theme.of(context);
+    final u = ubicacion;
+    final precision = u?.precision;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.place),
+                const SizedBox(width: 8),
+                Expanded(child: Text('Ubicación del domicilio', style: tema.textTheme.titleMedium)),
+                Text('Opcional', style: tema.textTheme.labelSmall),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (u == null)
+              const Text('Ubica el domicilio: el administrador lo verá en el mapa y la dirección se llena sola.')
+            else ...[
+              VistaUbicacion(ubicacion: u, conMosaicos: conMosaicos),
+              const SizedBox(height: 6),
+              Text(
+                u.fuente == FuenteUbicacion.gps && precision != null
+                    ? 'Con GPS, ±${precision.round()} m'
+                    : 'Marcado a mano en el mapa',
+                style: tema.textTheme.bodySmall,
+              ),
+              if (precision != null && precision > precisionBajaM)
+                Text(
+                  'Precisión baja: puede ser otra casa de la cuadra. Ajústalo en el mapa.',
+                  style: tema.textTheme.bodySmall?.copyWith(color: tema.colorScheme.error),
+                ),
+            ],
+            if (ubicando) ...[
+              const SizedBox(height: 12),
+              const LinearProgressIndicator(),
+              const SizedBox(height: 4),
+              Text(precisionUbicando == null
+                  ? 'Buscando tu ubicación…'
+                  : 'Afinando tu ubicación: ±${precisionUbicando!.round()} m'),
+            ],
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                FilledButton.tonalIcon(
+                  key: PantallaNuevoReporte.llaveGpsFormulario,
+                  onPressed: alGps,
+                  icon: const Icon(Icons.my_location),
+                  label: Text(ubicando ? 'Usar ya' : 'Mi ubicación'),
+                ),
+                OutlinedButton.icon(
+                  key: PantallaNuevoReporte.llaveMapaFormulario,
+                  onPressed: alMapa,
+                  icon: const Icon(Icons.map),
+                  label: Text(u == null ? 'Elegir en el mapa' : 'Ajustar en el mapa'),
+                ),
+                if (u != null)
+                  TextButton.icon(onPressed: alQuitar, icon: const Icon(Icons.close), label: const Text('Quitar')),
+                if (haySugerencia)
+                  TextButton.icon(
+                    onPressed: alRellenar,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Volver a llenar la dirección'),
+                  ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

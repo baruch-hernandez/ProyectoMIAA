@@ -6,7 +6,7 @@ import 'package:permission_handler/permission_handler.dart';
 import '../core/plataforma.dart';
 
 /// Los permisos que usa el reporte.
-enum TipoPermiso { camara, galeria }
+enum TipoPermiso { camara, galeria, ubicacion }
 
 /// El estado de un permiso, ya traducido a lo que le importa a la app (tarea 1.4).
 enum EstadoPermiso {
@@ -60,11 +60,12 @@ abstract class ServicioPermisos {
 class ServicioPermisosAndroid implements ServicioPermisos {
   const ServicioPermisosAndroid();
 
-  /// Cámara → CAMERA.
+  /// Cámara → CAMERA. Ubicación → ACCESS_FINE_LOCATION (solo mientras se usa la app).
   /// Galería → READ_MEDIA_IMAGES en Android 13+ (API 33+) y READ_EXTERNAL_STORAGE en 12 o menos
   /// (así está declarado en el AndroidManifest, con maxSdkVersion="32").
   Future<Permission> _permiso(TipoPermiso tipo) async {
     if (tipo == TipoPermiso.camara) return Permission.camera;
+    if (tipo == TipoPermiso.ubicacion) return Permission.locationWhenInUse;
     final sdk = await Plataforma.sdkAndroid();
     return (sdk ?? 33) >= 33 ? Permission.photos : Permission.storage;
   }
