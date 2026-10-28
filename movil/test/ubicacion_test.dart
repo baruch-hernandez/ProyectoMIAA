@@ -139,6 +139,19 @@ void main() {
       expect(reabierto.editadosGps, contains(CampoReporte.calle));
     });
 
+    test('un borrador de antes del GPS no pierde lo escrito ni por una ubicación dañada', () async {
+      final almacen = AlmacenBorradorEnMemoria()
+        ..datos = {
+          'clienteId': 'x',
+          'campos': {CampoReporte.calle: 'Mi calle', CampoReporte.municipio: 'Aguascalientes'},
+          'ubicacion': {'lat': null},
+        };
+      final b = await BorradorReporte.cargar(almacen);
+      expect(b.campo(CampoReporte.calle), 'Mi calle');
+      expect(b.ubicacion, isNull);
+      expect(b.editadosGps, {CampoReporte.calle}, reason: 'el municipio por defecto no cuenta como escrito');
+    });
+
     test('sin ubicación se mandan null (el backend la acepta opcional)', () {
       final s = BorradorReporte.nuevo(AlmacenBorradorEnMemoria()).aSolicitud();
       expect(s['latitud'], isNull);
@@ -175,7 +188,9 @@ void main() {
       final b = await abrirFormulario(tester, permisos: PermisosFalsos(respuestas: [EstadoPermiso.denegado]));
 
       await tester.tap(find.byKey(PantallaNuevoReporte.llaveGpsFormulario));
-      await tester.pumpAndSettle();
+      // Con el diálogo abierto la barra de progreso sigue animada: pumpAndSettle nunca acabaría
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.text('Se necesita tu ubicación'), findsOneWidget);
       expect(find.byKey(DialogoPermiso.llaveAjustes), findsOneWidget);
@@ -187,12 +202,32 @@ void main() {
       await abrirFormulario(tester, gps: gps);
 
       await tester.tap(find.byKey(PantallaNuevoReporte.llaveGpsFormulario));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
       expect(find.text('La ubicación está apagada'), findsOneWidget);
 
       await tester.tap(find.text('Prender ubicación'));
       await tester.pumpAndSettle();
       expect(gps.ajustesAbiertos, 1);
+    });
+
+    testWidgets('una lectura precisa pero fuera del estado no tapa las buenas', (tester) async {
+      final b = await abrirFormulario(
+        tester,
+        gps: FuenteGpsFalsa(lecturas: [
+          const LecturaGps(lat: 21.8824, lng: -102.2826, precision: 40),
+          const LecturaGps(lat: 19.43, lng: -99.13, precision: 5), // CDMX
+        ]),
+      );
+      await tester.tap(find.byKey(PantallaNuevoReporte.llaveGpsFormulario));
+      await tester.pumpAndSettle();
+      expect(b.ubicacion?.precision, 40);
+    });
+
+    testWidgets('al abrir con la ubicación apagada no sale ningún diálogo', (tester) async {
+      await abrirFormulario(tester, ubicarAlAbrir: true, gps: FuenteGpsFalsa(activo: false));
+      await tester.pumpAndSettle();
+      expect(find.text('La ubicación está apagada'), findsNothing);
     });
 
     testWidgets('al abrir, si YA hay permiso, se ubica solo (como la web)', (tester) async {

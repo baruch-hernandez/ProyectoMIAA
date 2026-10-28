@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 
 import '../fotos/foto_evidencia.dart';
 import '../fotos/procesador_fotos.dart';
+import '../ubicacion/direccion_gps.dart' show camposGps;
 import '../ubicacion/ubicacion.dart';
 import 'almacen_borrador.dart';
 
@@ -94,9 +95,23 @@ class BorradorReporte extends ChangeNotifier {
       }
       final clienteId = datos['clienteId'] as String? ?? nuevoUuid();
       final borrador = BorradorReporte._(almacen, clienteId, campos, fotos);
-      final u = datos['ubicacion'];
-      if (u is Map) borrador._ubicacion = Ubicacion.desdeJson(u.cast<String, dynamic>());
-      borrador._editadosGps.addAll((datos['editadosGps'] as List? ?? const []).map((e) => e.toString()));
+      // Lo de la ubicación es opcional: si viene dañado se descarta solo eso, no el borrador.
+      try {
+        final u = datos['ubicacion'];
+        if (u is Map) borrador._ubicacion = Ubicacion.desdeJson(u.cast<String, dynamic>());
+      } catch (_) {}
+      final editados = datos['editadosGps'];
+      if (editados is List) {
+        borrador._editadosGps.addAll(editados.map((e) => e.toString()));
+      } else {
+        // Borrador de antes del GPS: lo ya escrito cuenta como "a mano" para no pisarlo.
+        for (final c in camposGps) {
+          final v = campos[c] ?? '';
+          if (v.isNotEmpty && !(c == CampoReporte.municipio && v == municipiosAguascalientes.first)) {
+            borrador._editadosGps.add(c);
+          }
+        }
+      }
       return borrador;
     } catch (_) {
       return BorradorReporte.nuevo(almacen);

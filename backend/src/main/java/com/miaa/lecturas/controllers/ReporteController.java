@@ -35,8 +35,8 @@ import java.util.List;
  *   DELETE /reportes/{id}                    borrarlo (primeras 24 h)
  *   GET    /reportes/mios                    mis reportes
  *   POST   /reportes/{id}/notas              agregar una nota
- *   POST   /reportes/{id}/fotos              poner una foto (máx. 3)
- *   DELETE /reportes/{id}/fotos/{fotoId}     quitar una foto
+ *   POST   /reportes/{id}/fotos              poner una foto (máx. 3, primeras 24 h)
+ *   DELETE /reportes/{id}/fotos/{fotoId}     quitar una foto (primeras 24 h)
  *  ADMIN (solo consulta)
  *   GET    /reportes                         los reportes de todos los empleados
  *  AMBOS

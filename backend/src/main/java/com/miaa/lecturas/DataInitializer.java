@@ -4,6 +4,7 @@ import com.miaa.lecturas.entities.Rol;
 import com.miaa.lecturas.entities.Usuario;
 import com.miaa.lecturas.repositories.UsuarioRepository;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
@@ -21,6 +22,7 @@ import org.springframework.stereotype.Component;
  * ⚠️ Solo para desarrollo. En producción los usuarios se dan de alta desde un panel.
  */
 @Component
+@Profile("!prod") // en el servidor real (perfil "prod") NO se crean admin/admin123 ni notificador1
 @Order(1) // después de CatalogoRoles: los roles ya existen
 public class DataInitializer implements CommandLineRunner {
 

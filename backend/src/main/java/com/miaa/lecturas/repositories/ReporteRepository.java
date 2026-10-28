@@ -1,7 +1,9 @@
 package com.miaa.lecturas.repositories;
 
 import com.miaa.lecturas.entities.Reporte;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -36,6 +38,11 @@ public interface ReporteRepository extends JpaRepository<Reporte, Long> {
             WHERE r.id = :id
             """)
     Optional<Reporte> buscarConAutor(@Param("id") Long id);
+
+    /** SELECT ... FOR UPDATE: dos fotos subidas al mismo tiempo se forman y no pasan del máximo. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT r FROM Reporte r WHERE r.id = :id")
+    Optional<Reporte> bloquear(@Param("id") Long id);
 
     /** Para reconocer un reporte reenviado (guardado sin conexión) y no duplicarlo. */
     @Query("""

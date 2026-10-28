@@ -51,21 +51,17 @@ class DialogoPermiso extends StatelessWidget {
   Widget build(BuildContext context) {
     final tema = Theme.of(context);
     final textos = _textos;
-    final titulo = textos.titulo;
-    final para = textos.para;
-    final nombrePermiso = textos.nombre;
-    final opcion = textos.opcion;
 
     return AlertDialog(
       key: llave,
       icon: Icon(textos.icono, size: 36),
-      title: Text(titulo),
+      title: Text(textos.titulo),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(para),
+            Text(textos.para),
             const SizedBox(height: 12),
             if (estado == EstadoPermiso.restringido)
               const Text('Una política de este celular bloquea el permiso. '
@@ -76,11 +72,11 @@ class DialogoPermiso extends StatelessWidget {
               const SizedBox(height: 8),
               const _Paso(numero: 1, texto: 'Toca «Abrir ajustes».'),
               const _Paso(numero: 2, texto: 'Entra a «Permisos».'),
-              _Paso(numero: 3, texto: 'Elige «$nombrePermiso» y marca «$opcion».'),
+              _Paso(numero: 3, texto: 'Elige «${textos.nombre}» y marca «${textos.opcion}».'),
               const _Paso(numero: 4, texto: 'Regresa a la app: se revisa sola.'),
             ] else
-              Text('Toca «Intentar de nuevo» y, cuando Android pregunte, elige «$opcion». '
-                  'También puedes activarlo tú en Ajustes → Permisos → $nombrePermiso.'),
+              Text('Toca «Intentar de nuevo» y, cuando Android pregunte, elige «${textos.opcion}». '
+                  'También puedes activarlo tú en Ajustes → Permisos → ${textos.nombre}.'),
           ],
         ),
       ),

@@ -39,8 +39,8 @@ import java.util.Set;
  *  - El servicio DECIDE: quién puede ver/cambiar qué y qué datos son válidos.
  *
  * Quién puede hacer qué:
- *  - NOTIFICADOR: sube reportes, ve SOLO los suyos, les agrega notas y quita/pone fotos.
- *    Puede CORREGIR o BORRAR su reporte solo en las primeras N horas (configurable):
+ *  - NOTIFICADOR: sube reportes, ve SOLO los suyos y les agrega notas cuando quiera.
+ *    Puede CORREGIR, BORRAR o quitar/poner FOTOS solo en las primeras N horas (configurable):
  *    después queda fijo como evidencia.
  *  - ADMIN: ve TODOS los reportes, pero solo para consultar (no los cambia).
  */
@@ -172,9 +172,12 @@ public class ReporteService {
         return NotaDTO.desde(nota);
     }
 
+    // Las fotos son la evidencia: se cambian solo dentro de la ventana, igual que el domicilio,
+    // y cuentan como edición (el admin ve "Editado").
     @Transactional
     public FotoDTO agregarFoto(UsuarioPrincipal yo, Long reporteId, FotoRequestDTO req) {
-        Reporte r = obtenerParaEditar(yo, reporteId);
+        Reporte r = obtenerParaModificar(yo, reporteId);
+        reporteRepository.bloquear(reporteId); // la otra subida espera aquí hasta que esta termine
         if (fotoRepository.countByReporteId(reporteId) >= MAX_FOTOS) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "El reporte ya tiene " + MAX_FOTOS + " fotos. Borra una para poner otra.");
@@ -182,21 +185,27 @@ public class ReporteService {
         FotoReporte foto = crearFoto(req);
         foto.setReporte(r);
         FotoReporte guardada = fotoRepository.save(foto);
-        r.setFechaActualizacion(LocalDateTime.now());
+        marcarEditado(r);
         return FotoDTO.desde(guardada);
     }
 
     @SuppressWarnings("null")
     @Transactional
     public void borrarFoto(UsuarioPrincipal yo, Long reporteId, Long fotoId) {
-        Reporte r = obtenerParaEditar(yo, reporteId);
+        Reporte r = obtenerParaModificar(yo, reporteId);
         @SuppressWarnings("null")
         FotoReporte foto = fotoRepository.findById(fotoId)
                 // ¿La foto es de ESTE reporte? Si no, para nosotros "no existe".
                 .filter(f -> Objects.equals(f.getReporte().getId(), reporteId))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Esa foto ya no existe"));
         fotoRepository.delete(foto);
-        r.setFechaActualizacion(LocalDateTime.now());
+        marcarEditado(r);
+    }
+
+    private static void marcarEditado(Reporte r) {
+        LocalDateTime ahora = LocalDateTime.now();
+        r.setFechaActualizacion(ahora);
+        r.setFechaEdicion(ahora);
     }
 
     // =====================================================================

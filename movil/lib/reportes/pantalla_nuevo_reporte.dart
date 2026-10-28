@@ -18,6 +18,7 @@ import '../ubicacion/pantalla_elegir_ubicacion.dart';
 import '../ubicacion/ubicacion.dart';
 import 'almacen_borrador.dart';
 import 'borrador_reporte.dart';
+import 'reglas_reporte.dart' as reglas;
 
 /// Manda el reporte al backend (en la app real: ApiReportes.crear).
 typedef EnviarReporte = Future<void> Function(Map<String, dynamic> solicitud);
@@ -93,6 +94,7 @@ class PantallaNuevoReporte extends StatefulWidget {
 
 class _PantallaNuevoReporteState extends State<PantallaNuevoReporte> {
   final _form = GlobalKey<FormState>();
+  final _municipio = GlobalKey<FormFieldState<String>>();
   late final Map<String, TextEditingController> _textos = {
     for (final c in CampoReporte.todos)
       if (c != CampoReporte.municipio) c: TextEditingController(text: widget.borrador.campo(c)),
@@ -134,11 +136,11 @@ class _PantallaNuevoReporteState extends State<PantallaNuevoReporte> {
   /// Al abrir: solo si el permiso YA está dado (no se interrumpe con un diálogo al entrar).
   Future<void> _ubicarSiYaHayPermiso() async {
     final estado = await widget.permisos.consultar(TipoPermiso.ubicacion);
-    if (mounted && estado.permitido) await _ubicarConGps();
+    if (mounted && estado.permitido) await _ubicarConGps(silencioso: true);
   }
 
   /// «Mi ubicación»: afina el GPS, pone el punto y llena la dirección sin pisar lo escrito a mano.
-  Future<void> _ubicarConGps() async {
+  Future<void> _ubicarConGps({bool silencioso = false}) async {
     if (_ubicando) {
       _afinador.terminar(); // "usar ya" la mejor lectura
       return;
@@ -155,6 +157,7 @@ class _PantallaNuevoReporteState extends State<PantallaNuevoReporte> {
       alMejorar: (l) {
         if (mounted) setState(() => _precisionUbicando = l.precision);
       },
+      silencioso: silencioso,
     );
     if (!mounted) return;
     setState(() => _ubicando = false);
@@ -184,6 +187,7 @@ class _PantallaNuevoReporteState extends State<PantallaNuevoReporte> {
   }
 
   Future<void> _llenarDireccion(double lat, double lng) async {
+    setState(() => _sugerencia = null); // la del punto anterior ya no sirve
     try {
       final r = await _geocodificador.direccionDe(lat, lng);
       if (!mounted) return;
@@ -205,6 +209,7 @@ class _PantallaNuevoReporteState extends State<PantallaNuevoReporte> {
     final cambios = cambiosPorDireccion(direccion, _b.editadosGps, forzar: forzar);
     cambios.forEach((campo, valor) {
       _textos[campo]?.text = valor; // el municipio no tiene controlador: es la lista
+      if (campo == CampoReporte.municipio) _municipio.currentState?.didChange(valor);
       _b.ponerCampo(campo, valor);
     });
     if (forzar) _b.olvidarEditados();
@@ -220,6 +225,7 @@ class _PantallaNuevoReporteState extends State<PantallaNuevoReporte> {
   void _quitarUbicacion() {
     _afinador.cancelar();
     _b.ponerUbicacion(null);
+    setState(() => _sugerencia = null);
   }
 
   void _avisar(String texto) {
@@ -323,16 +329,6 @@ class _PantallaNuevoReporteState extends State<PantallaNuevoReporte> {
     }
   }
 
-  // ------------------------------------------------------------------ validaciones
-
-  static String? Function(String) _obligatorio(String mensaje) => (v) => v.isEmpty ? mensaje : null;
-
-  static String? _codigoPostal(String v) =>
-      RegExp(r'^20\d{3}$').hasMatch(v) ? null : 'Debe ser un C.P. de Aguascalientes (20xxx)';
-
-  static String? _descripcion(String v) =>
-      v.length < 10 ? 'Describe el reporte (mínimo 10 caracteres)' : null;
-
   Widget _texto(
     String campo,
     String etiqueta, {
@@ -406,33 +402,33 @@ class _PantallaNuevoReporteState extends State<PantallaNuevoReporte> {
                   const SizedBox(height: 20),
                   Text('Domicilio', style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 12),
-                  _texto(CampoReporte.calle, 'Calle', validar: _obligatorio('La calle es obligatoria')),
+                  _texto(CampoReporte.calle, 'Calle', validar: reglas.obligatorio('La calle es obligatoria')),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
                         child: _texto(CampoReporte.numeroExterior, 'Núm. exterior',
-                            largoMaximo: 20, validar: _obligatorio('Obligatorio')),
+                            largoMaximo: 20, validar: reglas.obligatorio('Obligatorio')),
                       ),
                       const SizedBox(width: 12),
                       Expanded(child: _texto(CampoReporte.numeroInterior, 'Núm. interior', largoMaximo: 20)),
                     ],
                   ),
                   _texto(CampoReporte.colonia, 'Colonia',
-                      largoMaximo: 100, validar: _obligatorio('La colonia es obligatoria')),
+                      largoMaximo: 100, validar: reglas.obligatorio('La colonia es obligatoria')),
                   _texto(
                     CampoReporte.codigoPostal,
                     'Código postal',
                     largoMaximo: 5,
                     teclado: TextInputType.number,
                     formatos: [FilteringTextInputFormatter.digitsOnly],
-                    validar: _codigoPostal,
+                    validar: reglas.codigoPostal,
                   ),
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: DropdownButtonFormField<String>(
-                      // La llave cambia con el valor: así la lista se redibuja cuando el GPS lo llena
-                      key: ValueKey('campo-municipio-$municipio'),
+                      // Cuando el GPS lo llena, _aplicarDireccion le hace didChange por esta llave
+                      key: _municipio,
                       initialValue: municipiosAguascalientes.contains(municipio) ? municipio : municipiosAguascalientes.first,
                       decoration: const InputDecoration(labelText: 'Municipio', border: OutlineInputBorder()),
                       items: [
@@ -450,7 +446,7 @@ class _PantallaNuevoReporteState extends State<PantallaNuevoReporte> {
                   const SizedBox(height: 8),
                   Text('Descripción', style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 12),
-                  _texto(CampoReporte.descripcion, 'Qué se encontró', largoMaximo: 2000, multilinea: true, validar: _descripcion),
+                  _texto(CampoReporte.descripcion, 'Qué se encontró', largoMaximo: 2000, multilinea: true, validar: reglas.descripcion),
                 ],
               ),
             ),

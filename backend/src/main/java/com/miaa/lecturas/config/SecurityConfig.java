@@ -71,7 +71,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/auth/**", "/api/v1/auth/**", "/api/auth/**").permitAll()
                         .requestMatchers("/error").permitAll()
-                        .anyRequest().hasAnyRole("ADMIN", "NOTIFICADOR", "Administrador", "Empleado"))
+                        .anyRequest().hasAnyRole("ADMIN", "NOTIFICADOR"))
 
                 .exceptionHandling(e -> e
                         .authenticationEntryPoint(

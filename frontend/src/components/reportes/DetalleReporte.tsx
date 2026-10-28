@@ -160,6 +160,8 @@ export function DetalleReporte({ volverA }: Props) {
   const r = reporte;
   const ubicacion = r.latitud != null && r.longitud != null ? { lat: r.latitud, lng: r.longitud } : null;
   const editable = r.puedeEditar;
+  // Las fotos son evidencia: solo se cambian dentro de la ventana de corrección (igual que el backend)
+  const fotosEditables = r.puedeModificar;
 
   return (
     <div className="space-y-5">
@@ -243,10 +245,10 @@ export function DetalleReporte({ volverA }: Props) {
               <h2 id="titulo-fotos" className="text-lg font-extrabold text-miaa-marino">
                 Fotos <span className="cifras text-slate-400 font-bold">{r.fotos.length}/{MAX_FOTOS}</span>
               </h2>
-              {editable && <p className="text-xs text-slate-500">Si una salió borrosa, quítala y pon otra.</p>}
+              {fotosEditables && <p className="text-xs text-slate-500">Si una salió borrosa, quítala y pon otra.</p>}
             </div>
 
-            {r.fotos.length === 0 && !editable && <p className="mt-3 text-sm text-slate-600">Este reporte no tiene fotos.</p>}
+            {r.fotos.length === 0 && !fotosEditables && <p className="mt-3 text-sm text-slate-600">Este reporte no tiene fotos.</p>}
 
             <div className="mt-4 flex flex-wrap gap-4">
               {r.fotos.map((f, i) => (
@@ -259,12 +261,12 @@ export function DetalleReporte({ volverA }: Props) {
                   ancho={f.ancho}
                   alto={f.alto}
                   onAbrir={() => setFotoAbierta(f)}
-                  onQuitar={editable ? () => quitarFoto(f.id) : undefined}
+                  onQuitar={fotosEditables ? () => quitarFoto(f.id) : undefined}
                   quitando={quitandoFoto === f.id}
                 />
               ))}
 
-              {editable && r.fotos.length < MAX_FOTOS && (
+              {fotosEditables && r.fotos.length < MAX_FOTOS && (
                 <label className="w-44 h-36 rounded-xl border-2 border-dashed border-miaa-azul/50 bg-blue-50/50 flex flex-col items-center justify-center gap-1.5 text-miaa-azul text-sm font-semibold cursor-pointer hover:bg-blue-50 has-[:focus-visible]:outline has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-miaa-cielo">
                   {subiendoFoto ? <LoaderCircle size={24} className="animate-spin" aria-hidden="true" /> : <Camera size={24} aria-hidden="true" />}
                   {subiendoFoto ? 'Subiendo…' : 'Poner foto'}

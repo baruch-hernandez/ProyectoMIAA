@@ -29,12 +29,15 @@ const precisionBajaM = 60.0;
 
 /// Pide permiso, revisa que la ubicación del celular esté prendida y afina el GPS.
 /// Regresa la mejor lectura DENTRO del estado, o null (y ya avisó por qué).
+/// Con [silencioso] (al abrir el formulario) no sale el diálogo de «ubicación apagada» ni el aviso
+/// de «aproximada»: solo se intenta si todo está listo.
 Future<LecturaGps?> ubicarConGps(
   BuildContext context, {
   required ServicioPermisos permisos,
   required FuenteGps gps,
   required AfinadorGps afinador,
   void Function(LecturaGps lectura)? alMejorar,
+  bool silencioso = false,
 }) async {
   void avisar(String texto) {
     if (context.mounted) {
@@ -44,44 +47,48 @@ Future<LecturaGps?> ubicarConGps(
     }
   }
 
-  if (!await asegurarPermiso(context, permisos, TipoPermiso.ubicacion)) return null;
-
-  if (!await gps.servicioActivo()) {
-    if (!context.mounted) return null;
-    final abrir = await showDialog<bool>(
-      context: context,
-      builder: (contexto) => AlertDialog(
-        icon: const Icon(Icons.location_disabled, size: 36),
-        title: const Text('La ubicación está apagada'),
-        content: const Text('Prende «Ubicación» en el celular para encontrar el domicilio. '
-            'También puedes marcar el punto a mano en el mapa.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.of(contexto).pop(false), child: const Text('Ahora no')),
-          FilledButton(onPressed: () => Navigator.of(contexto).pop(true), child: const Text('Prender ubicación')),
-        ],
-      ),
-    );
-    if (abrir == true) await gps.abrirAjustesUbicacion();
-    return null;
-  }
-
-  if (!await gps.esPrecisa()) {
-    avisar('Tienes la ubicación «aproximada»: activa «Usar ubicación precisa» en Ajustes → Ubicación.');
-  }
-
+  // Todo va dentro del try: si un plugin truena, quien llama no se queda "ubicando" para siempre.
   try {
-    final r = await afinador.afinar(gps.lecturas(), alMejorar: (l) {
-      if (dentroDeAguascalientes(l.lat, l.lng)) alMejorar?.call(l); // lecturas locas se ignoran
-    });
-    final mejor = r.mejor;
-    if (mejor == null) {
-      if (r.fin != FinAfinado.manual) {
-        avisar('No se encontró tu ubicación. Toca el mapa para marcar el punto o llena la dirección a mano.');
-      }
+    if (!await asegurarPermiso(context, permisos, TipoPermiso.ubicacion)) return null;
+
+    if (!await gps.servicioActivo()) {
+      if (silencioso || !context.mounted) return null;
+      final abrir = await showDialog<bool>(
+        context: context,
+        builder: (contexto) => AlertDialog(
+          icon: const Icon(Icons.location_disabled, size: 36),
+          title: const Text('La ubicación está apagada'),
+          content: const Text('Prende «Ubicación» en el celular para encontrar el domicilio. '
+              'También puedes marcar el punto a mano en el mapa.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(contexto).pop(false), child: const Text('Ahora no')),
+            FilledButton(onPressed: () => Navigator.of(contexto).pop(true), child: const Text('Prender ubicación')),
+          ],
+        ),
+      );
+      if (abrir == true) await gps.abrirAjustesUbicacion();
       return null;
     }
-    if (!dentroDeAguascalientes(mejor.lat, mejor.lng)) {
-      avisar('Tu ubicación sale fuera de Aguascalientes. Marca el punto a mano en el mapa.');
+
+    if (!silencioso && !await gps.esPrecisa()) {
+      avisar('Tienes la ubicación «aproximada»: activa «Usar ubicación precisa» en Ajustes → Ubicación.');
+    }
+
+    // Las lecturas fuera del estado ni entran al afinador: una loca pero precisa no tapa las buenas.
+    var huboFuera = false;
+    final dentro = gps.lecturas().where((l) {
+      final ok = dentroDeAguascalientes(l.lat, l.lng);
+      if (!ok) huboFuera = true;
+      return ok;
+    });
+    final r = await afinador.afinar(dentro, alMejorar: alMejorar);
+    final mejor = r.mejor;
+    if (mejor == null) {
+      if (huboFuera) {
+        avisar('Tu ubicación sale fuera de Aguascalientes. Marca el punto a mano en el mapa.');
+      } else if (r.fin != FinAfinado.manual) {
+        avisar('No se encontró tu ubicación. Toca el mapa para marcar el punto o llena la dirección a mano.');
+      }
       return null;
     }
     return mejor;
@@ -150,6 +157,10 @@ class _PantallaElegirUbicacionState extends State<PantallaElegirUbicacion> {
   bool _afinando = false;
   double? _precisionAfinando;
 
+  /// Sin punto inicial, el centro de la ciudad NO es un punto elegido: hay que mover el mapa,
+  /// tocarlo o usar el GPS antes de poder confirmarlo.
+  late bool _elegido = widget.inicial != null;
+
   Timer? _espera;
   int _turno = 0;
   bool _buscando = false;
@@ -194,13 +205,19 @@ class _PantallaElegirUbicacionState extends State<PantallaElegirUbicacion> {
     if (centro == _centro && !porGesto) return;
     setState(() {
       _centro = centro;
-      if (porGesto) _soltarGps(); // lo movieron con el dedo: ya no es el punto del GPS
+      if (porGesto) {
+        _elegido = true;
+        _soltarGps(); // lo movieron con el dedo: ya no es el punto del GPS
+      }
     });
     _programarBusqueda();
   }
 
   void _alTocar(TapPosition _, LatLng punto) {
-    setState(_soltarGps);
+    setState(() {
+      _elegido = true;
+      _soltarGps();
+    });
     _mapa.move(punto, math.max(_mapa.camera.zoom, 17));
   }
 
@@ -215,6 +232,7 @@ class _PantallaElegirUbicacionState extends State<PantallaElegirUbicacion> {
     _mapa.move(punto, l.precision <= 30 ? 18 : 17);
     setState(() {
       _centro = punto;
+      _elegido = true;
       _precision = l.precision;
       _fuente = FuenteUbicacion.gps;
       _precisionAfinando = l.precision;
@@ -386,7 +404,7 @@ class _PantallaElegirUbicacionState extends State<PantallaElegirUbicacion> {
               FilledButton.icon(
                 key: PantallaElegirUbicacion.llaveUsar,
                 style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
-                onPressed: _dentro ? _confirmar : null,
+                onPressed: _dentro && _elegido ? _confirmar : null,
                 icon: const Icon(Icons.check),
                 label: const Text('Usar este punto'),
               ),

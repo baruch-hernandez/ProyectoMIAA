@@ -5,6 +5,7 @@ import '../core/api.dart';
 import '../diagnostico/pantalla_diagnostico.dart';
 import '../presencia/latido.dart';
 import '../reportes/api_reportes.dart';
+import '../reportes/pantalla_mis_reportes.dart';
 import '../reportes/pantalla_nuevo_reporte.dart';
 
 /// Inicio después del login: nuevo reporte (Sprint 2), quién soy (GET /usuarios/yo) y el latido de la 2.4.
@@ -103,6 +104,14 @@ class _PantallaInicioState extends State<PantallaInicio> with WidgetsBindingObse
               ),
               icon: const Icon(Icons.add_a_photo),
               label: const Text('Nuevo reporte'),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              key: const Key('btn-mis-reportes'),
+              style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(52)),
+              onPressed: () => PantallaMisReportes.abrir(context, ApiReportes(widget.sesion.api)),
+              icon: const Icon(Icons.list_alt),
+              label: const Text('Mis reportes'),
             ),
             const SizedBox(height: 16),
             ListenableBuilder(

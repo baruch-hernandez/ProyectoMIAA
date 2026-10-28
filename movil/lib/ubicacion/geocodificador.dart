@@ -59,13 +59,16 @@ class GeocodificadorNominatim implements Geocodificador {
     final guardado = _cache[llave];
     if (guardado != null) return guardado;
 
-    // Máximo 1 petición por segundo
+    // Máximo 1 petición por segundo. El turno se aparta ANTES de esperar: así dos llamadas
+    // encimadas no leen la misma hora y salen juntas.
+    final ahora = DateTime.now();
     final ultima = _ultima;
-    if (ultima != null) {
-      final espera = const Duration(seconds: 1) - DateTime.now().difference(ultima);
-      if (espera > Duration.zero) await Future<void>.delayed(espera);
-    }
-    _ultima = DateTime.now();
+    final turno = ultima == null || ahora.difference(ultima) >= const Duration(seconds: 1)
+        ? ahora
+        : ultima.add(const Duration(seconds: 1));
+    _ultima = turno;
+    final espera = turno.difference(ahora);
+    if (espera > Duration.zero) await Future<void>.delayed(espera);
 
     final respuesta = await _dio.get<dynamic>('/reverse', queryParameters: {
       'format': 'jsonv2',

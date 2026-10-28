@@ -28,7 +28,7 @@ function aCampos(r: ReporteDetalle): Campos {
 
 /**
  * Corregir domicilio, ubicación o descripción de un reporte propio, en las primeras
- * horas después de enviarlo. Las fotos se cambian desde el detalle (sin límite de tiempo).
+ * horas después de enviarlo. Las fotos se cambian desde el detalle (en el mismo plazo).
  */
 export function EditarReporte() {
   const id = Number(useParams().id);

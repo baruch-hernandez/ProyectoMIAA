@@ -66,8 +66,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             UsuarioPrincipal yo = new UsuarioPrincipal(usuario.id(), usuario.username(), usuario.nombre(),
                     cuenta.get().getRol());
 
-            String nombreRol = yo.rol() != null ? yo.rol().toString() : "Empleado";
-            var permisos = List.of(new SimpleGrantedAuthority("ROLE_" + nombreRol));
+            // Sin rol no hay permisos: SecurityConfig lo rechaza con 403
+            var permisos = yo.rol() == null ? List.<SimpleGrantedAuthority>of()
+                    : List.of(new SimpleGrantedAuthority("ROLE_" + yo.rol()));
 
             SecurityContextHolder.getContext()
                     .setAuthentication(new UsernamePasswordAuthenticationToken(yo, null, permisos));

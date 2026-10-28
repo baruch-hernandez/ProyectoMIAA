@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -44,8 +45,11 @@ public class AuthController {
         this.presenciaService = presenciaService;
     }
 
+    // @Transactional: la fila del usuario queda bloqueada (FOR UPDATE) hasta responder, así los
+    // intentos fallidos simultáneos se cuentan uno por uno y el bloqueo no se puede brincar.
     @SuppressWarnings("null")
     @PostMapping("/login")
+    @Transactional
     public ResponseEntity<?> login(@RequestBody LoginRequestDTO request) {
         if (request == null || estaVacio(request.getUsername()) || estaVacio(request.getPassword())) {
             return error(HttpStatus.BAD_REQUEST, "Escribe tu usuario y contraseña.");
@@ -53,10 +57,10 @@ public class AuthController {
 
         String identificador = request.getUsername().trim();
 
-        // 1. Buscar por username o por email (RF-01)
-        Optional<Usuario> usuarioOpt = usuarioRepository.findByUsername(identificador);
+        // 1. Buscar por username o por email (RF-01), sin importar mayúsculas
+        Optional<Usuario> usuarioOpt = usuarioRepository.findParaLoginByUsernameIgnoreCase(identificador);
         if (usuarioOpt.isEmpty()) {
-            usuarioOpt = usuarioRepository.findByEmail(identificador);
+            usuarioOpt = usuarioRepository.findParaLoginByEmailIgnoreCase(identificador);
         }
 
         LocalDateTime ahora = LocalDateTime.now();
@@ -110,8 +114,8 @@ public class AuthController {
         // Generar token JWT
         String token = jwtUtils.generarToken(usuario);
 
-        // Mapear rol normalizado ("Administrador" o "Empleado") (RF-02)
-        String rolNombre = usuario.getRol() != null ? usuario.getRol().toString() : "Empleado";
+        // Rol: ADMIN o NOTIFICADOR (RF-02)
+        String rolNombre = usuario.getRol();
 
         // 4. Estructura de respuesta adaptada exactamente al requerimiento de la Tarea
         // 2.1

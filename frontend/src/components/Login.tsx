@@ -83,7 +83,7 @@ export const Login: React.FC = () => {
       const response = await api.post<LoginResponse>('/auth/login', { username, password });
       
       const { token, user } = response.data;
-      const rol = (user.role as RolUsuario) || 'Empleado';
+      const rol = user.role as RolUsuario;
 
       const usuarioParaGuardar = {
         id: user.id,
