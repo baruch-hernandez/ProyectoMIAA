@@ -1,6 +1,8 @@
 // Tareas 2.2–2.5, 3.4 y 4.1: bloqueo del envío sin foto, vista previa, repetir/confirmar
 // y metadatos persistidos en el borrador.
 //   flutter test test/formulario_reporte_test.dart
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:movil/fotos/foto_evidencia.dart';
@@ -23,6 +25,24 @@ void main() {
 
       await b.quitarFoto(foto.id);
       expect(b.puedeEnviar, isFalse);
+    });
+
+    test('en un celular compartido cada notificador tiene SU borrador', () async {
+      final carpeta = await Directory.systemTemp.createTemp('borrador');
+      addTearDown(() => carpeta.delete(recursive: true));
+      Future<Directory> base() async => carpeta;
+
+      final deAna = BorradorReporte.nuevo(AlmacenBorradorArchivos(usuarioId: 1, carpetaBase: base))
+        ..ponerCampo(CampoReporte.calle, 'Calle de Ana');
+      await deAna.agregarFoto(fotoProcesada(), OrigenFoto.camara);
+
+      final deLuis = await BorradorReporte.cargar(AlmacenBorradorArchivos(usuarioId: 2, carpetaBase: base));
+      expect(deLuis.campo(CampoReporte.calle), isEmpty);
+      expect(deLuis.fotos, isEmpty);
+
+      final otraVezAna = await BorradorReporte.cargar(AlmacenBorradorArchivos(usuarioId: 1, carpetaBase: base));
+      expect(otraVezAna.campo(CampoReporte.calle), 'Calle de Ana');
+      expect(otraVezAna.fotos, hasLength(1));
     });
 
     test('máximo 3 fotos, como el backend', () async {

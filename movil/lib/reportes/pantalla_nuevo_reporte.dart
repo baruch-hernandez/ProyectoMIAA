@@ -75,8 +75,8 @@ class PantallaNuevoReporte extends StatefulWidget {
   static const llaveArchivos = Key('btn-foto-archivos');
 
   /// Carga el borrador guardado en el celular y abre la pantalla. Regresa true si se envió.
-  static Future<bool?> abrir(BuildContext context, {required EnviarReporte enviar}) async {
-    final borrador = await BorradorReporte.cargar(AlmacenBorradorArchivos());
+  static Future<bool?> abrir(BuildContext context, {required int usuarioId, required EnviarReporte enviar}) async {
+    final borrador = await BorradorReporte.cargar(AlmacenBorradorArchivos(usuarioId: usuarioId));
     if (!context.mounted) {
       borrador.dispose();
       return null;

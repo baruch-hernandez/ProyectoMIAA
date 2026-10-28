@@ -144,13 +144,17 @@ public class ReporteService {
     /** NOTIFICADOR: solo los reportes que él subió, del más nuevo al más viejo. */
     @Transactional(readOnly = true)
     public List<ReporteResumenDTO> mios(UsuarioPrincipal yo) {
-        return aResumenes(reporteRepository.buscarDeUsuario(yo.id()));
+        return aResumenes(reporteRepository.buscarDeUsuario(yo.id()),
+                reporteRepository.contarFotosDeUsuario(yo.id()),
+                reporteRepository.contarNotasDeUsuario(yo.id()));
     }
 
     /** ADMIN: los reportes de todos los empleados. */
     @Transactional(readOnly = true)
     public List<ReporteResumenDTO> todos() {
-        return aResumenes(reporteRepository.buscarTodos());
+        return aResumenes(reporteRepository.buscarTodos(),
+                reporteRepository.contarFotosDeTodos(),
+                reporteRepository.contarNotasDeTodos());
     }
 
     @Transactional(readOnly = true)
@@ -314,15 +318,11 @@ public class ReporteService {
         return (s == null || s.isBlank()) ? null : s.trim();
     }
 
-    /** Lista → resúmenes, contando fotos y notas con 2 consultas en total (no 2 por reporte). */
-    private List<ReporteResumenDTO> aResumenes(List<Reporte> reportes) {
-        if (reportes.isEmpty()) {
-            return List.of();
-        }
-        @SuppressWarnings("null")
-        List<Long> ids = reportes.stream().map(Reporte::getId).toList();
-        Map<Long, Long> fotos = aMapa(reporteRepository.contarFotos(ids));
-        Map<Long, Long> notas = aMapa(reporteRepository.contarNotas(ids));
+    /** Lista → resúmenes, con los conteos de fotos y notas ya hechos (2 consultas, no 2 por reporte). */
+    static List<ReporteResumenDTO> aResumenes(List<Reporte> reportes, List<Object[]> conteoFotos,
+                                              List<Object[]> conteoNotas) {
+        Map<Long, Long> fotos = aMapa(conteoFotos);
+        Map<Long, Long> notas = aMapa(conteoNotas);
         return reportes.stream()
                 .map(r -> ReporteResumenDTO.desde(r, fotos.getOrDefault(r.getId(), 0L), notas.getOrDefault(r.getId(), 0L)))
                 .toList();

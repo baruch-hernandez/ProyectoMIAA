@@ -37,7 +37,7 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('negar permiso → Ajustes → cámara → repetir → confirmar → galería → archivo inválido', (tester) async {
-    final almacen = AlmacenBorradorArchivos();
+    final almacen = AlmacenBorradorArchivos(usuarioId: 1);
     await almacen.limpiar();
     final borrador = BorradorReporte.nuevo(almacen);
 
@@ -117,7 +117,7 @@ void main() {
     expect(borrador.fotos, hasLength(2));
 
     // --- Quedó guardado en el disco del celular con sus metadatos ---
-    final reabierto = await BorradorReporte.cargar(AlmacenBorradorArchivos());
+    final reabierto = await BorradorReporte.cargar(AlmacenBorradorArchivos(usuarioId: 1));
     expect(reabierto.fotos, hasLength(2));
     expect(reabierto.fotos.map((f) => f.origen), [OrigenFoto.camara, OrigenFoto.galeria]);
     expect(reabierto.fotos.last.origenFecha, OrigenFechaFoto.exif);

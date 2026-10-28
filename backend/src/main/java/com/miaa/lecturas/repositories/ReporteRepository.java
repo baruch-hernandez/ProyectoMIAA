@@ -7,7 +7,6 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -52,13 +51,21 @@ public interface ReporteRepository extends JpaRepository<Reporte, Long> {
             """)
     Optional<Reporte> buscarPorClienteId(@Param("clienteId") String clienteId);
 
-    /** [reporteId, número de fotos] — para la lista, sin traer las imágenes. */
-    @Query("SELECT f.reporte.id, COUNT(f) FROM FotoReporte f WHERE f.reporte.id IN :ids GROUP BY f.reporte.id")
-    List<Object[]> contarFotos(@Param("ids") Collection<Long> ids);
+    // [reporteId, número de fotos/notas] para las listas, sin traer las imágenes.
+    // Se filtra por autor y NO con "IN (:ids)": PostgreSQL acepta máx. ~32 mil parámetros por
+    // consulta, y con todos los ids la lista del admin tronaba al pasar de ese número de reportes.
 
-    /** [reporteId, número de notas] */
-    @Query("SELECT n.reporte.id, COUNT(n) FROM NotaReporte n WHERE n.reporte.id IN :ids GROUP BY n.reporte.id")
-    List<Object[]> contarNotas(@Param("ids") Collection<Long> ids);
+    @Query("SELECT f.reporte.id, COUNT(f) FROM FotoReporte f GROUP BY f.reporte.id")
+    List<Object[]> contarFotosDeTodos();
+
+    @Query("SELECT n.reporte.id, COUNT(n) FROM NotaReporte n GROUP BY n.reporte.id")
+    List<Object[]> contarNotasDeTodos();
+
+    @Query("SELECT f.reporte.id, COUNT(f) FROM FotoReporte f WHERE f.reporte.creadoPor.id = :usuarioId GROUP BY f.reporte.id")
+    List<Object[]> contarFotosDeUsuario(@Param("usuarioId") Long usuarioId);
+
+    @Query("SELECT n.reporte.id, COUNT(n) FROM NotaReporte n WHERE n.reporte.creadoPor.id = :usuarioId GROUP BY n.reporte.id")
+    List<Object[]> contarNotasDeUsuario(@Param("usuarioId") Long usuarioId);
 
     /** [usuarioId, cuántos reportes, fecha del último] — para saber si un empleado está activo. */
     @Query("SELECT r.creadoPor.id, COUNT(r), MAX(r.fechaCreacion) FROM Reporte r GROUP BY r.creadoPor.id")

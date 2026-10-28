@@ -17,18 +17,20 @@ abstract class AlmacenBorrador {
   Future<void> limpiar();
 }
 
-/// En la carpeta PRIVADA de la app (no aparece en la galería ni la ven otras apps):
-///   <documentos>/borrador_reporte/borrador.json
-///   <documentos>/borrador_reporte/fotos/<id>.jpg
+/// En la carpeta PRIVADA de la app (no aparece en la galería ni la ven otras apps),
+/// UNA POR NOTIFICADOR: en un celular compartido nadie ve ni envía el borrador de otro.
+///   `<documentos>/borrador_reporte/<usuarioId>/borrador.json`
+///   `<documentos>/borrador_reporte/<usuarioId>/fotos/<id>.jpg`
 class AlmacenBorradorArchivos implements AlmacenBorrador {
-  AlmacenBorradorArchivos({Future<Directory> Function()? carpetaBase})
+  AlmacenBorradorArchivos({required this.usuarioId, Future<Directory> Function()? carpetaBase})
       : _carpetaBase = carpetaBase ?? getApplicationDocumentsDirectory;
 
+  final int usuarioId;
   final Future<Directory> Function() _carpetaBase;
   Directory? _carpeta;
 
   Future<Directory> _raiz() async {
-    final c = _carpeta ??= Directory('${(await _carpetaBase()).path}/borrador_reporte');
+    final c = _carpeta ??= Directory('${(await _carpetaBase()).path}/borrador_reporte/$usuarioId');
     await Directory('${c.path}/fotos').create(recursive: true);
     return c;
   }

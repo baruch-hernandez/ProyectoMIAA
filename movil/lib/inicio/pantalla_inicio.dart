@@ -100,6 +100,7 @@ class _PantallaInicioState extends State<PantallaInicio> with WidgetsBindingObse
               style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(56)),
               onPressed: () => PantallaNuevoReporte.abrir(
                 context,
+                usuarioId: widget.sesion.usuario!.id, // Inicio solo se ve con sesión
                 enviar: (solicitud) => ApiReportes(widget.sesion.api).crear(solicitud),
               ),
               icon: const Icon(Icons.add_a_photo),

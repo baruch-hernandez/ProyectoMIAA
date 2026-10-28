@@ -2,6 +2,7 @@ package com.miaa.lecturas.services;
 
 import com.miaa.lecturas.config.UsuarioPrincipal;
 import com.miaa.lecturas.dtos.ReporteEdicionDTO;
+import com.miaa.lecturas.dtos.ReporteResumenDTO;
 import com.miaa.lecturas.entities.Reporte;
 import com.miaa.lecturas.entities.Usuario;
 import com.miaa.lecturas.repositories.FotoReporteRepository;
@@ -89,6 +90,24 @@ class ReporteServiceTest {
         assertEquals(403, status(assertThrows(ResponseStatusException.class,
                 () -> servicio.borrarFoto(AUTOR, 5L, 7L))));
         verify(fotos, never()).delete(any());
+    }
+
+    @Test
+    void laListaJuntaLosConteosYLosQueNoTienenFotosQuedanEnCero() {
+        reporte(1);
+        Reporte conFotos = reportes.buscarConAutor(5L).orElseThrow();
+        conFotos.setDescripcion("Medidor sin sello");
+        Reporte sinNada = new Reporte();
+        sinNada.setId(6L);
+        sinNada.setCreadoPor(conFotos.getCreadoPor());
+        sinNada.setDescripcion("Toma clandestina");
+
+        List<Object[]> fotosPorReporte = List.<Object[]>of(new Object[] { 5L, 3L });
+        List<ReporteResumenDTO> lista = ReporteService.aResumenes(List.of(conFotos, sinNada), fotosPorReporte, List.of());
+
+        assertEquals(3L, lista.get(0).totalFotos());
+        assertEquals(0L, lista.get(1).totalFotos());
+        assertEquals(0L, lista.get(1).totalNotas());
     }
 
     @Test
