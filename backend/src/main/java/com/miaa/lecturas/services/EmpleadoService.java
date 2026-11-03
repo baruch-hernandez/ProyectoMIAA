@@ -61,7 +61,7 @@ public class EmpleadoService {
         List<EmpleadoDTO> empleados = java.util.stream.Stream.concat(
                         usuarioRepository.findByRolOrderByNombreAsc(Rol.NOTIFICADOR).stream(),
                         usuarioRepository.findByRolOrderByNombreAsc(Rol.ADMIN).stream())
-                .sorted(java.util.Comparator.comparing(Usuario::getNombre,
+                .sorted(java.util.Comparator.comparing((Usuario u) -> u.getNombre(),
                         java.util.Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
                 .map(u -> {
                     Object[] s = stats.get(u.getId());

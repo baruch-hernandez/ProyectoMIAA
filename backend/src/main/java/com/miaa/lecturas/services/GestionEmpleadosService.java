@@ -164,8 +164,7 @@ public class GestionEmpleadosService {
     /** Antes de quitarle lo de admin (o darlo de baja): que quede al menos otro administrador activo. */
     private void exigirOtroAdministrador(Long id) {
         long otros = usuarioRepository.findByRolOrderByNombreAsc(Rol.ADMIN).stream()
-                .filter(Usuario::estaHabilitado)
-                .filter(a -> !Objects.equals(a.getId(), id))
+                .filter(a -> a.estaHabilitado() && !Objects.equals(a.getId(), id))
                 .count();
         if (otros == 0) {
             throw conflicto("Debe quedar al menos un administrador activo. Da de alta a otro antes de hacer este cambio.");

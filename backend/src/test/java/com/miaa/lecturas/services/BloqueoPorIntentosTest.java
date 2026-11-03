@@ -21,10 +21,10 @@ class BloqueoPorIntentosTest {
     @Test
     void cuatroFallosNoBloqueanYCuentanLosIntentosRestantes() {
         Usuario u = new Usuario();
-        BloqueoPorIntentos.Fallo fallo = null;
-        for (int i = 1; i <= 4; i++) {
-            fallo = bloqueo.registrarFallo(u, AHORA);
+        for (int i = 1; i < 4; i++) {
+            bloqueo.registrarFallo(u, AHORA);
         }
+        BloqueoPorIntentos.Fallo fallo = bloqueo.registrarFallo(u, AHORA); // el 4º
         assertFalse(fallo.bloqueo());
         assertEquals(1, fallo.intentosRestantes());
         assertNull(bloqueo.bloqueadaHasta(u, AHORA));
@@ -33,10 +33,10 @@ class BloqueoPorIntentosTest {
     @Test
     void elQuintoFalloBloqueaQuinceMinutos() {
         Usuario u = new Usuario();
-        BloqueoPorIntentos.Fallo fallo = null;
-        for (int i = 1; i <= 5; i++) {
-            fallo = bloqueo.registrarFallo(u, AHORA);
+        for (int i = 1; i < 5; i++) {
+            bloqueo.registrarFallo(u, AHORA);
         }
+        BloqueoPorIntentos.Fallo fallo = bloqueo.registrarFallo(u, AHORA); // el 5º
         assertTrue(fallo.bloqueo());
         assertEquals(AHORA.plusMinutes(15), fallo.bloqueadoHasta());
         assertNotNull(bloqueo.bloqueadaHasta(u, AHORA.plusMinutes(14)));

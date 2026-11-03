@@ -34,6 +34,7 @@ import static org.mockito.Mockito.when;
 /**
  * Quién puede ver y cambiar qué reporte. Sin base de datos: los repositorios son "mocks" (Mockito).
  */
+@SuppressWarnings("null") // any() de Mockito devuelve null a propósito
 class ReporteServiceTest {
 
     private static final UsuarioPrincipal AUTOR = new UsuarioPrincipal(10L, "autor", "Autor", "NOTIFICADOR");

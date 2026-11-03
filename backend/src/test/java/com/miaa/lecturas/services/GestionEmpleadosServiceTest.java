@@ -27,6 +27,7 @@ import static org.mockito.Mockito.when;
  * El admin asigna el rol (NOTIFICADOR o ADMIN) al dar de alta y al editar, con candados para
  * no quedarse sin administradores. Sin base de datos: el repositorio es un "mock" (Mockito).
  */
+@SuppressWarnings("null") // any() de Mockito devuelve null a propósito
 class GestionEmpleadosServiceTest {
 
     private UsuarioRepository repo;

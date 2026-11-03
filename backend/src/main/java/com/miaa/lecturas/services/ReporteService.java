@@ -198,7 +198,6 @@ public class ReporteService {
     @Transactional
     public void borrarFoto(UsuarioPrincipal yo, Long reporteId, Long fotoId) {
         Reporte r = obtenerParaModificar(yo, reporteId);
-        @SuppressWarnings("null")
         FotoReporte foto = fotoRepository.findById(fotoId)
                 // ¿La foto es de ESTE reporte? Si no, para nosotros "no existe".
                 .filter(f -> Objects.equals(f.getReporte().getId(), reporteId))
