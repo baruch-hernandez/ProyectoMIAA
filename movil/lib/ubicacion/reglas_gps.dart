@@ -15,7 +15,7 @@ class ReglasGps {
   /// Casi ningún celular baja de ±3 m (el radio que reporta Android es al 68 %), y bajo techo el
   /// chip GPS no da nada. Pasado este tiempo la foto se puede tomar igual (tarea 1.3): con la
   /// mejor lectura que haya, o sin coordenadas si no hay ninguna que sirva (medidor en interior).
-  static const esperaMaxima = Duration(seconds: 30);
+  static const esperaMaxima = Duration(seconds: 10);
 
   /// Una lectura peor que esto no se graba con la foto: ±20 m ya puede ser la casa de al lado.
   static const precisionMaxima = 20.0;

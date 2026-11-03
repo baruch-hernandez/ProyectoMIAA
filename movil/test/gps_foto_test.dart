@@ -42,14 +42,14 @@ void main() {
     });
 
     test('±3 m: se espera; al cumplirse la espera máxima, se acepta lo mejor del hardware', () {
-      expect(motivo(_con(3), esperando: 10), allOf(contains('±3.0 m'), contains('en 20 s')));
+      expect(motivo(_con(3), esperando: 4), allOf(contains('±3.0 m'), contains('en 6 s')));
       expect(motivo(_con(3), esperando: ReglasGps.esperaMaxima.inSeconds), isNull);
       expect(lecturaParaFoto(_con(3), edad: Duration.zero)!.precision, 3);
     });
 
     test('interior sin señal: pasada la espera se toma igual, pero sin coordenadas', () {
-      expect(motivo(null, esperando: 10), contains('en 20 s'));
-      expect(motivo(null, esperando: 30), isNull);
+      expect(motivo(null, esperando: 4), contains('en 6 s'));
+      expect(motivo(null, esperando: 10), isNull);
       expect(lecturaParaFoto(null, edad: Duration.zero), isNull);
     });
 
