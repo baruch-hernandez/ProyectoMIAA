@@ -18,7 +18,8 @@ import 'foto_evidencia.dart';
 /// - Flash: apagado → automático → linterna (útil dentro de un nicho oscuro).
 /// - El archivo temporal que crea la cámara se borra en cuanto se leen sus bytes.
 /// - Historia 3: semáforo del GPS y obturador bloqueado hasta tener el punto exacto
-///   (ReglasGps); cada foto sale con su lectura GPS y la hora del servidor.
+///   (ReglasGps); cada foto sale con su lectura GPS y la hora del servidor. Bajo techo, pasada
+///   la espera máxima se pasa a wifi/antenas y la foto se puede tomar aunque sea sin coordenadas.
 class PantallaCamara extends StatefulWidget {
   const PantallaCamara({super.key, this.gps = const FuenteGpsDispositivo()});
 
@@ -50,6 +51,9 @@ class _PantallaCamaraState extends State<PantallaCamara> with WidgetsBindingObse
   bool _gpsApagado = false;
   List<String> _avisosGps = const [];
 
+  /// true = ya no solo el chip GPS: también wifi y antenas (el chip no dio el punto a tiempo).
+  bool _respaldo = false;
+
   /// Redibuja cada segundo: la lectura "envejece" y la espera máxima se cumple sin eventos.
   Timer? _tic;
 
@@ -60,7 +64,14 @@ class _PantallaCamaraState extends State<PantallaCamara> with WidgetsBindingObse
     _iniciar();
     _iniciarGps();
     _tic = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (mounted) setState(() {});
+      if (!mounted) return;
+      setState(() {});
+      // Interiores: el chip GPS no ve satélites; wifi y antenas sí dan un punto (menos preciso)
+      final esperando = DateTime.now().difference(_esperandoDesde);
+      if (!_respaldo && _subGps != null && esperando >= ReglasGps.esperaMaxima && _gpsParaFoto() == null) {
+        _respaldo = true;
+        _escuchar(satelital: false);
+      }
     });
   }
 
@@ -105,10 +116,21 @@ class _PantallaCamaraState extends State<PantallaCamara> with WidgetsBindingObse
         _gpsApagado = false;
         _avisosGps = avisos;
         _lectura = null;
+        _respaldo = false;
         _esperandoDesde = DateTime.now();
       });
-      _detenerGps(); // por si otra llamada empezó a escuchar mientras se esperaba
-      _subGps = gps.lecturas(satelital: true).listen(
+      await _escuchar(satelital: true);
+    } catch (_) {
+      if (mounted) setState(() => _gpsApagado = true);
+    }
+  }
+
+  Future<void> _escuchar({required bool satelital}) async {
+    // geolocator tiene UN solo stream: para cambiar de modo hay que soltar el anterior primero
+    await _subGps?.cancel();
+    _subGps = null;
+    if (!mounted) return;
+    _subGps = widget.gps.lecturas(satelital: satelital).listen(
         (l) {
           if (!l.precision.isFinite || l.precision <= 0) return; // Android manda 0 si no sabe la precisión
           if (mounted) {
@@ -122,9 +144,6 @@ class _PantallaCamaraState extends State<PantallaCamara> with WidgetsBindingObse
           if (mounted) setState(() => _gpsApagado = true); // p. ej. apagaron la ubicación
         },
       );
-    } catch (_) {
-      if (mounted) setState(() => _gpsApagado = true);
-    }
   }
 
   void _detenerGps() {
@@ -132,15 +151,18 @@ class _PantallaCamaraState extends State<PantallaCamara> with WidgetsBindingObse
     _subGps = null;
   }
 
-  /// null = ya se puede tomar la foto.
+  Duration get _edadLectura => _lecturaEn == null ? Duration.zero : DateTime.now().difference(_lecturaEn!);
+
+  /// Lo que se graba con la foto (null = va sin coordenadas).
+  LecturaGps? _gpsParaFoto() => lecturaParaFoto(_lectura, edad: _edadLectura);
+
+  /// null = ya se puede tomar la foto. Con la ubicación apagada nunca: si no, apagarla sería el atajo.
   String? _motivoGps() {
     if (_gpsApagado) return 'La ubicación del celular está apagada. Préndela para tomar la foto.';
-    final ahora = DateTime.now();
-    final en = _lecturaEn;
     return motivoParaEsperar(
       _lectura,
-      edad: en == null ? Duration.zero : ahora.difference(en),
-      esperando: ahora.difference(_esperandoDesde),
+      edad: _edadLectura,
+      esperando: DateTime.now().difference(_esperandoDesde),
     );
   }
 
@@ -218,7 +240,7 @@ class _PantallaCamaraState extends State<PantallaCamara> with WidgetsBindingObse
     if (control == null || !control.value.isInitialized || _tomando || control.value.isTakingPicture) return;
     if (_motivoGps() != null) return; // 3.2: sin el punto exacto no hay foto
     // 2.1: el punto y la hora se fijan al tocar el botón, no cuando la cámara termina de guardar
-    final lectura = _lectura;
+    final lectura = _gpsParaFoto();
     final momento = RelojServidor.ahora();
     final desfase = RelojServidor.desfase?.inMilliseconds;
     setState(() => _tomando = true);
@@ -307,7 +329,8 @@ class _PantallaCamaraState extends State<PantallaCamara> with WidgetsBindingObse
             mainAxisSize: MainAxisSize.min,
             children: [
               _IndicadorGps(
-                lectura: _lectura,
+                lectura: _edadLectura <= ReglasGps.lecturaVieja ? _lectura : null,
+                paraFoto: _gpsParaFoto(),
                 motivo: motivo,
                 alPrender: _gpsApagado ? () => widget.gps.abrirAjustesUbicacion() : null,
               ),
@@ -358,9 +381,13 @@ class _PantallaCamaraState extends State<PantallaCamara> with WidgetsBindingObse
 /// Tarea 3.1: semáforo de precisión (verde ≤ 1 m, amarillo 1–5 m, rojo > 5 m) + qué falta.
 /// El color nunca va solo: el texto dice lo mismo para quien no distingue colores.
 class _IndicadorGps extends StatelessWidget {
-  const _IndicadorGps({required this.lectura, required this.motivo, this.alPrender});
+  const _IndicadorGps({required this.lectura, required this.paraFoto, required this.motivo, this.alPrender});
 
+  /// La última lectura, si es reciente (para el color).
   final LecturaGps? lectura;
+
+  /// La que se grabaría con la foto.
+  final LecturaGps? paraFoto;
   final String? motivo;
   final VoidCallback? alPrender;
 
@@ -384,7 +411,10 @@ class _IndicadorGps extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                motivo ?? 'GPS listo: ±${p!.toStringAsFixed(1)} m',
+                motivo ??
+                    (paraFoto != null
+                        ? 'GPS listo: ±${paraFoto!.precision.toStringAsFixed(1)} m'
+                        : 'Sin señal precisa (¿interior?): la foto se guardará sin coordenadas.'),
                 style: const TextStyle(color: Colors.white),
               ),
             ),

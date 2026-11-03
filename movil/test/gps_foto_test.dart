@@ -42,16 +42,27 @@ void main() {
     });
 
     test('±3 m: se espera; al cumplirse la espera máxima, se acepta lo mejor del hardware', () {
-      expect(motivo(_con(3), esperando: 10), contains('±3.0 m'));
+      expect(motivo(_con(3), esperando: 10), allOf(contains('±3.0 m'), contains('en 20 s')));
       expect(motivo(_con(3), esperando: ReglasGps.esperaMaxima.inSeconds), isNull);
+      expect(lecturaParaFoto(_con(3), edad: Duration.zero)!.precision, 3);
     });
 
-    test('ni después de esperar se acepta más de ±20 m', () {
-      expect(motivo(_con(25), esperando: 120), isNotNull);
+    test('interior sin señal: pasada la espera se toma igual, pero sin coordenadas', () {
+      expect(motivo(null, esperando: 10), contains('en 20 s'));
+      expect(motivo(null, esperando: 30), isNull);
+      expect(lecturaParaFoto(null, edad: Duration.zero), isNull);
     });
 
-    test('un punto fuera de Aguascalientes no se acepta aunque sea preciso', () {
-      expect(motivo(const LecturaGps(lat: 19.4326, lng: -99.1332, precision: 0.5)), contains('fuera'));
+    test('más de ±20 m o una lectura vieja no se graban con la foto', () {
+      expect(motivo(_con(25), esperando: 120), isNull);
+      expect(lecturaParaFoto(_con(25), edad: Duration.zero), isNull);
+      expect(lecturaParaFoto(_plaza, edad: const Duration(seconds: 6)), isNull);
+    });
+
+    test('un punto preciso fuera de Aguascalientes no se acepta, ni esperando', () {
+      const cdmx = LecturaGps(lat: 19.4326, lng: -99.1332, precision: 0.5);
+      expect(motivo(cdmx), contains('fuera'));
+      expect(motivo(cdmx, esperando: 120), contains('fuera'));
     });
   });
 
