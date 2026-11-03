@@ -23,4 +23,16 @@ class Plataforma {
     }
     return _sdk;
   }
+
+  /// ¿"Ahorro de batería" prendido? (PowerManager.isPowerSaveMode). Si no se sabe, false.
+  static Future<bool> ahorroEnergia() async {
+    if (!Platform.isAndroid) return false;
+    try {
+      return await _canal.invokeMethod<bool>('ahorroEnergia') ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
 }

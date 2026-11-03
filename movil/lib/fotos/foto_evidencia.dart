@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+import '../ubicacion/ubicacion.dart';
+
 /// De dónde salió la foto (tarea 3.4: trazabilidad de auditoría).
 enum OrigenFoto {
   camara('Cámara'),
@@ -47,6 +49,8 @@ class FotoCruda {
     required this.nombre,
     this.fechaArchivo,
     this.momentoObturador,
+    this.gps,
+    this.desfaseRelojMs,
   });
 
   final Uint8List bytes;
@@ -55,8 +59,14 @@ class FotoCruda {
   /// Fecha de modificación del archivo, si el sistema la dio.
   final DateTime? fechaArchivo;
 
-  /// Solo con la cámara de la app: el instante en que se tocó el botón.
+  /// Solo con la cámara de la app: el instante en que se tocó el botón (hora del servidor).
   final DateTime? momentoObturador;
+
+  /// Solo con la cámara de la app: dónde estaba el notificador al tocar el botón.
+  final LecturaGps? gps;
+
+  /// Cuánto se corrigió el reloj del celular con la hora del servidor (null = sin verificar).
+  final int? desfaseRelojMs;
 }
 
 /// Una foto ya fijada al borrador del reporte (tarea 2.5), con sus metadatos de auditoría.
@@ -71,6 +81,8 @@ class FotoEvidencia {
     required this.fechaCaptura,
     required this.origenFecha,
     required this.fechaAdjunta,
+    this.gps,
+    this.desfaseRelojMs,
   });
 
   final String id;
@@ -92,9 +104,16 @@ class FotoEvidencia {
   /// Cuándo se adjuntó al reporte (UTC).
   final DateTime fechaAdjunta;
 
+  /// Dónde se tomó (solo cámara de la app). null con galería o archivos.
+  final LecturaGps? gps;
+
+  /// servidor − celular al tomarla, en ms. null = la hora no se pudo verificar con el servidor.
+  final int? desfaseRelojMs;
+
   int get pesoBytes => bytes.length;
 
-  /// Lo que se persiste en el borrador. "origen_fecha_foto" agrupa la trazabilidad de auditoría.
+  /// Lo que se persiste en el borrador: archivo, punto, precisión, hora y origen de la hora,
+  /// todo en un solo bloque (tarea 2.3). "origen_fecha_foto" agrupa la trazabilidad de auditoría.
   Map<String, dynamic> aJson() => {
         'id': id,
         'ruta': ruta,
@@ -106,12 +125,15 @@ class FotoEvidencia {
           'fecha_captura': fechaCaptura.toUtc().toIso8601String(),
           'origen_fecha': origenFecha.clave,
           'fecha_adjunta': fechaAdjunta.toUtc().toIso8601String(),
+          if (desfaseRelojMs != null) 'desfase_reloj_ms': desfaseRelojMs,
         },
+        if (gps != null) 'gps': {'lat': gps!.lat, 'lng': gps!.lng, 'precision': gps!.precision},
       };
 
   /// Lee una foto del borrador; los bytes los pone quien la carga (desde el archivo).
   factory FotoEvidencia.desdeJson(Map<String, dynamic> json, Uint8List bytes) {
     final meta = (json['origen_fecha_foto'] as Map).cast<String, dynamic>();
+    final gps = (json['gps'] as Map?)?.cast<String, dynamic>();
     return FotoEvidencia(
       id: json['id'] as String,
       ruta: json['ruta'] as String,
@@ -122,6 +144,14 @@ class FotoEvidencia {
       fechaCaptura: DateTime.parse(meta['fecha_captura'] as String),
       origenFecha: OrigenFechaFoto.desdeClave(meta['origen_fecha'] as String?),
       fechaAdjunta: DateTime.parse(meta['fecha_adjunta'] as String),
+      gps: gps == null
+          ? null
+          : LecturaGps(
+              lat: (gps['lat'] as num).toDouble(),
+              lng: (gps['lng'] as num).toDouble(),
+              precision: (gps['precision'] as num).toDouble(),
+            ),
+      desfaseRelojMs: (meta['desfase_reloj_ms'] as num?)?.toInt(),
     );
   }
 }

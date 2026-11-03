@@ -1,5 +1,6 @@
 import 'package:geolocator/geolocator.dart';
 
+import '../core/plataforma.dart';
 import 'ubicacion.dart';
 
 /// El GPS del celular. Interfaz para poder simularlo en las pruebas.
@@ -13,8 +14,12 @@ abstract class FuenteGps {
   /// false si el usuario dio solo "Ubicación aproximada" (Android 12+): ±1–3 km, no sirve.
   Future<bool> esPrecisa();
 
-  /// Lecturas del GPS mientras se escuchen.
-  Stream<LecturaGps> lecturas();
+  /// ¿Está prendido el "Ahorro de batería"? Android puede espaciar o apagar el GPS (tarea 1.4).
+  Future<bool> ahorroEnergia();
+
+  /// Lecturas del GPS mientras se escuchen. Con [satelital] solo el chip GPS (sin wifi ni
+  /// antenas): tarda más en el primer punto, pero es el que se usa para la foto de evidencia.
+  Stream<LecturaGps> lecturas({bool satelital = false});
 }
 
 /// Implementación real con geolocator (FusedLocationProvider de Google en Android).
@@ -38,11 +43,17 @@ class FuenteGpsDispositivo implements FuenteGps {
   }
 
   @override
-  Stream<LecturaGps> lecturas() => Geolocator.getPositionStream(
+  Future<bool> ahorroEnergia() => Plataforma.ahorroEnergia();
+
+  /// Tarea 1.2: bestForNavigation. Con [satelital], LocationManager de Android en vez del
+  /// FusedLocationProvider de Google, que mezcla wifi y antenas.
+  @override
+  Stream<LecturaGps> lecturas({bool satelital = false}) => Geolocator.getPositionStream(
         locationSettings: AndroidSettings(
-          accuracy: LocationAccuracy.best,
+          accuracy: LocationAccuracy.bestForNavigation,
           distanceFilter: 0,
           intervalDuration: const Duration(seconds: 1),
+          forceLocationManager: satelital,
         ),
       ).map((p) => LecturaGps(lat: p.latitude, lng: p.longitude, precision: p.accuracy));
 }

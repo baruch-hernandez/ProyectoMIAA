@@ -7,9 +7,15 @@
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false"/>
     <uses-permission android:name="android.permission.CAMERA"/>
+    <!-- Sprint 3 (tarea 1.1): ubicación precisa para el punto exacto de cada foto -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
-    <uses-feature android:name="android.hardware.location.gps" android:required="false"/><!-- Android 13+ (API 33+): leer imágenes de la galería -->
+    <!-- Android 14+: el servicio de ubicación en primer plano que trae geolocator
+         (GeolocatorLocationService, foregroundServiceType="location") necesita estos dos -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
+    <uses-feature android:name="android.hardware.location.gps" android:required="false"/>
+    <!-- Android 13+ (API 33+): leer imágenes de la galería -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
     <!-- Android 12 y anteriores (API 32 o menos): el permiso de almacenamiento de siempre -->
     <uses-permission

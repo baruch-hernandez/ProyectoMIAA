@@ -20,6 +20,7 @@ class PantallaVistaPrevia extends StatelessWidget {
   static const llave = Key('vista-previa');
   static const llaveRepetir = Key('btn-repetir-foto');
   static const llaveConfirmar = Key('btn-confirmar-foto');
+  static const llaveTarjetaGps = Key('tarjeta-gps');
 
   static Future<DecisionVistaPrevia?> abrir(BuildContext context, FotoProcesada foto, OrigenFoto origen) =>
       Navigator.of(context).push<DecisionVistaPrevia>(MaterialPageRoute(
@@ -46,17 +47,25 @@ class PantallaVistaPrevia extends StatelessWidget {
       body: Column(
         children: [
           Expanded(
-            child: InteractiveViewer(
-              minScale: 1,
-              maxScale: 6,
-              child: Center(
-                child: Image.memory(
-                  foto.bytes,
-                  fit: BoxFit.contain,
-                  gaplessPlayback: true,
-                  semanticLabel: 'Foto de evidencia para revisar',
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: InteractiveViewer(
+                    minScale: 1,
+                    maxScale: 6,
+                    child: Center(
+                      child: Image.memory(
+                        foto.bytes,
+                        fit: BoxFit.contain,
+                        gaplessPlayback: true,
+                        semanticLabel: 'Foto de evidencia para revisar',
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+                if (foto.gps != null)
+                  Positioned(left: 12, right: 12, top: 12, child: _TarjetaGps(foto: foto)),
+              ],
             ),
           ),
           Padding(
@@ -115,4 +124,49 @@ class PantallaVistaPrevia extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Tarea 3.3: lo que quedó registrado con la foto: punto, margen de error y hora (UTC y local).
+class _TarjetaGps extends StatelessWidget {
+  const _TarjetaGps({required this.foto});
+
+  final FotoProcesada foto;
+
+  @override
+  Widget build(BuildContext context) {
+    final gps = foto.gps!;
+    final utc = foto.fechaCaptura.toUtc();
+    final local = foto.fechaCaptura.toLocal();
+    const estilo = TextStyle(color: Colors.white, fontSize: 13);
+    return IgnorePointer(
+      child: DecoratedBox(
+        key: PantallaVistaPrevia.llaveTarjetaGps,
+        decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.7), borderRadius: BorderRadius.circular(8)),
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Lat ${gps.lat.toStringAsFixed(7)}  ·  Lng ${gps.lng.toStringAsFixed(7)}', style: estilo),
+              Text('Margen de error: ±${gps.precision.toStringAsFixed(1)} m', style: estilo),
+              Text('Hora: ${_hms(local)} local  ·  ${_hms(utc)} UTC', style: estilo),
+              Text(origenDeLaHora(foto.desfaseRelojMs), style: const TextStyle(color: Colors.white70, fontSize: 12)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  static String _hms(DateTime f) => [f.hour, f.minute, f.second].map((n) => n.toString().padLeft(2, '0')).join(':');
+}
+
+/// De dónde salió la hora, para el notificador. [desfaseMs] = servidor − celular.
+String origenDeLaHora(int? desfaseMs) {
+  if (desfaseMs == null) return 'Hora del celular: no se pudo verificar con el servidor.';
+  if (desfaseMs == 0) return 'Hora verificada con el servidor.';
+  final d = Duration(milliseconds: desfaseMs.abs());
+  final cuanto = d.inMinutes >= 1 ? '${d.inMinutes} min' : '${d.inSeconds} s';
+  return 'Hora del servidor: el reloj del celular iba $cuanto ${desfaseMs > 0 ? 'atrasado' : 'adelantado'}.';
 }

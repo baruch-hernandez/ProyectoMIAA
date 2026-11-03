@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * REGLAS DE NEGOCIO de los reportes.
@@ -286,6 +287,7 @@ public class ReporteService {
     private FotoReporte crearFoto(FotoRequestDTO req) {
         ValidadorFotos.Medidas medidas = validadorFotos.validar(req.datos()); // HD o error 400
         validadorFotos.validarFechaCaptura(req.fechaCaptura());
+        validarGpsFoto(req);
 
         FotoReporte f = new FotoReporte();
         f.setDatos(req.datos());
@@ -293,7 +295,28 @@ public class ReporteService {
         f.setAlto(medidas.alto());
         f.setFechaCaptura(req.fechaCaptura()); // la hora en que se TOMÓ (la que pidió MIAA)
         f.setOrigenFecha(req.origenFecha());
+        f.setLatitud(req.latitud());
+        f.setLongitud(req.longitud());
+        f.setPrecisionGps(req.precisionGps());
+        f.setDesfaseRelojMs(req.desfaseRelojMs());
         return f; // fechaSubida la pone @PrePersist
+    }
+
+    /**
+     * Historia 3 (tarea 4.3): el punto de la foto es opcional (la web y la galería no lo tienen),
+     * pero si viene, completo y dentro del estado. Los rangos los revisa FotoRequestDTO.
+     */
+    private void validarGpsFoto(FotoRequestDTO req) {
+        long presentes = Stream.of(req.latitud(), req.longitud(), req.precisionGps())
+                .filter(Objects::nonNull).count();
+        if (presentes == 0) return;
+        if (presentes < 3) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "El GPS de la foto debe traer latitud, longitud y precisión");
+        }
+        if (!limiteAgs.contiene(req.latitud(), req.longitud())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La foto se tomó fuera del estado de Aguascalientes");
+        }
     }
 
     private static ResponseStatusException noEncontrado(Long id) {

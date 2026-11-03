@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:image/image.dart' as img;
 
+import '../ubicacion/ubicacion.dart';
 import 'foto_evidencia.dart';
 
 /// Reglas de las fotos. Las mínimas y el peso salen de ValidadorFotos.java del backend:
@@ -54,6 +55,8 @@ class EntradaFoto {
     required this.ahora,
     this.fechaArchivo,
     this.momentoObturador,
+    this.gps,
+    this.desfaseRelojMs,
   });
 
   final Uint8List bytes;
@@ -65,6 +68,8 @@ class EntradaFoto {
   final DateTime ahora;
   final DateTime? fechaArchivo;
   final DateTime? momentoObturador;
+  final LecturaGps? gps;
+  final int? desfaseRelojMs;
 
   factory EntradaFoto.desde(FotoCruda cruda, {required DateTime momentoSeleccion, DateTime? ahora}) => EntradaFoto(
         bytes: cruda.bytes,
@@ -72,10 +77,12 @@ class EntradaFoto {
         ahora: ahora ?? DateTime.now(),
         fechaArchivo: cruda.fechaArchivo,
         momentoObturador: cruda.momentoObturador,
+        gps: cruda.gps,
+        desfaseRelojMs: cruda.desfaseRelojMs,
       );
 }
 
-/// Resultado: JPEG listo para el reporte + su hora de captura y de dónde salió.
+/// Resultado: JPEG listo para el reporte + su hora de captura, de dónde salió y dónde se tomó.
 class FotoProcesada {
   const FotoProcesada({
     required this.bytes,
@@ -83,6 +90,8 @@ class FotoProcesada {
     required this.alto,
     required this.fechaCaptura,
     required this.origenFecha,
+    this.gps,
+    this.desfaseRelojMs,
   });
 
   final Uint8List bytes;
@@ -90,6 +99,8 @@ class FotoProcesada {
   final int alto;
   final DateTime fechaCaptura;
   final OrigenFechaFoto origenFecha;
+  final LecturaGps? gps;
+  final int? desfaseRelojMs;
 }
 
 /// Procesa la foto en otro isolate para que la pantalla no se congele.
@@ -152,6 +163,16 @@ FotoProcesada procesarFoto(EntradaFoto e) {
     );
   }
 
+  final fecha = resolverFechaCaptura(
+    fechaExif: fechaExif,
+    momentoObturador: e.momentoObturador,
+    fechaArchivo: e.fechaArchivo,
+    momentoSeleccion: e.momentoSeleccion,
+    ahora: e.ahora,
+  );
+  // Tarea 2.4: lo de la cámara de la app se graba en los bytes ANTES de guardarla en el celular.
+  if (e.momentoObturador != null) grabarExif(imagen.exif, fecha.fecha, e.gps);
+
   Uint8List? salida;
   for (final calidad in ReglasFoto.calidades) {
     salida = img.encodeJpg(imagen, quality: calidad);
@@ -161,21 +182,46 @@ FotoProcesada procesarFoto(EntradaFoto e) {
     throw const FotoInvalida('La foto pesa demasiado aun comprimida. Vuelve a tomarla.');
   }
 
-  final fecha = resolverFechaCaptura(
-    fechaExif: fechaExif,
-    momentoObturador: e.momentoObturador,
-    fechaArchivo: e.fechaArchivo,
-    momentoSeleccion: e.momentoSeleccion,
-    ahora: e.ahora,
-  );
-
   return FotoProcesada(
     bytes: salida,
     ancho: imagen.width,
     alto: imagen.height,
     fechaCaptura: fecha.fecha,
     origenFecha: fecha.origen,
+    gps: e.gps,
+    desfaseRelojMs: e.desfaseRelojMs,
   );
+}
+
+/// Tarea 2.4: la hora del disparo (UTC) y el punto GPS en el EXIF, con las etiquetas estándar
+/// (grados/minutos/segundos como fracciones) para que cualquier visor de fotos las lea.
+void grabarExif(img.ExifData exif, DateTime fecha, LecturaGps? gps) {
+  final f = fecha.toUtc();
+  String dos(int n) => n.toString().padLeft(2, '0');
+  exif.exifIfd['DateTimeOriginal'] = '${f.year}:${dos(f.month)}:${dos(f.day)} ${dos(f.hour)}:${dos(f.minute)}:${dos(f.second)}';
+  exif.exifIfd['OffsetTimeOriginal'] = '+00:00';
+  if (gps == null) return;
+  // El setGpsLocation() de la librería escribe un double, que casi ningún visor entiende.
+  final g = exif.gpsIfd;
+  g[0x0000] = img.IfdByteValue.list(Uint8List.fromList([2, 3, 0, 0])); // GPSVersionID
+  g[0x0001] = img.IfdValueAscii(gps.lat < 0 ? 'S' : 'N');
+  g[0x0002] = _gradosMinSeg(gps.lat);
+  g[0x0003] = img.IfdValueAscii(gps.lng < 0 ? 'W' : 'E');
+  g[0x0004] = _gradosMinSeg(gps.lng);
+  g[0x0012] = img.IfdValueAscii('WGS-84'); // GPSMapDatum
+  g[0x001F] = img.IfdValueRational((gps.precision * 100).round(), 100); // GPSHPositioningError (m)
+}
+
+/// 21.88234° → [21/1, 52/1, 564240/10000]: diezmilésimas de segundo (~3 mm).
+/// (La librería no exporta su clase Rational: se arma cada fracción con IfdValueRational.)
+img.IfdValueRational _gradosMinSeg(double grados) {
+  final total = (grados.abs() * 3600 * 10000).round();
+  final partes = [
+    img.IfdValueRational(total ~/ 36000000, 1),
+    img.IfdValueRational(total ~/ 600000 % 60, 1),
+    img.IfdValueRational(total % 600000, 10000),
+  ];
+  return img.IfdValueRational.list([for (final p in partes) p.value.single]);
 }
 
 /// "DateTimeOriginal" (y su zona "OffsetTimeOriginal", si la cámara la escribió).
@@ -209,7 +255,7 @@ DateTime? parsearFechaExif(String? texto, String? zona) {
   return DateTime(p[0], p[1], p[2], p[3], p[4], p[5]).toUtc();
 }
 
-/// Tarea 3.4: qué hora de captura se registra y de dónde salió (EXIF → ARCHIVO → SUBIDA).
+/// Tarea 3.4: qué hora de captura se registra y de dónde salió (disparo → EXIF → ARCHIVO → SUBIDA).
 ({DateTime fecha, OrigenFechaFoto origen}) resolverFechaCaptura({
   DateTime? fechaExif,
   DateTime? momentoObturador,
@@ -220,12 +266,14 @@ DateTime? parsearFechaExif(String? texto, String? zona) {
   bool creible(DateTime f) =>
       f.isAfter(DateTime.utc(2000)) && !f.isAfter(ahora.add(ReglasFoto.toleranciaFuturo));
 
+  // Historia 3 (tarea 2.1): con la cámara de la app manda el instante del disparo, ya corregido
+  // con la hora del servidor. El EXIF de CameraX sale del reloj del celular, que se puede mover.
+  // Sin revisar si es "creíble" contra [ahora]: [ahora] es el reloj del celular, el que se corrigió.
+  if (momentoObturador != null) {
+    return (fecha: momentoObturador.toUtc(), origen: OrigenFechaFoto.archivo);
+  }
   if (fechaExif != null && creible(fechaExif)) {
     return (fecha: fechaExif.toUtc(), origen: OrigenFechaFoto.exif);
-  }
-  // Cámara de la app: el disparo ES la creación del archivo.
-  if (momentoObturador != null && creible(momentoObturador)) {
-    return (fecha: momentoObturador.toUtc(), origen: OrigenFechaFoto.archivo);
   }
   // Galería/archivos: la fecha del archivo vale solo si es anterior a cuando se eligió
   // (si es "de ahorita", es la de la copia que hizo el selector).

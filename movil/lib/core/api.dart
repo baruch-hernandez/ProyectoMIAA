@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
 import 'config.dart';
+import 'reloj.dart';
 
 /// Error de la API ya "traducido": el mensaje es el mismo que manda el backend
 /// ({ status, message, codigo, segundos }), o uno claro si ni siquiera hubo respuesta.
@@ -93,7 +94,12 @@ class Api {
         }
         handler.next(options);
       },
+      onResponse: (respuesta, handler) {
+        RelojServidor.registrar(respuesta.headers.value('date'));
+        handler.next(respuesta);
+      },
       onError: (error, handler) {
+        RelojServidor.registrar(error.response?.headers.value('date')); // un 4xx también trae la hora
         final esLogin = error.requestOptions.path.contains('/auth/login');
         if (error.response?.statusCode == 401 && !esLogin) {
           alExpirar(ApiError.de(error));

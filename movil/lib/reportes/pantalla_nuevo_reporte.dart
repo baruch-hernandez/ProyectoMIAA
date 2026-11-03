@@ -251,6 +251,10 @@ class _PantallaNuevoReporteState extends State<PantallaNuevoReporte> {
       final hayPermiso = await asegurarPermiso(context, widget.permisos, tipo);
       if (!hayPermiso) return;
     }
+    // Historia 3: la foto de la cámara lleva el punto exacto donde se tomó
+    if (origen == OrigenFoto.camara) {
+      if (!mounted || !await asegurarPermiso(context, widget.permisos, TipoPermiso.ubicacion)) return;
+    }
 
     while (true) {
       if (!mounted) return;
@@ -616,6 +620,7 @@ class _Miniatura extends StatelessWidget {
           const SizedBox(height: 4),
           Text('${foto.origen.etiqueta} · $hora', style: estilo, maxLines: 1, overflow: TextOverflow.ellipsis),
           Text('Hora: ${foto.origenFecha.clave}', style: estilo, maxLines: 1, overflow: TextOverflow.ellipsis),
+          if (foto.gps != null) Text('GPS ±${foto.gps!.precision.toStringAsFixed(1)} m', style: estilo),
         ],
       ),
     );

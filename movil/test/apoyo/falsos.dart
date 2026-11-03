@@ -130,7 +130,10 @@ class FuenteGpsFalsa implements FuenteGps {
   Future<bool> esPrecisa() async => precisa;
 
   @override
-  Stream<LecturaGps> lecturas() => Stream.fromIterable(lecturasProgramadas);
+  Future<bool> ahorroEnergia() async => false;
+
+  @override
+  Stream<LecturaGps> lecturas({bool satelital = false}) => Stream.fromIterable(lecturasProgramadas);
 }
 
 /// Geocodificador falso: siempre regresa [resultado] y cuenta las consultas.

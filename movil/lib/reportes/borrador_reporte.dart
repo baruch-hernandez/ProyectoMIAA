@@ -187,6 +187,8 @@ class BorradorReporte extends ChangeNotifier {
       fechaCaptura: procesada.fechaCaptura,
       origenFecha: procesada.origenFecha,
       fechaAdjunta: (ahora ?? DateTime.now()).toUtc(),
+      gps: procesada.gps,
+      desfaseRelojMs: procesada.desfaseRelojMs,
     );
     _fotos.add(foto);
     await _guardar();
@@ -248,6 +250,13 @@ class BorradorReporte extends ChangeNotifier {
           'fechaCaptura': f.fechaCaptura.toUtc().toIso8601String(),
           'origenFecha': f.origenFecha.clave,
           'origenFoto': f.origen.clave,
+          // Historia 3: dónde se tomó (solo cámara de la app) y cuánto se corrigió el reloj
+          if (f.gps != null) ...{
+            'latitud': f.gps!.lat,
+            'longitud': f.gps!.lng,
+            'precisionGps': f.gps!.precision,
+          },
+          if (f.desfaseRelojMs != null) 'desfaseRelojMs': f.desfaseRelojMs,
         },
     ];
     return datos;

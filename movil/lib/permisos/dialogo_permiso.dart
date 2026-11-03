@@ -39,8 +39,9 @@ class DialogoPermiso extends StatelessWidget {
           ),
         TipoPermiso.ubicacion => (
             titulo: 'Se necesita tu ubicación',
-            para: 'Con la ubicación se marca solo el domicilio en el mapa y se llena la dirección. '
-                'Sin ella puedes marcar el punto a mano en el mapa.',
+            para: 'Con la ubicación se marca solo el domicilio en el mapa y cada foto de la cámara '
+                'queda con el punto exacto donde se tomó. Sin ella puedes marcar el punto a mano, '
+                'pero no tomar fotos con la cámara.',
             nombre: 'Ubicación',
             opcion: 'Permitir solo mientras se usa la app» y activa «Usar ubicación precisa',
             icono: Icons.location_off,
