@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -95,11 +96,11 @@ class Api {
         handler.next(options);
       },
       onResponse: (respuesta, handler) {
-        RelojServidor.registrar(respuesta.headers.value('date'));
+        unawaited(RelojServidor.registrarRespuesta(respuesta.headers.value('date')));
         handler.next(respuesta);
       },
       onError: (error, handler) {
-        RelojServidor.registrar(error.response?.headers.value('date')); // un 4xx también trae la hora
+        unawaited(RelojServidor.registrarRespuesta(error.response?.headers.value('date'))); // un 4xx también trae la hora
         final esLogin = error.requestOptions.path.contains('/auth/login');
         if (error.response?.statusCode == 401 && !esLogin) {
           alExpirar(ApiError.de(error));

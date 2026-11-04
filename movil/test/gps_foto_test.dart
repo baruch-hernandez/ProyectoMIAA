@@ -28,6 +28,57 @@ void main() {
     });
   });
 
+  group('mejor lectura de la ventana (2.3)', () {
+    final t0 = DateTime.utc(2026, 11, 4, 12);
+    DateTime en(int s) => t0.add(Duration(seconds: s));
+
+    test('se queda con la más precisa, no con la última', () {
+      final v = VentanaGps()
+        ..agregar(_con(2.8), en(0))
+        ..agregar(_con(3.1), en(1))
+        ..agregar(_con(3.5), en(2));
+      expect(v.mejor(en(2))!.precision, 2.8);
+    });
+
+    test('una lectura que salió de la ventana ya no cuenta', () {
+      final v = VentanaGps()
+        ..agregar(_con(0.9), en(0))
+        ..agregar(_con(3.5), en(4));
+      expect(v.mejor(en(5))!.precision, 0.9);
+      expect(v.mejor(en(6))!.precision, 3.5);
+    });
+
+    test('sin lecturas recientes no hay mejor', () {
+      final v = VentanaGps()..agregar(_con(0.9), en(0));
+      expect(v.mejor(en(6)), isNull);
+    });
+
+    test('nunca inventa precisión: da la lectura tal como llegó', () {
+      final v = VentanaGps()..agregar(_con(3), en(0));
+      expect(v.mejor(en(0)), same(v.mejor(en(1))));
+      expect(semaforoDe(v.mejor(en(0))!.precision), Semaforo.amarillo);
+    });
+  });
+
+  group('bloqueo por hardware (2.4)', () {
+    String? motivo({bool apagado = false, bool aproximada = false, bool ahorro = false}) =>
+        bloqueoDeHardware(gpsApagado: apagado, aproximada: aproximada, ahorro: ahorro);
+
+    test('todo en orden: no bloquea', () {
+      expect(motivo(), isNull);
+    });
+
+    test('ubicación apagada, aproximada o ahorro de batería bloquean y lo dicen', () {
+      expect(motivo(apagado: true), contains('apagada'));
+      expect(motivo(aproximada: true), contains('ubicación precisa'));
+      expect(motivo(ahorro: true), contains('ahorro de batería'));
+    });
+
+    test('la ubicación apagada se avisa primero', () {
+      expect(motivo(apagado: true, ahorro: true), contains('apagada'));
+    });
+  });
+
   group('obturador (1.3 / 3.2)', () {
     String? motivo(LecturaGps? l, {int edad = 0, int esperando = 0}) =>
         motivoParaEsperar(l, edad: Duration(seconds: edad), esperando: Duration(seconds: esperando));
@@ -70,8 +121,9 @@ void main() {
     final disparo = DateTime.utc(2026, 11, 3, 18, 4, 5);
 
     FotoProcesada procesar({LecturaGps? gps}) => procesarFoto(EntradaFoto(
-          // El EXIF de la cámara dice otra hora (reloj del celular movido): manda el disparo
-          bytes: jpgDePrueba(1600, 1200, fechaExif: '2026:11:03 08:00:00', zona: '-06:00'),
+          // El EXIF de la cámara dice otra hora (reloj del celular movido): manda el disparo.
+          // 2560 px: la foto se reduce y el EXIF debe sobrevivir a eso.
+          bytes: jpgDePrueba(2560, 1920, fechaExif: '2026:11:03 08:00:00', zona: '-06:00'),
           momentoSeleccion: disparo,
           ahora: disparo,
           momentoObturador: disparo,
@@ -82,7 +134,7 @@ void main() {
     test('la hora registrada es la del disparo, no la del EXIF que escribió la cámara', () {
       final r = procesar(gps: _plaza);
       expect(r.fechaCaptura, disparo);
-      expect(r.origenFecha, OrigenFechaFoto.archivo);
+      expect(r.origenFecha, OrigenFechaFoto.obturador);
       expect(r.desfaseRelojMs, 3600000);
     });
 
@@ -97,6 +149,13 @@ void main() {
       expect(-grados(0x0004), closeTo(_plaza.lng, 1e-7));
       expect(g[0x001F]!.toDouble(), closeTo(0.8, 1e-9));
       expect(leerFechaExif(exif), disparo);
+    });
+
+    test('ninguna fecha del EXIF conserva la hora del reloj del celular', () {
+      final exif = img.decodeJpgExif(procesar().bytes)!;
+      expect(exif.imageIfd['DateTime'].toString(), '2026:11:03 18:04:05');
+      expect(exif.exifIfd['DateTimeOriginal'].toString(), '2026:11:03 18:04:05');
+      expect(exif.exifIfd['DateTimeDigitized'].toString(), '2026:11:03 18:04:05');
     });
   });
 
@@ -123,6 +182,29 @@ void main() {
       RelojServidor.registrar('ayer');
       expect(RelojServidor.desfase, isNull);
     });
+
+    test('sin red, mover el reloj no cambia la hora de la foto (2.6)', () {
+      // El celular estaba bien cuando contestó el servidor, con 1000 s de prendido
+      final bien = DateTime.utc(2026, 11, 3, 18, 0, 0);
+      RelojServidor.registrar('Tue, 03 Nov 2026 18:00:00 GMT', ahora: bien, arranqueMs: 1000000);
+      // 60 s después, sin red, alguien lo atrasó 1 h. El contador de arranque no se entera.
+      final hora = RelojServidor.ahora(arranqueMs: 1060000);
+      expect(hora, bien.add(const Duration(seconds: 60)));
+      expect(hora.isUtc, isTrue);
+      final movido = bien.subtract(const Duration(minutes: 59));
+      expect(RelojServidor.desfaseDe(hora, celular: movido)!.inMinutes, 60);
+    });
+
+    test('si el reloj no se movió, el desfase sigue en cero (2.6)', () {
+      final bien = DateTime.utc(2026, 11, 3, 18, 0, 0);
+      RelojServidor.registrar('Tue, 03 Nov 2026 18:00:00 GMT', ahora: bien, arranqueMs: 1000000);
+      final hora = RelojServidor.ahora(arranqueMs: 1060000);
+      expect(RelojServidor.desfaseDe(hora, celular: bien.add(const Duration(seconds: 60))), Duration.zero);
+    });
+
+    test('sin ninguna respuesta del servidor la hora queda sin verificar (2.6)', () {
+      expect(RelojServidor.desfaseDe(DateTime.now().toUtc()), isNull);
+    });
   });
 
   test('borrador: la foto guarda su punto y hora en un solo bloque y los manda al backend (2.3)', () async {
@@ -134,7 +216,7 @@ void main() {
         ancho: 1920,
         alto: 1080,
         fechaCaptura: DateTime.utc(2026, 11, 3, 18, 4, 5),
-        origenFecha: OrigenFechaFoto.archivo,
+        origenFecha: OrigenFechaFoto.obturador,
         gps: _plaza,
         desfaseRelojMs: -120000,
       ),
@@ -146,6 +228,7 @@ void main() {
     expect(foto.gps!.lat, _plaza.lat);
     expect(foto.gps!.precision, 0.8);
     expect(foto.desfaseRelojMs, -120000);
+    expect(foto.origenFecha, OrigenFechaFoto.obturador);
 
     final enviada = (reabierto.aSolicitud()['fotos'] as List).single as Map;
     expect(enviada['latitud'], _plaza.lat);
@@ -153,6 +236,8 @@ void main() {
     expect(enviada['precisionGps'], 0.8);
     expect(enviada['desfaseRelojMs'], -120000);
     expect(enviada['fechaCaptura'], '2026-11-03T18:04:05.000Z');
+    expect(enviada['origenFecha'], 'OBTURADOR');
+    expect(enviada['origenFoto'], 'CAMARA');
   });
 
   testWidgets('vista previa: tarjeta con lat, lng, margen de error y hora UTC (3.3)', (tester) async {
@@ -163,7 +248,7 @@ void main() {
           ancho: 1920,
           alto: 1080,
           fechaCaptura: DateTime.utc(2026, 11, 3, 18, 4, 5),
-          origenFecha: OrigenFechaFoto.archivo,
+          origenFecha: OrigenFechaFoto.obturador,
           gps: _plaza,
           desfaseRelojMs: 0,
         ),
@@ -175,6 +260,34 @@ void main() {
     expect(find.text('Margen de error: ±0.8 m'), findsOneWidget);
     expect(find.textContaining('18:04:05 UTC'), findsOneWidget);
     expect(find.text('Hora verificada con el servidor.'), findsOneWidget);
+  });
+
+  group('vista previa sin coordenadas (2.11)', () {
+    Widget pantalla(OrigenFoto origen) => MaterialApp(
+          home: PantallaVistaPrevia(
+            foto: FotoProcesada(
+              bytes: pngDePrueba(),
+              ancho: 1920,
+              alto: 1080,
+              fechaCaptura: DateTime.utc(2026, 11, 3, 18, 4, 5),
+              origenFecha: OrigenFechaFoto.obturador,
+              desfaseRelojMs: 0,
+            ),
+            origen: origen,
+          ),
+        );
+
+    testWidgets('foto de interior: la tarjeta dice que no hay punto y muestra la hora', (tester) async {
+      await tester.pumpWidget(pantalla(OrigenFoto.camara));
+      expect(find.byKey(PantallaVistaPrevia.llaveTarjetaGps), findsOneWidget);
+      expect(find.textContaining('Sin coordenadas'), findsOneWidget);
+      expect(find.textContaining('18:04:05 UTC'), findsOneWidget);
+    });
+
+    testWidgets('foto de galería: sin tarjeta', (tester) async {
+      await tester.pumpWidget(pantalla(OrigenFoto.galeria));
+      expect(find.byKey(PantallaVistaPrevia.llaveTarjetaGps), findsNothing);
+    });
   });
 
   test('origen de la hora, en palabras', () {

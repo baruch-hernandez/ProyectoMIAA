@@ -44,7 +44,7 @@ Las reglas de las fotos salen del backend (`ValidadorFotos.java` y `ReporteServi
 - mínimo 1280×720;
 - ~1.8 MB por foto;
 - JPG o PNG;
-- `origenFecha` con uno de estos valores: EXIF, ARCHIVO o SUBIDA.
+- `origenFecha` con uno de estos valores: OBTURADOR (cámara de la app, desde el Sprint 3), EXIF, ARCHIVO o SUBIDA.
 
 ### ¿De dónde sale la hora de captura? (3.4)
 
@@ -87,7 +87,7 @@ La prueba de integración usa en el emulador **el procesamiento y el disco reale
 | P2 | «Intentar de nuevo» → «No permitir» otra vez | El modal cambia: «Android ya no lo vuelve a preguntar», los pasos 1 a 4 y solo «Abrir ajustes» | ☐ |
 | P3 | «Abrir ajustes» → Permisos → Cámara → «Permitir solo mientras se usa la app» → regresar | La cámara se abre sola, sin volver a tocar nada | ☐ |
 | P4 | Tomar una foto movida a propósito → en la vista previa, hacer zoom | Se nota que no se lee. Al tocar «Repetir foto», la cámara se reabre y esa foto NO aparece en el reporte. | ☐ |
-| P5 | Tomar una foto nítida del medidor → «Usar foto» | Aparece la miniatura «Cámara · hh:mm», con «Hora: EXIF» o «ARCHIVO». **Enviar reporte** se habilita. | ☐ |
+| P5 | Tomar una foto nítida del medidor → «Usar foto» | Aparece la miniatura «Cámara · hh:mm», con «Hora: OBTURADOR». **Enviar reporte** se habilita. | ☐ |
 | P6 | **Galería** → elegir `medidor.jpg` → «Usar foto» | La miniatura dice «Galería» y la hora es la del EXIF de la foto, no la de ahorita | ☐ |
 | P7 | **Archivos** → navegar a Pictures → elegir un PNG | Se adjunta. Los PDF ni siquiera aparecen, por el filtro. | ☐ |
 | P8 | **Archivos** → elegir una imagen de 800×600 | Mensaje «La foto mide 800×600…» y no se adjunta | ☐ |
@@ -105,5 +105,5 @@ Anota en cada caso el modelo o la API del emulador y una captura. Te sirven de e
 - **Galería en Android 13+.** `image_picker` usa el Photo Picker del sistema, que en realidad no necesita `READ_MEDIA_IMAGES`. El permiso se pide igual porque así lo marca la tarea 1.2.
   - Si la app se publica en Google Play, revisa su política: Play restringe `READ_MEDIA_IMAGES` a apps cuyo propósito principal son las fotos. En ese caso convendría quitarlo y quedarse con el Photo Picker.
 - **"Permanentemente denegado" en Android** solo lo informa `request()`, nunca `status`. Así lo marca la guía de `permission_handler` 13, y el código nunca guarda ese veredicto: al volver de Ajustes, consulta de nuevo.
-- **`origenFoto`** (CAMARA, GALERIA o ARCHIVOS) ya viaja en la solicitud, pero el backend todavía no lo guarda (Spring ignora los campos que no conoce). Para auditarlo en el servidor, falta agregar la columna `origen_foto` a `FotoReporte`.
+- **`origenFoto`** (CAMARA, GALERIA o ARCHIVOS) viaja en la solicitud y el backend lo guarda en `fotos_reporte.origen_foto`.
 - **La latitud y la longitud** van en `null` hasta la tarea del GPS.

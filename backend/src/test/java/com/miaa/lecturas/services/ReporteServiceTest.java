@@ -6,6 +6,7 @@ import com.miaa.lecturas.dtos.FotoRequestDTO;
 import com.miaa.lecturas.dtos.ReporteEdicionDTO;
 import com.miaa.lecturas.dtos.ReporteResumenDTO;
 import com.miaa.lecturas.entities.OrigenFechaFoto;
+import com.miaa.lecturas.entities.OrigenFoto;
 import com.miaa.lecturas.entities.Reporte;
 import com.miaa.lecturas.entities.Usuario;
 import com.miaa.lecturas.repositories.FotoReporteRepository;
@@ -63,7 +64,7 @@ class ReporteServiceTest {
     /** Una foto con el GPS que se indique (null = sin GPS, como la web o la galería). */
     private static FotoRequestDTO foto(Double lat, Double lng, Double precision) {
         return new FotoRequestDTO("data:image/jpeg;base64,AAAA", Instant.parse("2026-11-03T18:04:05Z"),
-                OrigenFechaFoto.ARCHIVO, lat, lng, precision, -120000L);
+                OrigenFechaFoto.OBTURADOR, OrigenFoto.CAMARA, lat, lng, precision, -120000L);
     }
 
     /** Un reporte del AUTOR creado hace [horas] horas. */
@@ -144,6 +145,8 @@ class ReporteServiceTest {
         assertEquals(21.88234, f.latitud());
         assertEquals(0.8, f.precisionGps());
         assertEquals(-120000L, f.desfaseRelojMs());
+        assertEquals(OrigenFechaFoto.OBTURADOR, f.origenFecha());
+        assertEquals(OrigenFoto.CAMARA, f.origenFoto());
     }
 
     @Test

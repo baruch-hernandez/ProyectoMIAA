@@ -198,7 +198,11 @@ FotoProcesada procesarFoto(EntradaFoto e) {
 void grabarExif(img.ExifData exif, DateTime fecha, LecturaGps? gps) {
   final f = fecha.toUtc();
   String dos(int n) => n.toString().padLeft(2, '0');
-  exif.exifIfd['DateTimeOriginal'] = '${f.year}:${dos(f.month)}:${dos(f.day)} ${dos(f.hour)}:${dos(f.minute)}:${dos(f.second)}';
+  final texto = '${f.year}:${dos(f.month)}:${dos(f.day)} ${dos(f.hour)}:${dos(f.minute)}:${dos(f.second)}';
+  // Los tres: la cámara dejó en los otros dos la hora del reloj del celular, que se puede mover.
+  exif.imageIfd['DateTime'] = texto;
+  exif.exifIfd['DateTimeOriginal'] = texto;
+  exif.exifIfd['DateTimeDigitized'] = texto;
   exif.exifIfd['OffsetTimeOriginal'] = '+00:00';
   if (gps == null) return;
   // El setGpsLocation() de la librería escribe un double, que casi ningún visor entiende.
@@ -270,7 +274,7 @@ DateTime? parsearFechaExif(String? texto, String? zona) {
   // con la hora del servidor. El EXIF de CameraX sale del reloj del celular, que se puede mover.
   // Sin revisar si es "creíble" contra [ahora]: [ahora] es el reloj del celular, el que se corrigió.
   if (momentoObturador != null) {
-    return (fecha: momentoObturador.toUtc(), origen: OrigenFechaFoto.archivo);
+    return (fecha: momentoObturador.toUtc(), origen: OrigenFechaFoto.obturador);
   }
   if (fechaExif != null && creible(fechaExif)) {
     return (fecha: fechaExif.toUtc(), origen: OrigenFechaFoto.exif);

@@ -63,7 +63,7 @@ class PantallaVistaPrevia extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (foto.gps != null)
+                if (esCamara || foto.gps != null)
                   Positioned(left: 12, right: 12, top: 12, child: _TarjetaGps(foto: foto)),
               ],
             ),
@@ -127,6 +127,7 @@ class PantallaVistaPrevia extends StatelessWidget {
 }
 
 /// Tarea 3.3: lo que quedó registrado con la foto: punto, margen de error y hora (UTC y local).
+/// Una foto de interior puede no traer punto: entonces se dice, y la hora se muestra igual.
 class _TarjetaGps extends StatelessWidget {
   const _TarjetaGps({required this.foto});
 
@@ -134,7 +135,7 @@ class _TarjetaGps extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final gps = foto.gps!;
+    final gps = foto.gps;
     final utc = foto.fechaCaptura.toUtc();
     final local = foto.fechaCaptura.toLocal();
     const estilo = TextStyle(color: Colors.white, fontSize: 13);
@@ -148,8 +149,12 @@ class _TarjetaGps extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Lat ${gps.lat.toStringAsFixed(7)}  ·  Lng ${gps.lng.toStringAsFixed(7)}', style: estilo),
-              Text('Margen de error: ±${gps.precision.toStringAsFixed(1)} m', style: estilo),
+              if (gps == null)
+                const Text('Sin coordenadas: no hubo señal GPS utilizable.', style: estilo)
+              else ...[
+                Text('Lat ${gps.lat.toStringAsFixed(7)}  ·  Lng ${gps.lng.toStringAsFixed(7)}', style: estilo),
+                Text('Margen de error: ±${gps.precision.toStringAsFixed(1)} m', style: estilo),
+              ],
               Text('Hora: ${_hms(local)} local  ·  ${_hms(utc)} UTC', style: estilo),
               Text(origenDeLaHora(foto.desfaseRelojMs), style: const TextStyle(color: Colors.white70, fontSize: 12)),
             ],

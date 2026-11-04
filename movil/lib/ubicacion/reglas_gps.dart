@@ -1,3 +1,4 @@
+import 'afinador_gps.dart';
 import 'limite_ags.dart';
 import 'ubicacion.dart';
 
@@ -32,6 +33,34 @@ Semaforo semaforoDe(double precision) => precision <= ReglasGps.objetivo
     : precision <= ReglasGps.amarillo
         ? Semaforo.amarillo
         : Semaforo.rojo;
+
+/// Tarea 2.3 (backlog actual): la lectura más precisa de los últimos [ReglasGps.lecturaVieja], no
+/// la última que llegó. Si llegan ±2.8, ±3.1 y ±3.5, la foto se queda con ±2.8.
+class VentanaGps {
+  final _lecturas = <({LecturaGps lectura, DateTime en})>[];
+
+  void agregar(LecturaGps lectura, DateTime en) => _lecturas.add((lectura: lectura, en: en));
+
+  LecturaGps? mejor(DateTime ahora) {
+    _lecturas.removeWhere((l) => ahora.difference(l.en) > ReglasGps.lecturaVieja);
+    LecturaGps? mejor;
+    for (final l in _lecturas) {
+      if (esMasPrecisa(l.lectura.precision, mejor?.precision)) mejor = l.lectura;
+    }
+    return mejor;
+  }
+
+  void limpiar() => _lecturas.clear();
+}
+
+/// Tarea 2.4 (backlog actual): lo que impide tomar la foto sin importar la señal, porque el
+/// notificador lo puede arreglar en Ajustes. null = nada.
+String? bloqueoDeHardware({required bool gpsApagado, required bool aproximada, required bool ahorro}) {
+  if (gpsApagado) return 'La ubicación del celular está apagada. Préndela para tomar la foto.';
+  if (aproximada) return 'Activa «Usar ubicación precisa» en Ajustes → Ubicación para tomar la foto.';
+  if (ahorro) return 'Apaga el ahorro de batería para tomar la foto: limita el GPS.';
+  return null;
+}
 
 /// La lectura que se graba con la foto: reciente y de ±[ReglasGps.precisionMaxima] m o mejor.
 /// null = la foto va sin coordenadas (el backend la acepta, igual que una de galería).

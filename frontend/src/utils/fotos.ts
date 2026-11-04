@@ -240,6 +240,8 @@ export async function prepararFoto(archivo: File, ahora = new Date()): Promise<F
 export function textoHoraFoto(fechaCaptura: string, origen: OrigenFechaFoto): { principal: string; detalle?: string } {
   const hora = new Date(fechaCaptura).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
   switch (origen) {
+    case 'OBTURADOR':
+      return { principal: `Tomada ${hora}`, detalle: 'hora del disparo en la cámara de la app' };
     case 'EXIF':
       return { principal: `Tomada ${hora}` };
     case 'ARCHIVO':

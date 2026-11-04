@@ -22,10 +22,13 @@ enum OrigenFoto {
 /// De dónde se sacó la HORA de captura, de más a menos confiable.
 /// Son los mismos valores que el enum OrigenFechaFoto del backend.
 enum OrigenFechaFoto {
+  /// Instante del disparo en la cámara de la app, corregido con la hora del servidor.
+  obturador('disparo'),
+
   /// Metadato EXIF "DateTimeOriginal" que escribe la cámara.
   exif('EXIF'),
 
-  /// Fecha del archivo o el instante del disparo en la cámara de la app.
+  /// Fecha del archivo.
   archivo('archivo'),
 
   /// No se pudo saber: la hora en que se eligió la foto.
@@ -35,7 +38,7 @@ enum OrigenFechaFoto {
 
   final String etiqueta;
 
-  /// EXIF, ARCHIVO, SUBIDA (lo que espera el backend en "origenFecha").
+  /// OBTURADOR, EXIF, ARCHIVO, SUBIDA (lo que espera el backend en "origenFecha").
   String get clave => name.toUpperCase();
 
   static OrigenFechaFoto desdeClave(String? clave) =>

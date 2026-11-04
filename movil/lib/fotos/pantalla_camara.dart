@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 
+import '../core/plataforma.dart';
 import '../core/reloj.dart';
 import '../ubicacion/fuente_gps.dart';
 import '../ubicacion/reglas_gps.dart';
@@ -19,7 +20,7 @@ import 'foto_evidencia.dart';
 /// - El archivo temporal que crea la cámara se borra en cuanto se leen sus bytes.
 /// - Historia 3: semáforo del GPS y obturador bloqueado hasta tener el punto exacto
 ///   (ReglasGps); cada foto sale con su lectura GPS y la hora del servidor. Bajo techo, pasada
-///   la espera máxima se pasa a wifi/antenas y la foto se puede tomar aunque sea sin coordenadas.
+///   la espera máxima se suman wifi/antenas y la foto se puede tomar aunque sea sin coordenadas.
 class PantallaCamara extends StatefulWidget {
   const PantallaCamara({super.key, this.gps = const FuenteGpsDispositivo()});
 
@@ -48,11 +49,14 @@ class _PantallaCamaraState extends State<PantallaCamara> with WidgetsBindingObse
   LecturaGps? _lectura;
   DateTime? _lecturaEn;
   DateTime _esperandoDesde = DateTime.now();
+  final _ventana = VentanaGps();
   bool _gpsApagado = false;
-  List<String> _avisosGps = const [];
+  bool _gpsAproximado = false;
+  bool _ahorro = false;
+  bool _revisando = false;
 
-  /// true = ya no solo el chip GPS: también wifi y antenas (el chip no dio el punto a tiempo).
-  bool _respaldo = false;
+  /// Wifi y antenas, además del chip GPS, que sigue afinando (el chip no dio el punto a tiempo).
+  StreamSubscription<LecturaGps>? _subRespaldo;
 
   /// Redibuja cada segundo: la lectura "envejece" y la espera máxima se cumple sin eventos.
   Timer? _tic;
@@ -62,15 +66,15 @@ class _PantallaCamaraState extends State<PantallaCamara> with WidgetsBindingObse
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _iniciar();
-    _iniciarGps();
+    _revisarGps();
     _tic = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
       setState(() {});
+      if (WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed) _revisarGps();
       // Interiores: el chip GPS no ve satélites; wifi y antenas sí dan un punto (menos preciso)
       final esperando = DateTime.now().difference(_esperandoDesde);
-      if (!_respaldo && _subGps != null && esperando >= ReglasGps.esperaMaxima && _gpsParaFoto() == null) {
-        _respaldo = true;
-        _escuchar(satelital: false);
+      if (_subRespaldo == null && _subGps != null && esperando >= ReglasGps.esperaMaxima && _gpsParaFoto() == null) {
+        _subRespaldo = _escuchar(satelital: false);
       }
     });
   }
@@ -94,49 +98,56 @@ class _PantallaCamaraState extends State<PantallaCamara> with WidgetsBindingObse
       _detenerGps();
     } else if (estado == AppLifecycleState.resumed && control == null) {
       _iniciar();
-      _iniciarGps(); // pudo volver de Ajustes con la ubicación ya prendida
+      _revisarGps();
     }
   }
 
-  /// Tareas 1.3 y 1.4: revisa el GPS del celular y escucha solo el chip satelital.
-  Future<void> _iniciarGps() async {
-    _detenerGps();
+  /// Tareas 1.3 y 1.4: revisa el GPS del celular al abrir, al volver de Ajustes y cada segundo
+  /// (la ubicación y el ahorro de batería se cambian desde la barra, sin salir de la app).
+  /// Con todo en orden escucha el chip satelital; si algo falla, deja de escuchar y bloquea.
+  Future<void> _revisarGps() async {
+    if (_revisando) return;
+    _revisando = true;
     final gps = widget.gps;
+    var activo = false;
+    var precisa = true;
+    var ahorro = false;
     try {
-      if (!await gps.servicioActivo()) {
-        if (mounted) setState(() => _gpsApagado = true);
-        return;
+      activo = await gps.servicioActivo();
+      if (activo) {
+        precisa = await gps.esPrecisa();
+        ahorro = await gps.ahorroEnergia();
       }
-      final avisos = [
-        if (!await gps.esPrecisa()) 'Activa «Usar ubicación precisa» en Ajustes → Ubicación.',
-        if (await gps.ahorroEnergia()) 'El ahorro de batería puede bajar la precisión del GPS: apágalo.',
-      ];
-      if (!mounted) return;
-      setState(() {
-        _gpsApagado = false;
-        _avisosGps = avisos;
-        _lectura = null;
-        _respaldo = false;
-        _esperandoDesde = DateTime.now();
-      });
-      await _escuchar(satelital: true);
     } catch (_) {
-      if (mounted) setState(() => _gpsApagado = true);
+      activo = false;
     }
+    _revisando = false;
+    if (!mounted) return;
+    final listo = activo && precisa && !ahorro;
+    final arrancar = listo && _subGps == null;
+    if (!listo) _detenerGps();
+    setState(() {
+      _gpsApagado = !activo;
+      _gpsAproximado = !precisa;
+      _ahorro = ahorro;
+      if (arrancar) {
+        _lectura = null;
+        _ventana.limpiar();
+        _esperandoDesde = DateTime.now();
+      }
+    });
+    if (arrancar) _subGps = _escuchar(satelital: true);
   }
 
-  Future<void> _escuchar({required bool satelital}) async {
-    // geolocator tiene UN solo stream: para cambiar de modo hay que soltar el anterior primero
-    await _subGps?.cancel();
-    _subGps = null;
-    if (!mounted) return;
-    _subGps = widget.gps.lecturas(satelital: satelital).listen(
+  StreamSubscription<LecturaGps> _escuchar({required bool satelital}) => widget.gps.lecturas(satelital: satelital).listen(
         (l) {
           if (!l.precision.isFinite || l.precision <= 0) return; // Android manda 0 si no sabe la precisión
           if (mounted) {
             setState(() {
+              final ahora = DateTime.now();
               _lectura = l;
-              _lecturaEn = DateTime.now();
+              _lecturaEn = ahora;
+              _ventana.agregar(l, ahora);
             });
           }
         },
@@ -144,27 +155,29 @@ class _PantallaCamaraState extends State<PantallaCamara> with WidgetsBindingObse
           if (mounted) setState(() => _gpsApagado = true); // p. ej. apagaron la ubicación
         },
       );
-  }
 
   void _detenerGps() {
     unawaited(_subGps?.cancel());
+    unawaited(_subRespaldo?.cancel());
     _subGps = null;
+    _subRespaldo = null;
   }
 
   Duration get _edadLectura => _lecturaEn == null ? Duration.zero : DateTime.now().difference(_lecturaEn!);
 
   /// Lo que se graba con la foto (null = va sin coordenadas).
-  LecturaGps? _gpsParaFoto() => lecturaParaFoto(_lectura, edad: _edadLectura);
+  LecturaGps? _gpsParaFoto() => lecturaParaFoto(_mejorLectura(), edad: _edadLectura);
+
+  LecturaGps? _mejorLectura() => _ventana.mejor(DateTime.now()) ?? _lectura;
 
   /// null = ya se puede tomar la foto. Con la ubicación apagada nunca: si no, apagarla sería el atajo.
-  String? _motivoGps() {
-    if (_gpsApagado) return 'La ubicación del celular está apagada. Préndela para tomar la foto.';
-    return motivoParaEsperar(
-      _lectura,
-      edad: _edadLectura,
-      esperando: DateTime.now().difference(_esperandoDesde),
-    );
-  }
+  String? _motivoGps() =>
+      bloqueoDeHardware(gpsApagado: _gpsApagado, aproximada: _gpsAproximado, ahorro: _ahorro) ??
+      motivoParaEsperar(
+        _mejorLectura(),
+        edad: _edadLectura,
+        esperando: DateTime.now().difference(_esperandoDesde),
+      );
 
   Future<void> _iniciar() async {
     if (_iniciando) return;
@@ -241,10 +254,10 @@ class _PantallaCamaraState extends State<PantallaCamara> with WidgetsBindingObse
     if (_motivoGps() != null) return; // 3.2: sin el punto exacto no hay foto
     // 2.1: el punto y la hora se fijan al tocar el botón, no cuando la cámara termina de guardar
     final lectura = _gpsParaFoto();
-    final momento = RelojServidor.ahora();
-    final desfase = RelojServidor.desfase?.inMilliseconds;
     setState(() => _tomando = true);
     try {
+      final momento = RelojServidor.ahora(arranqueMs: await Plataforma.arranqueMs());
+      final desfase = RelojServidor.desfaseDe(momento)?.inMilliseconds;
       final archivo = await control.takePicture();
       final bytes = await archivo.readAsBytes();
       // Limpiar el temporal: la foto ya está en memoria y, si se confirma, se guarda aparte.
@@ -329,16 +342,15 @@ class _PantallaCamaraState extends State<PantallaCamara> with WidgetsBindingObse
             mainAxisSize: MainAxisSize.min,
             children: [
               _IndicadorGps(
-                lectura: _edadLectura <= ReglasGps.lecturaVieja ? _lectura : null,
+                lectura: _edadLectura <= ReglasGps.lecturaVieja ? _mejorLectura() : null,
                 paraFoto: _gpsParaFoto(),
                 motivo: motivo,
-                alPrender: _gpsApagado ? () => widget.gps.abrirAjustesUbicacion() : null,
+                alAjustar: _gpsApagado || _gpsAproximado
+                    ? () => widget.gps.abrirAjustesUbicacion()
+                    : _ahorro
+                        ? () => widget.gps.abrirAjustesAhorro()
+                        : null,
               ),
-              for (final aviso in _avisosGps)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-                  child: Text(aviso, textAlign: TextAlign.center, style: const TextStyle(color: Colors.amber)),
-                ),
               const SizedBox(height: 8),
               const Text(
                 'Encuadra el domicilio o el medidor. Toca la imagen para enfocar.',
@@ -381,7 +393,7 @@ class _PantallaCamaraState extends State<PantallaCamara> with WidgetsBindingObse
 /// Tarea 3.1: semáforo de precisión (verde ≤ 1 m, amarillo 1–5 m, rojo > 5 m) + qué falta.
 /// El color nunca va solo: el texto dice lo mismo para quien no distingue colores.
 class _IndicadorGps extends StatelessWidget {
-  const _IndicadorGps({required this.lectura, required this.paraFoto, required this.motivo, this.alPrender});
+  const _IndicadorGps({required this.lectura, required this.paraFoto, required this.motivo, this.alAjustar});
 
   /// La última lectura, si es reciente (para el color).
   final LecturaGps? lectura;
@@ -389,7 +401,7 @@ class _IndicadorGps extends StatelessWidget {
   /// La que se grabaría con la foto.
   final LecturaGps? paraFoto;
   final String? motivo;
-  final VoidCallback? alPrender;
+  final VoidCallback? alAjustar;
 
   @override
   Widget build(BuildContext context) {
@@ -418,7 +430,7 @@ class _IndicadorGps extends StatelessWidget {
                 style: const TextStyle(color: Colors.white),
               ),
             ),
-            if (alPrender != null) TextButton(onPressed: alPrender, child: const Text('Prender ubicación')),
+            if (alAjustar != null) TextButton(onPressed: alAjustar, child: const Text('Abrir ajustes')),
           ],
         ),
       ),

@@ -231,20 +231,22 @@ Las fotos se guardan en la base como texto base64 (columna `datos` de `fotos_rep
 
 ### 6.3 Fotos de evidencia: hora y GPS
 
-Cada foto guarda **cuándo** y **dónde** se tomó. Los campos `fecha_captura`, `latitud`, `longitud` y `precision_gps` no se pueden cambiar una vez guardados (`updatable = false`).
+Cada foto guarda **cuándo** y **dónde** se tomó. Los campos `fecha_captura`, `origen_foto`, `latitud`, `longitud` y `precision_gps` no se pueden cambiar una vez guardados (`updatable = false`).
 
 **Hora de captura** ([procesador_fotos.dart](movil/lib/fotos/procesador_fotos.dart)), en este orden de prioridad:
 
-1. **Cámara de la app:** el instante del disparo, corregido con el reloj del servidor. [RelojServidor](movil/lib/core/reloj.dart) lee el encabezado HTTP `Date` de cada respuesta. Si el reloj del celular está movido, la hora no se altera.
+1. **Cámara de la app:** el instante del disparo, corregido con el reloj del servidor. [RelojServidor](movil/lib/core/reloj.dart) lee el encabezado HTTP `Date` de cada respuesta y, entre una respuesta y otra, avanza con el contador de arranque del celular. Si el reloj del celular está movido, aun sin red, la hora no se altera. Si el servidor no ha contestado desde que se abrió la app, la hora queda como no verificada.
 2. **Foto de galería:** la fecha EXIF `DateTimeOriginal`, respetando la zona horaria.
 3. La fecha del archivo, y si no hay otra, la hora en que se eligió la foto.
 
-Cada foto también manda `origenFecha` (EXIF, ARCHIVO o SUBIDA) para que el admin sepa qué tan confiable es la hora.
+Cada foto también manda `origenFecha` (OBTURADOR, EXIF, ARCHIVO o SUBIDA) para saber qué tan confiable es la hora, y `origenFoto` (CAMARA, GALERIA o ARCHIVOS; la web no lo manda).
 
 **Punto GPS** (solo en fotos tomadas con la cámara de la app; reglas en [reglas_gps.dart](movil/lib/ubicacion/reglas_gps.dart)):
 
-- Durante los primeros **10 s** escucha solo el chip GPS (satélites) y busca **±1 m**. Un semáforo lo muestra: verde ≤ 1 m, amarillo ≤ 5 m, rojo > 5 m.
-- Si en ese tiempo no llega a ±1 m (por ejemplo, un medidor bajo techo), cambia a GPS + wifi + antenas y **deja tomar la foto igual**:
+- Con la ubicación apagada, la ubicación aproximada o el ahorro de batería activo **no deja tomar la foto** y ofrece abrir los ajustes.
+- Durante los primeros **10 s** escucha solo el chip GPS (`GPS_PROVIDER`, por un canal nativo en [MainActivity.kt](movil/android/app/src/main/kotlin/mx/gob/miaa/movil/MainActivity.kt)) y busca **±1 m**. Un semáforo lo muestra: verde ≤ 1 m, amarillo ≤ 5 m, rojo > 5 m. El `forceLocationManager` de geolocator no sirve para esto: en Android 12+ elige el proveedor fusionado.
+- La foto se queda con la **lectura más precisa de los últimos 5 s**, no con la última. La precisión es la que reporta Android: la app nunca la ajusta, así que el ±1 m depende del chip del celular y del cielo despejado.
+- Si en ese tiempo no llega a ±1 m (por ejemplo, un medidor bajo techo) **deja tomar la foto igual**. Si además no hay lectura útil, suma wifi y antenas sin soltar el chip:
   - con la mejor lectura que haya, si es de ±20 m o mejor;
   - **sin coordenadas**, si no hay ninguna que sirva.
 - El punto y la hora se escriben también en el **EXIF del JPG** y se muestran en una tarjeta en la vista previa.

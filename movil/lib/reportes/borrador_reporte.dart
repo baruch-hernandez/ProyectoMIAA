@@ -230,8 +230,6 @@ class BorradorReporte extends ChangeNotifier {
       };
 
   /// El cuerpo de POST /reportes (ReporteRequestDTO).
-  /// "origenFoto" todavía no lo guarda el backend; Spring ignora los campos que no conoce,
-  /// así que ya se manda para cuando se agregue la columna.
   Map<String, dynamic> aSolicitud() {
     final datos = <String, dynamic>{};
     for (final nombre in CampoReporte.todos) {

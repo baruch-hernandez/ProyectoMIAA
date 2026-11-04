@@ -54,10 +54,15 @@ public class FotoReporte {
     @Column(name = "fecha_captura", nullable = false, updatable = false)
     private Instant fechaCaptura;
 
-    /** De dónde salió fechaCaptura: EXIF (la más confiable), ARCHIVO o SUBIDA. */
+    /** De dónde salió fechaCaptura: OBTURADOR (la más confiable), EXIF, ARCHIVO o SUBIDA. */
     @Enumerated(EnumType.STRING)
     @Column(name = "origen_fecha", nullable = false, length = 10)
     private OrigenFechaFoto origenFecha;
+
+    /** Con qué se agregó en la app. null = la web, que no lo manda. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "origen_foto", length = 10, updatable = false)
+    private OrigenFoto origenFoto;
 
     /** Cuándo llegó al servidor (la "fecha de sincronización" del celular). */
     @Column(name = "fecha_subida", nullable = false, updatable = false)

@@ -1,4 +1,4 @@
-// Tareas 3.1 y 3.4: compresión/resolución de las fotos y hora de captura (disparo → EXIF → ARCHIVO → SUBIDA).
+// Tareas 3.1 y 3.4: compresión/resolución de las fotos y hora de captura (OBTURADOR → EXIF → ARCHIVO → SUBIDA).
 //   flutter test test/procesador_fotos_test.dart
 import 'dart:typed_data';
 
@@ -100,7 +100,7 @@ void main() {
         momentoSeleccion: seleccion,
         ahora: _ahora,
       );
-      expect(r.origen, OrigenFechaFoto.archivo);
+      expect(r.origen, OrigenFechaFoto.obturador);
       expect(r.fecha, seleccion);
     });
 
@@ -115,10 +115,10 @@ void main() {
       expect(r.fecha, DateTime.utc(2026, 10, 27, 17, 0));
     });
 
-    test('2) cámara de la app sin EXIF: el instante del disparo (ARCHIVO)', () {
+    test('2) cámara de la app sin EXIF: el instante del disparo (OBTURADOR)', () {
       final disparo = DateTime.utc(2026, 10, 27, 18, 5);
       final r = resolverFechaCaptura(momentoObturador: disparo, momentoSeleccion: seleccion, ahora: _ahora);
-      expect(r.origen, OrigenFechaFoto.archivo);
+      expect(r.origen, OrigenFechaFoto.obturador);
       expect(r.fecha, disparo);
     });
 

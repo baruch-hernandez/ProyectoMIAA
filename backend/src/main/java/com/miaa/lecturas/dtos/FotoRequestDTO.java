@@ -1,6 +1,7 @@
 package com.miaa.lecturas.dtos;
 
 import com.miaa.lecturas.entities.OrigenFechaFoto;
+import com.miaa.lecturas.entities.OrigenFoto;
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -14,7 +15,8 @@ import java.time.Instant;
  *
  * @param datos          "data:image/jpeg;base64,..." (la resolución la mide el servidor)
  * @param fechaCaptura   cuándo se TOMÓ, en ISO-8601: "2026-10-09T20:02:15Z"
- * @param origenFecha    de dónde sacó el front esa hora (EXIF, ARCHIVO o SUBIDA)
+ * @param origenFecha    de dónde sacó el front esa hora (OBTURADOR, EXIF, ARCHIVO o SUBIDA)
+ * @param origenFoto     con qué se agregó en la app (CAMARA, GALERIA o ARCHIVOS). La web no lo manda
  * @param latitud        Historia 3: dónde se tomó (solo la cámara de la app; la web y la galería no lo mandan)
  * @param longitud       (las tres coordenadas van juntas o ninguna: lo revisa ReporteService)
  * @param precisionGps   radio de error del GPS en metros
@@ -29,6 +31,8 @@ public record FotoRequestDTO(
 
         @NotNull(message = "Falta el origen de la hora de la foto")
         OrigenFechaFoto origenFecha,
+
+        OrigenFoto origenFoto,
 
         // Filtro rápido con un rectángulo; el contorno real lo revisa LimiteAguascalientes
         @DecimalMin(value = "21.5", message = "La foto se tomó fuera de Aguascalientes")

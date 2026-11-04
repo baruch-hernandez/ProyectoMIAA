@@ -109,12 +109,13 @@ class ProcesadorFalso extends ProcesadorFotos {
 
 /// GPS falso: entrega las lecturas que se le den (y nada más).
 class FuenteGpsFalsa implements FuenteGps {
-  FuenteGpsFalsa({List<LecturaGps>? lecturas, this.activo = true, this.precisa = true})
+  FuenteGpsFalsa({List<LecturaGps>? lecturas, this.activo = true, this.precisa = true, this.ahorro = false})
       : lecturasProgramadas = lecturas ?? [];
 
   final List<LecturaGps> lecturasProgramadas;
   bool activo;
   bool precisa;
+  bool ahorro;
   int ajustesAbiertos = 0;
 
   @override
@@ -130,7 +131,13 @@ class FuenteGpsFalsa implements FuenteGps {
   Future<bool> esPrecisa() async => precisa;
 
   @override
-  Future<bool> ahorroEnergia() async => false;
+  Future<bool> ahorroEnergia() async => ahorro;
+
+  @override
+  Future<bool> abrirAjustesAhorro() async {
+    ajustesAbiertos++;
+    return true;
+  }
 
   @override
   Stream<LecturaGps> lecturas({bool satelital = false}) => Stream.fromIterable(lecturasProgramadas);

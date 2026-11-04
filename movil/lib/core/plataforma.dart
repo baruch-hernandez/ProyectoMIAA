@@ -8,6 +8,7 @@ class Plataforma {
   Plataforma._();
 
   static const _canal = MethodChannel('mx.gob.miaa.movil/dispositivo');
+  static const _gnss = EventChannel('mx.gob.miaa.movil/gnss');
   static int? _sdk;
 
   /// Versión de Android como "API level" (33 = Android 13). Fuera de Android, null.
@@ -35,4 +36,32 @@ class Plataforma {
       return false;
     }
   }
+
+  /// Abre los ajustes del "Ahorro de batería".
+  static Future<bool> abrirAhorroEnergia() async {
+    if (!Platform.isAndroid) return false;
+    try {
+      return await _canal.invokeMethod<bool>('abrirAhorroEnergia') ?? false;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+
+  /// Milisegundos desde que se prendió el celular (SystemClock.elapsedRealtime): cuenta también
+  /// con la pantalla apagada y mover el reloj no lo cambia. Fuera de Android, null.
+  static Future<int?> arranqueMs() async {
+    if (!Platform.isAndroid) return null;
+    try {
+      return await _canal.invokeMethod<int>('arranqueMs');
+    } on PlatformException {
+      return null;
+    } on MissingPluginException {
+      return null;
+    }
+  }
+
+  /// Lecturas directas del chip GPS: {lat, lng, precision}.
+  static Stream<Map<Object?, Object?>> lecturasGnss() => _gnss.receiveBroadcastStream().cast();
 }

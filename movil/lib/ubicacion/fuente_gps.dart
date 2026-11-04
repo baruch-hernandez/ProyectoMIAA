@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:geolocator/geolocator.dart';
 
 import '../core/plataforma.dart';
@@ -16,6 +18,9 @@ abstract class FuenteGps {
 
   /// ¿Está prendido el "Ahorro de batería"? Android puede espaciar o apagar el GPS (tarea 1.4).
   Future<bool> ahorroEnergia();
+
+  /// Abre los ajustes del "Ahorro de batería".
+  Future<bool> abrirAjustesAhorro();
 
   /// Lecturas del GPS mientras se escuchen. Con [satelital] solo el chip GPS (sin wifi ni
   /// antenas): tarda más en el primer punto, pero es el que se usa para la foto de evidencia.
@@ -45,15 +50,26 @@ class FuenteGpsDispositivo implements FuenteGps {
   @override
   Future<bool> ahorroEnergia() => Plataforma.ahorroEnergia();
 
-  /// Tarea 1.2: bestForNavigation. Con [satelital], LocationManager de Android en vez del
-  /// FusedLocationProvider de Google, que mezcla wifi y antenas.
   @override
-  Stream<LecturaGps> lecturas({bool satelital = false}) => Geolocator.getPositionStream(
-        locationSettings: AndroidSettings(
-          accuracy: LocationAccuracy.bestForNavigation,
-          distanceFilter: 0,
-          intervalDuration: const Duration(seconds: 1),
-          forceLocationManager: satelital,
-        ),
-      ).map((p) => LecturaGps(lat: p.latitude, lng: p.longitude, precision: p.accuracy));
+  Future<bool> abrirAjustesAhorro() => Plataforma.abrirAhorroEnergia();
+
+  /// Tarea 1.2: con [satelital], GPS_PROVIDER por el canal nativo. El forceLocationManager de
+  /// geolocator no sirve para esto: en Android 12+ elige FUSED_PROVIDER, que mezcla wifi y antenas.
+  @override
+  Stream<LecturaGps> lecturas({bool satelital = false}) {
+    if (satelital && Platform.isAndroid) {
+      return Plataforma.lecturasGnss().map((l) => LecturaGps(
+            lat: l['lat'] as double,
+            lng: l['lng'] as double,
+            precision: l['precision'] as double,
+          ));
+    }
+    return Geolocator.getPositionStream(
+      locationSettings: AndroidSettings(
+        accuracy: LocationAccuracy.bestForNavigation,
+        distanceFilter: 0,
+        intervalDuration: const Duration(seconds: 1),
+      ),
+    ).map((p) => LecturaGps(lat: p.latitude, lng: p.longitude, precision: p.accuracy));
+  }
 }

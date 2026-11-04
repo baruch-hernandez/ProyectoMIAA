@@ -10,7 +10,7 @@ export interface Coordenadas {
 }
 
 /** De dónde salió la hora de captura de una foto, de más a menos confiable. */
-export type OrigenFechaFoto = 'EXIF' | 'ARCHIVO' | 'SUBIDA';
+export type OrigenFechaFoto = 'OBTURADOR' | 'EXIF' | 'ARCHIVO' | 'SUBIDA';
 
 /** Foto que se manda al backend  ↔  FotoRequestDTO.java */
 export interface FotoNueva {

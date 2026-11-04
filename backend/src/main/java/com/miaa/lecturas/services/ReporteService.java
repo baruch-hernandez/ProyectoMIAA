@@ -294,6 +294,7 @@ public class ReporteService {
         f.setAlto(medidas.alto());
         f.setFechaCaptura(req.fechaCaptura()); // la hora en que se TOMÓ (la que pidió MIAA)
         f.setOrigenFecha(req.origenFecha());
+        f.setOrigenFoto(req.origenFoto());
         f.setLatitud(req.latitud());
         f.setLongitud(req.longitud());
         f.setPrecisionGps(req.precisionGps());
