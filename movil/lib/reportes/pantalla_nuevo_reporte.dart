@@ -72,7 +72,6 @@ class PantallaNuevoReporte extends StatefulWidget {
   static const llaveAvisoFoto = Key('aviso-falta-foto');
   static const llaveCamara = Key('btn-foto-camara');
   static const llaveGaleria = Key('btn-foto-galeria');
-  static const llaveArchivos = Key('btn-foto-archivos');
 
   /// Carga el borrador guardado en el celular y abre la pantalla. Regresa true si se envió.
   static Future<bool?> abrir(BuildContext context, {required int usuarioId, required EnviarReporte enviar}) async {
@@ -235,7 +234,7 @@ class _PantallaNuevoReporteState extends State<PantallaNuevoReporte> {
       ..showSnackBar(SnackBar(content: Text(texto)));
   }
 
-  /// Tareas 3.1–3.3 + 2.3–2.5: permiso → cámara/galería/archivos → procesar → vista previa →
+  /// Tareas 3.1–3.3 + 2.3–2.5: permiso → cámara/galería → procesar → vista previa →
   /// repetir (vuelve a abrir la misma fuente) o confirmar (se fija al borrador).
   Future<void> _agregarFoto(OrigenFoto origen) async {
     if (_procesando || _enviando) return;
@@ -244,13 +243,9 @@ class _PantallaNuevoReporteState extends State<PantallaNuevoReporte> {
       return;
     }
 
-    // El explorador de archivos (Storage Access Framework) no necesita permiso:
-    // el notificador elige el archivo y Android solo le da acceso a ese.
-    if (origen != OrigenFoto.archivos) {
-      final tipo = origen == OrigenFoto.camara ? TipoPermiso.camara : TipoPermiso.galeria;
-      final hayPermiso = await asegurarPermiso(context, widget.permisos, tipo);
-      if (!hayPermiso) return;
-    }
+    final tipo = origen == OrigenFoto.camara ? TipoPermiso.camara : TipoPermiso.galeria;
+    final hayPermiso = await asegurarPermiso(context, widget.permisos, tipo);
+    if (!hayPermiso) return;
     // Historia 3: la foto de la cámara lleva el punto exacto donde se tomó
     if (origen == OrigenFoto.camara) {
       if (!mounted || !await asegurarPermiso(context, widget.permisos, TipoPermiso.ubicacion)) return;
@@ -265,7 +260,6 @@ class _PantallaNuevoReporteState extends State<PantallaNuevoReporte> {
         cruda = switch (origen) {
           OrigenFoto.camara => await widget.abrirCamara(context),
           OrigenFoto.galeria => await _fuente.desdeGaleria(),
-          OrigenFoto.archivos => await _fuente.desdeArchivos(),
         };
       } on FotoInvalida catch (e) {
         _avisar(e.mensaje);
@@ -561,12 +555,6 @@ class _SeccionFotos extends StatelessWidget {
                   onPressed: bloqueado ? null : () => alAgregar(OrigenFoto.galeria),
                   icon: const Icon(Icons.photo_library),
                   label: const Text('Galería'),
-                ),
-                OutlinedButton.icon(
-                  key: PantallaNuevoReporte.llaveArchivos,
-                  onPressed: bloqueado ? null : () => alAgregar(OrigenFoto.archivos),
-                  icon: const Icon(Icons.folder_open),
-                  label: const Text('Archivos'),
                 ),
               ],
             ),

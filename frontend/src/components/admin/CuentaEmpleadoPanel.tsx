@@ -173,7 +173,7 @@ export function CuentaEmpleadoPanel({ id, onRol }: { id: number; onRol?: (rol: R
           {aviso}
           {temporalDada && (
             <span className="block mt-1">
-              Dale esta contraseña temporal: <code className="cifras font-bold">{temporalDada}</code>{' '}
+              Dale esta contraseña temporal: <code className="tabular-nums font-bold">{temporalDada}</code>{' '}
               <button type="button" onClick={() => navigator.clipboard?.writeText(temporalDada).catch(() => undefined)}
                 className="inline-flex items-center gap-1 font-semibold underline"><Copy size={13} aria-hidden="true" />Copiar</button>
               <span className="block text-xs">Al entrar, la app le pedirá crear una nueva.</span>
@@ -228,7 +228,7 @@ export function CuentaEmpleadoPanel({ id, onRol }: { id: number; onRol?: (rol: R
           </p>
           <div className="flex gap-2 max-w-md">
             <label htmlFor="temporal" className="sr-only">Contraseña temporal</label>
-            <input id="temporal" value={temporal} onChange={(e) => setTemporal(e.target.value)} required maxLength={72} className={`${claseInput} cifras`} />
+            <input id="temporal" value={temporal} onChange={(e) => setTemporal(e.target.value)} required maxLength={72} className={`${claseInput} tabular-nums`} />
             <button type="button" onClick={() => setTemporal(generarPasswordTemporal())} className={`${botonSecundario} h-12 text-miaa-azul hover:bg-blue-50 shrink-0`}>
               <RefreshCw size={15} aria-hidden="true" /> Otra
             </button>

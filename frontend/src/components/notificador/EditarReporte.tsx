@@ -125,7 +125,7 @@ export function EditarReporte() {
       {volver}
       <h1 className="mt-1 text-3xl font-extrabold text-miaa-marino">Corregir reporte</h1>
       <p className="mt-1 text-slate-600">
-        <span className="cifras font-semibold">{reporte.folio}</span> · El administrador verá que fue editado.
+        <span className="tabular-nums font-semibold">{reporte.folio}</span> · El administrador verá que fue editado.
         {reporte.modificableHasta && <> Puedes corregirlo hasta el {formatoFecha(reporte.modificableHasta)}</>}
       </p>
 
@@ -161,7 +161,7 @@ export function EditarReporte() {
               <input {...props('colonia')} required maxLength={100} className={claseInput} />
             </Campo>
             <Campo id="codigoPostal" etiqueta="C.P." error={errores.codigoPostal} className="col-span-4 sm:col-span-3">
-              <input {...props('codigoPostal')} required inputMode="numeric" pattern="20\d{3}" maxLength={5} className={`${claseInput} cifras`} />
+              <input {...props('codigoPostal')} required inputMode="numeric" pattern="20\d{3}" maxLength={5} className={`${claseInput} tabular-nums`} />
             </Campo>
             <Campo id="municipio" etiqueta="Municipio" error={errores.municipio} className="col-span-8 sm:col-span-4">
               <select {...props('municipio')} className={claseInput}>
@@ -172,7 +172,7 @@ export function EditarReporte() {
               <input {...props('referencias')} maxLength={255} className={claseInput} />
             </Campo>
             <Campo id="numeroContrato" etiqueta="Núm. de contrato" opcional error={errores.numeroContrato} className="col-span-12 sm:col-span-5">
-              <input {...props('numeroContrato')} maxLength={30} inputMode="numeric" className={`${claseInput} cifras`} />
+              <input {...props('numeroContrato')} maxLength={30} inputMode="numeric" className={`${claseInput} tabular-nums`} />
             </Campo>
           </div>
         </Paso>

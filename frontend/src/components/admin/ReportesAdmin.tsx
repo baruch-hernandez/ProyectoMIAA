@@ -39,9 +39,9 @@ export function ReportesAdmin() {
         <div>
           <h1 className="text-3xl font-extrabold text-miaa-marino">Reportes</h1>
           <p className="mt-1 text-slate-600">
-            <span className="cifras font-semibold text-miaa-marino">{reportes.length}</span>{' '}
+            <span className="tabular-nums font-semibold text-miaa-marino">{reportes.length}</span>{' '}
             {reportes.length === 1 ? 'reporte' : 'reportes'} de{' '}
-            <span className="cifras font-semibold text-miaa-marino">{empleadosConReportes}</span>{' '}
+            <span className="tabular-nums font-semibold text-miaa-marino">{empleadosConReportes}</span>{' '}
             {empleadosConReportes === 1 ? 'empleado' : 'empleados'}, del más reciente al más antiguo.
           </p>
         </div>

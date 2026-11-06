@@ -79,7 +79,7 @@ void main() {
       final b = BorradorReporte.nuevo(AlmacenBorradorEnMemoria())
         ..ponerCampo(CampoReporte.calle, '  Madero ')
         ..ponerCampo(CampoReporte.numeroInterior, '   ');
-      await b.agregarFoto(fotoProcesada(origenFecha: OrigenFechaFoto.subida), OrigenFoto.archivos);
+      await b.agregarFoto(fotoProcesada(origenFecha: OrigenFechaFoto.subida), OrigenFoto.galeria);
 
       final s = b.aSolicitud();
       expect(s['calle'], 'Madero');
@@ -89,12 +89,20 @@ void main() {
       final foto = (s['fotos'] as List).single as Map;
       expect(foto['datos'], startsWith('data:image/jpeg;base64,'));
       expect(foto['origenFecha'], 'SUBIDA');
-      expect(foto['origenFoto'], 'ARCHIVOS');
+      expect(foto['origenFoto'], 'GALERIA');
       expect(foto['fechaCaptura'], '2026-10-27T18:30:00.000Z');
     });
   });
 
   group('formulario (2.2–2.5 / 4.1)', () {
+    testWidgets('las fotos solo salen de la cámara o la galería', (tester) async {
+      await abrirFormulario(tester);
+
+      expect(find.byKey(PantallaNuevoReporte.llaveCamara), findsOneWidget);
+      expect(find.byKey(PantallaNuevoReporte.llaveGaleria), findsOneWidget);
+      expect(find.text('Archivos'), findsNothing);
+    });
+
     testWidgets('el botón Enviar está DESHABILITADO mientras no haya foto', (tester) async {
       await abrirFormulario(tester);
 
@@ -166,11 +174,11 @@ void main() {
     testWidgets('una foto que no sirve (baja resolución) no se adjunta y se explica por qué', (tester) async {
       final b = await abrirFormulario(
         tester,
-        fuente: FuenteFalsa(archivos: [fotoCruda()]),
+        fuente: FuenteFalsa(galeria: [fotoCruda()]),
         procesador: ProcesadorFalso(error: const FotoInvalida('La foto mide 800×600 y se necesita mínimo 1280×720')),
       );
 
-      await tester.tap(find.byKey(PantallaNuevoReporte.llaveArchivos));
+      await tester.tap(find.byKey(PantallaNuevoReporte.llaveGaleria));
       await tester.pumpAndSettle();
 
       expect(find.byKey(PantallaVistaPrevia.llave), findsNothing);

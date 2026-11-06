@@ -115,13 +115,14 @@ export interface Empleado {
   ultimoReporte: string | null;
   totalReportes: number;
   ultimaActividad: string | null;
+  /** Sesión iniciada y app a la vista. Se calcula en el backend */
   activo: boolean;
   diasSinActividad: number | null;
   /** Ahorita está compartiendo su ubicación (app abierta y con red) */
   enLinea: boolean;
   /** false = el admin lo dio de baja */
   habilitado: boolean;
-  /** Tipo WhatsApp: tiene la app abierta (latido en los últimos 60 s) o no. Tarea 2.4 */
+  /** EN_LINEA si llegó un latido en los últimos 60 s y no cerró sesión. Tarea 2.4 */
   disponibilidad: Disponibilidad;
   /** Último latido o inicio de sesión, para el "últ. vez hace 5 min" */
   ultimaConexion: string | null;
@@ -133,8 +134,6 @@ export type Disponibilidad = 'EN_LINEA' | 'DESCONECTADO';
 
 /** GET /usuarios/empleados  ↔  EmpleadosDTO.java */
 export interface EmpleadosRespuesta {
-  /** Días sin actividad para considerar a alguien inactivo (configurable en el backend) */
-  diasInactivo: number;
   empleados: Empleado[];
 }
 

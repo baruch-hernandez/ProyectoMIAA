@@ -63,10 +63,3 @@
     }
   }
 }
-
-@layer utilities {
-  /* Números de ancho fijo: folios, contratos, coordenadas, contadores */
-  .cifras {
-    font-variant-numeric: tabular-nums;
-  }
-}

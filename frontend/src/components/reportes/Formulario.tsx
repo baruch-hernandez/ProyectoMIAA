@@ -8,7 +8,7 @@ export function Paso({ numero, titulo, ayuda, children }: { numero: number; titu
   return (
     <section className="rounded-2xl bg-white border border-slate-200 p-5 sm:p-6" aria-labelledby={`paso-${numero}`}>
       <div className="flex items-start gap-3 mb-5">
-        <span className="cifras grid place-items-center size-8 shrink-0 rounded-full bg-miaa-marino text-white text-sm font-bold" aria-hidden="true">
+        <span className="tabular-nums grid place-items-center size-8 shrink-0 rounded-full bg-miaa-marino text-white text-sm font-bold" aria-hidden="true">
           {numero}
         </span>
         <div>

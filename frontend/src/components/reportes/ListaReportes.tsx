@@ -29,7 +29,7 @@ export function ListaReportes({ reportes, enlace, mostrarAutor = false }: Props)
               <p className="mt-1.5 text-slate-700 line-clamp-2">{r.descripcion}</p>
 
               <p className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
-                <span className="cifras font-semibold text-slate-600">{r.folio}</span>
+                <span className="tabular-nums font-semibold text-slate-600">{r.folio}</span>
                 {mostrarAutor && (
                   <span className="inline-flex items-center gap-1 font-semibold text-slate-700">
                     <UserRound size={13} aria-hidden="true" /> {r.autor}
@@ -42,10 +42,10 @@ export function ListaReportes({ reportes, enlace, mostrarAutor = false }: Props)
                   </span>
                 )}
                 <span className="inline-flex items-center gap-1" aria-label={`${r.totalFotos} fotos`}>
-                  <Camera size={13} aria-hidden="true" /> <span className="cifras">{r.totalFotos}</span>
+                  <Camera size={13} aria-hidden="true" /> <span className="tabular-nums">{r.totalFotos}</span>
                 </span>
                 <span className="inline-flex items-center gap-1" aria-label={`${r.totalNotas} notas`}>
-                  <MessageSquareText size={13} aria-hidden="true" /> <span className="cifras">{r.totalNotas}</span>
+                  <MessageSquareText size={13} aria-hidden="true" /> <span className="tabular-nums">{r.totalNotas}</span>
                 </span>
               </p>
             </div>

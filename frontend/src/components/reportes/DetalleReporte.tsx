@@ -173,7 +173,7 @@ export function DetalleReporte({ volverA }: Props) {
           <p className="flex-1">
             {estadoNav?.editado
               ? <span className="font-bold">Cambios guardados.</span>
-              : <><span className="font-bold">Reporte enviado.</span> Su folio es <span className="cifras font-bold">{r.folio}</span>.</>}
+              : <><span className="font-bold">Reporte enviado.</span> Su folio es <span className="tabular-nums font-bold">{r.folio}</span>.</>}
           </p>
           <button type="button" onClick={() => setMostrarAviso(false)} aria-label="Cerrar aviso" className="size-8 grid place-items-center rounded-lg hover:bg-white/50">
             <X size={18} aria-hidden="true" />
@@ -188,7 +188,7 @@ export function DetalleReporte({ volverA }: Props) {
       )}
 
       <header className="rounded-3xl bg-miaa-bruma/50 border-l-8 border-l-miaa-azul p-6 sm:p-8">
-        <p className="cifras text-sm font-bold text-miaa-azul">{r.folio}</p>
+        <p className="tabular-nums text-sm font-bold text-miaa-azul">{r.folio}</p>
         <h1 className="mt-1 text-2xl sm:text-3xl font-extrabold text-miaa-marino text-balance">
           {r.calle} #{r.numeroExterior}
           {r.numeroInterior && ` int. ${r.numeroInterior}`}, {r.colonia}
@@ -243,7 +243,7 @@ export function DetalleReporte({ volverA }: Props) {
           <section className="rounded-2xl bg-white border border-slate-200 p-5 sm:p-6" aria-labelledby="titulo-fotos">
             <div className="flex items-baseline justify-between gap-3">
               <h2 id="titulo-fotos" className="text-lg font-extrabold text-miaa-marino">
-                Fotos <span className="cifras text-slate-400 font-bold">{r.fotos.length}/{MAX_FOTOS}</span>
+                Fotos <span className="tabular-nums text-slate-400 font-bold">{r.fotos.length}/{MAX_FOTOS}</span>
               </h2>
               {fotosEditables && <p className="text-xs text-slate-500">Si una salió borrosa, quítala y pon otra.</p>}
             </div>
@@ -286,12 +286,12 @@ export function DetalleReporte({ volverA }: Props) {
               {r.calle} #{r.numeroExterior}
               {r.numeroInterior && ` int. ${r.numeroInterior}`}, {r.colonia}
               <br />
-              <span className="cifras">C.P. {r.codigoPostal}</span>, {r.municipio}
+              <span className="tabular-nums">C.P. {r.codigoPostal}</span>, {r.municipio}
             </p>
             {(r.referencias || r.numeroContrato) && (
               <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
                 {r.referencias && (<><dt className="text-slate-500">Referencias</dt><dd className="text-slate-800">{r.referencias}</dd></>)}
-                {r.numeroContrato && (<><dt className="text-slate-500">Contrato</dt><dd className="cifras text-slate-800">{r.numeroContrato}</dd></>)}
+                {r.numeroContrato && (<><dt className="text-slate-500">Contrato</dt><dd className="tabular-nums text-slate-800">{r.numeroContrato}</dd></>)}
               </dl>
             )}
             {ubicacion && <div className="mt-4"><MapaUbicacion valor={ubicacion} altoClase="h-56" /></div>}
@@ -308,7 +308,7 @@ export function DetalleReporte({ volverA }: Props) {
         {/* ---------- Notas ---------- */}
         <section className="rounded-2xl bg-white border border-slate-200 p-5 sm:p-6 lg:sticky lg:top-20">
           <h2 className="text-lg font-extrabold text-miaa-marino">
-            Notas <span className="cifras text-slate-400 font-bold">{r.notas.length}</span>
+            Notas <span className="tabular-nums text-slate-400 font-bold">{r.notas.length}</span>
           </h2>
 
           {r.notas.length === 0 ? (

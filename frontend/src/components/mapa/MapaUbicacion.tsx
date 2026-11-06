@@ -67,7 +67,7 @@ export function MapaUbicacion({ valor, onChange, onFuera, altoClase = 'h-72', pr
         maxZoom={ZOOM_MAXIMO}
         scrollWheelZoom
         {...PROPS_MAPA_AGS} // no deja arrastrar ni alejar el mapa fuera de la zona
-        style={{ height: '100%', width: '100%' }}
+        className="h-full w-full"
       >
         {/* Botón arriba a la derecha para cambiar entre mapa de calles y satélite.
             En satélite se ven los techos: lo más útil para poner el marcador en la casa exacta. */}

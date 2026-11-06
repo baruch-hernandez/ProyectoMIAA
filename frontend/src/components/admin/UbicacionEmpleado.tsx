@@ -154,7 +154,7 @@ export function UbicacionEmpleado() {
           )}
           {!esAdmin && segundos != null && d.fechaRecibida && (
             <p className="mt-1.5 text-sm text-slate-600">
-              Última señal <strong className="cifras text-miaa-marino">{haceCuanto(segundos)}</strong>
+              Última señal <strong className="tabular-nums text-miaa-marino">{haceCuanto(segundos)}</strong>
               <span className="text-slate-400"> · {formatoFecha(d.fechaRecibida)}</span>
             </p>
           )}
@@ -192,7 +192,7 @@ export function UbicacionEmpleado() {
           )}
 
           <div className="h-112 rounded-xl overflow-hidden border border-slate-200 relative z-0">
-            <MapContainer center={[pos.lat, pos.lng]} zoom={16} scrollWheelZoom {...PROPS_MAPA_AGS} style={{ height: '100%', width: '100%' }}>
+            <MapContainer center={[pos.lat, pos.lng]} zoom={16} scrollWheelZoom {...PROPS_MAPA_AGS} className="h-full w-full">
               <TileLayer
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -213,8 +213,8 @@ export function UbicacionEmpleado() {
 
           <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
             <p className="text-slate-600">
-              <span className="cifras">{pos.lat.toFixed(5)}, {pos.lng.toFixed(5)}</span>
-              {d.precisionMetros != null && <> · precisión <span className="cifras font-semibold">±{Math.round(d.precisionMetros)} m</span></>}
+              <span className="tabular-nums">{pos.lat.toFixed(5)}, {pos.lng.toFixed(5)}</span>
+              {d.precisionMetros != null && <> · precisión <span className="tabular-nums font-semibold">±{Math.round(d.precisionMetros)} m</span></>}
               {' '}· se actualiza cada {CONSULTA_MS / 1000} s
             </p>
             <div className="flex items-center gap-2">

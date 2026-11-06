@@ -39,7 +39,7 @@ class _PantallaInicioState extends State<PantallaInicio> with WidgetsBindingObse
     super.dispose();
   }
 
-  /// App a la vista → latido; app al fondo o pantalla apagada → sin latido (sale "últ. vez").
+  /// App a la vista → latido; app al fondo o pantalla apagada → sin latido (sale inactivo).
   @override
   void didChangeAppLifecycleState(AppLifecycleState estado) {
     if (estado == AppLifecycleState.resumed) {
@@ -147,7 +147,7 @@ class _TarjetaDisponibilidad extends StatelessWidget {
     return Card(
       child: ListTile(
         leading: Icon(Icons.circle, color: ok ? Colors.green : Colors.grey, size: 18),
-        title: Text(ok ? 'En línea' : 'Sin conexión con el servidor'),
+        title: Text(ok ? 'Activo' : 'Sin conexión con el servidor'),
         subtitle: Text(latido.ultimoError ?? 'Último latido: $hora · enviados: ${latido.enviados}'),
         trailing: IconButton(
           tooltip: 'Mandar latido ahora',

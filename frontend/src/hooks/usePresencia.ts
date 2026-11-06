@@ -5,15 +5,15 @@ import { presenciaApi } from '../services/presenciaApi';
 const LATIDO_MS = 30_000;
 
 /**
- * Mientras la app esté ABIERTA, manda un latido al backend para salir "En línea"
+ * Mientras la app esté A LA VISTA, manda un latido al backend para salir "Activo"
  * en el panel del administrador (tarea 2.4).
  *
  *  - Al montar (entró o recargó la página) manda uno de inmediato.
- *  - Luego cada 30 s. El backend lo da por DESCONECTADO si pasan 60 s sin latido: así un
- *    latido perdido (mala señal) no lo hace parpadear, pero si cierra la pestaña o se queda
- *    sin red, en máximo un minuto sale desconectado.
- *  - Si la pestaña está oculta (otra pestaña o pantalla apagada), no manda nada: igual que
- *    en WhatsApp, "en línea" = la app está a la vista. Al volver, manda uno al instante.
+ *  - Luego cada 30 s. El backend lo da por INACTIVO si pasan 60 s sin latido: un latido
+ *    perdido no lo hace parpadear, pero si cierra la pestaña o se queda sin red, sale
+ *    inactivo solo.
+ *  - Con la pestaña oculta (otra pestaña o pantalla apagada) no manda nada. El navegador no
+ *    distingue esos dos casos. Al volver, manda uno al instante.
  *  - Al volver la red ('online') también manda uno al instante.
  *  - Si un latido falla (sin red), se ignora: el siguiente lo intenta otra vez.
  */

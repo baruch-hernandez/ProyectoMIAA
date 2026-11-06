@@ -36,7 +36,7 @@ Future<void> esperarA(WidgetTester tester, Finder buscado, {Duration limite = co
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('negar permiso → Ajustes → cámara → repetir → confirmar → galería → archivo inválido', (tester) async {
+  testWidgets('negar permiso → Ajustes → cámara → repetir → confirmar → galería → foto inválida', (tester) async {
     final almacen = AlmacenBorradorArchivos(usuarioId: 1);
     await almacen.limpiar();
     final borrador = BorradorReporte.nuevo(almacen);
@@ -55,8 +55,8 @@ void main() {
           bytes: jpgDePrueba(1600, 1200, fechaExif: '2026:10:20 10:00:00', zona: '-06:00'),
           nombre: 'galeria.jpg',
         ),
+        FotoCruda(bytes: jpgDePrueba(800, 600), nombre: 'chica.jpg'),
       ],
-      archivos: [FotoCruda(bytes: jpgDePrueba(800, 600), nombre: 'chica.jpg')],
     );
 
     final navegador = GlobalKey<NavigatorState>();
@@ -111,8 +111,8 @@ void main() {
     expect(borrador.fotos.last.origenFecha, OrigenFechaFoto.exif);
     expect(borrador.fotos.last.fechaCaptura, DateTime.utc(2026, 10, 20, 16, 0));
 
-    // --- Archivo de baja resolución: no se adjunta ---
-    await tester.tap(find.byKey(PantallaNuevoReporte.llaveArchivos));
+    // --- Foto de baja resolución: no se adjunta ---
+    await tester.tap(find.byKey(PantallaNuevoReporte.llaveGaleria));
     await esperarA(tester, find.textContaining('800×600'));
     expect(borrador.fotos, hasLength(2));
 

@@ -82,7 +82,7 @@ export function RequisitosCuenta() {
         ) : (
           <section className="rounded-3xl bg-white border border-slate-200 p-6 sm:p-8">
             {total > 1 && (
-              <p className="cifras text-xs font-bold text-miaa-azul">
+              <p className="tabular-nums text-xs font-bold text-miaa-azul">
                 Paso {paso === 'password' ? 1 : 2} de {total}
               </p>
             )}

@@ -239,7 +239,7 @@ Cada foto guarda **cuándo** y **dónde** se tomó. Los campos `fecha_captura`, 
 2. **Foto de galería:** la fecha EXIF `DateTimeOriginal`, respetando la zona horaria.
 3. La fecha del archivo, y si no hay otra, la hora en que se eligió la foto.
 
-Cada foto también manda `origenFecha` (OBTURADOR, EXIF, ARCHIVO o SUBIDA) para saber qué tan confiable es la hora, y `origenFoto` (CAMARA, GALERIA o ARCHIVOS; la web no lo manda).
+Cada foto también manda `origenFecha` (OBTURADOR, EXIF, ARCHIVO o SUBIDA) para saber qué tan confiable es la hora, y `origenFoto` (CAMARA o GALERIA; la web no lo manda). La app solo agrega fotos con la cámara o la galería.
 
 **Punto GPS** (solo en fotos tomadas con la cámara de la app; reglas en [reglas_gps.dart](movil/lib/ubicacion/reglas_gps.dart)):
 
@@ -259,7 +259,7 @@ Cada foto también manda `origenFecha` (OBTURADOR, EXIF, ARCHIVO o SUBIDA) para 
 
 ### 6.5 Presencia y ubicación en vivo
 
-- **"En línea":** la app y la web mandan un latido cada 30 s (`POST /usuarios/yo/conexion`). Si no llega nada en 60 s, el servidor marca al usuario como desconectado.
+- **Activo / Inactivo:** con la sesión iniciada y la app a la vista, la app y la web mandan un latido cada 30 s (`POST /usuarios/yo/conexion`). Al cerrar sesión pasa a inactivo de inmediato. Si no llega nada en 60 s (pantalla o celular apagados, app al fondo o cerrada, pestaña oculta o sin señal), también.
 - **Ubicación del notificador** ([UbicacionService.java](backend/src/main/java/com/miaa/lecturas/services/UbicacionService.java)):
   - el celular manda su posición cada ~20 s (`POST /ubicacion`);
   - el admin, con el mapa abierto, consulta cada 5 s.

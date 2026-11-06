@@ -54,7 +54,7 @@ public class UsuarioController {
 
     /**
      * GET /usuarios/empleados (solo ADMIN)
-     * → { diasInactivo: 7, empleados: [{ id, nombre, username, ultimoAcceso, ultimoReporte,
+     * → { empleados: [{ id, nombre, username, ultimoAcceso, ultimoReporte,
      *      totalReportes, ultimaActividad, activo, diasSinActividad, enLinea }] }
      */
     @GetMapping("/empleados")

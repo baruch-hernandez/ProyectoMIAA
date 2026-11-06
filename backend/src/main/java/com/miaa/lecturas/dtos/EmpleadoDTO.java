@@ -8,7 +8,7 @@ import com.miaa.lecturas.entities.Disponibilidad;
  * Cómo ve el ADMIN a cada empleado (notificador).
  *
  * @param ultimaActividad lo más reciente entre su último inicio de sesión y su último reporte
- * @param activo          true si tuvo actividad en los últimos N días (miaa.empleados.dias-inactivo)
+ * @param activo          true con la sesión iniciada y latidos llegando (miaa.presencia.segundos-en-linea)
  * @param diasSinActividad días desde la última actividad (null si nunca ha entrado)
  * @param enLinea         true si ahorita está compartiendo su ubicación (app abierta y con red)
  * @param habilitado      false si el admin lo dio de baja (ya no puede entrar)

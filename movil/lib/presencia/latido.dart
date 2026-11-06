@@ -5,8 +5,8 @@ import 'package:flutter/foundation.dart';
 import '../core/api.dart';
 import '../core/config.dart';
 
-/// Tarea 2.4: "sigo aquí" al backend cada 30 s → el admin ve al notificador "En línea".
-/// Si la app se va al fondo, se detiene (como WhatsApp); al volver, avisa de inmediato.
+/// Tarea 2.4: "sigo aquí" al backend cada 30 s → el admin ve al notificador "Activo".
+/// Con la pantalla apagada o la app al fondo se detiene y pasa a inactivo; al volver, avisa de inmediato.
 class Latido extends ChangeNotifier {
   Latido(this._api);
 

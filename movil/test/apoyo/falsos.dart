@@ -53,27 +53,17 @@ class PermisosFalsos implements ServicioPermisos {
   }
 }
 
-/// Galería y archivos que regresan lo que se les forme en la cola (null = canceló).
+/// Galería que regresa lo que se le forme en la cola (null = canceló).
 class FuenteFalsa implements FuenteFotos {
-  FuenteFalsa({List<FotoCruda?>? galeria, List<FotoCruda?>? archivos})
-      : galeria = galeria ?? [],
-        archivos = archivos ?? [];
+  FuenteFalsa({List<FotoCruda?>? galeria}) : galeria = galeria ?? [];
 
   final List<FotoCruda?> galeria;
-  final List<FotoCruda?> archivos;
   int vecesGaleria = 0;
-  int vecesArchivos = 0;
 
   @override
   Future<FotoCruda?> desdeGaleria() async {
     vecesGaleria++;
     return galeria.isEmpty ? null : galeria.removeAt(0);
-  }
-
-  @override
-  Future<FotoCruda?> desdeArchivos() async {
-    vecesArchivos++;
-    return archivos.isEmpty ? null : archivos.removeAt(0);
   }
 }
 

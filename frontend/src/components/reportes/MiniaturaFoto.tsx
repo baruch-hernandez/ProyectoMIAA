@@ -40,7 +40,7 @@ export function MiniaturaFoto({ datos, numero, fechaCaptura, origenFecha, ancho,
           <Clock size={13} className="mt-px shrink-0" aria-hidden="true" /> {principal}
         </span>
         {detalle && <span className="block text-slate-500">{detalle}</span>}
-        {ancho && alto && <span className="block cifras text-slate-400">{ancho}×{alto}</span>}
+        {ancho && alto && <span className="block tabular-nums text-slate-400">{ancho}×{alto}</span>}
       </figcaption>
 
       {onQuitar && (

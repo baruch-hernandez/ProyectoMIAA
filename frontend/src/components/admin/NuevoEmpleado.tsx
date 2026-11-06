@@ -97,7 +97,7 @@ export function NuevoEmpleado() {
             <dd className="font-bold text-miaa-marino">{creado.cuenta.username}</dd>
             <dt className="text-slate-500">Contraseña temporal</dt>
             <dd className="flex items-center gap-2">
-              <code className="cifras font-bold text-miaa-marino">{creado.password}</code>
+              <code className="tabular-nums font-bold text-miaa-marino">{creado.password}</code>
               <button type="button" onClick={() => copiar(`Usuario: ${creado.cuenta.username}\nContraseña temporal: ${creado.password}`)}
                 className="inline-flex items-center gap-1 h-8 px-2 rounded-lg text-xs font-semibold text-miaa-azul hover:bg-blue-50">
                 <Copy size={14} aria-hidden="true" /> {copiado ? 'Copiado' : 'Copiar'}
@@ -137,7 +137,7 @@ export function NuevoEmpleado() {
           )}
           <Campo id="password" etiqueta="Contraseña temporal" error={errores.passwordTemporal}>
             <div className="flex gap-2">
-              <input id="password" value={password} onChange={(e) => setPassword(e.target.value)} required maxLength={72} autoComplete="off" className={`${claseInput} cifras`} />
+              <input id="password" value={password} onChange={(e) => setPassword(e.target.value)} required maxLength={72} autoComplete="off" className={`${claseInput} tabular-nums`} />
               <button type="button" onClick={() => setPassword(generarPasswordTemporal())} title="Generar otra"
                 className="inline-flex items-center gap-1.5 h-12 px-3 rounded-xl text-sm font-semibold text-miaa-azul hover:bg-blue-50 shrink-0">
                 <RefreshCw size={16} aria-hidden="true" /> Otra

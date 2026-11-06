@@ -110,7 +110,7 @@ function AvisoGps({ estado }: { estado: EstadoGps }) {
           <p className="flex items-start gap-1.5 text-slate-600">
             <Crosshair size={16} className="mt-0.5 shrink-0 animate-pulse text-miaa-azul" aria-hidden="true" />
             <span>
-              Afinando tu ubicación: <span className="cifras font-semibold">±{estado.precision} m</span>.
+              Afinando tu ubicación: <span className="tabular-nums font-semibold">±{estado.precision} m</span>.
               Quédate quieto unos segundos, de preferencia al aire libre y frente al domicilio.
             </span>
           </p>
@@ -147,7 +147,7 @@ function AvisoGps({ estado }: { estado: EstadoGps }) {
         <p className="flex items-start gap-1.5 rounded-lg bg-[#fff4cc] px-3 py-2 text-[#7a5600]">
           <TriangleAlert size={16} className="mt-0.5 shrink-0" aria-hidden="true" />
           <span>
-            Precisión baja (<span className="cifras">±{precision} m</span>): puede ser otra casa de la cuadra.
+            Precisión baja (<span className="tabular-nums">±{precision} m</span>): puede ser otra casa de la cuadra.
             Arrastra el marcador al domicilio correcto.
           </span>
         </p>
@@ -461,7 +461,7 @@ export function NuevoReporte() {
             <AvisoGps estado={gps} />
             {ubicacion ? (
               <p className="text-slate-600">
-                Punto en <span className="cifras font-semibold">{ubicacion.lat.toFixed(5)}, {ubicacion.lng.toFixed(5)}</span>.{' '}
+                Punto en <span className="tabular-nums font-semibold">{ubicacion.lat.toFixed(5)}, {ubicacion.lng.toFixed(5)}</span>.{' '}
                 <button type="button" onClick={quitarPunto} className="font-semibold text-red-700 underline">
                   Quitar
                 </button>
@@ -498,7 +498,7 @@ export function NuevoReporte() {
                 title="C.P. de Aguascalientes: del 20000 al 20999"
                 maxLength={5}
                 placeholder="20000"
-                className={`${claseInput} cifras`}
+                className={`${claseInput} tabular-nums`}
               />
             </Campo>
             <Campo id="municipio" deGps={deGps.has('municipio')} etiqueta="Municipio" error={errores.municipio} className="col-span-8 sm:col-span-4">
@@ -511,7 +511,7 @@ export function NuevoReporte() {
               <input {...props('referencias')} maxLength={255} placeholder="Entre calles, color de fachada…" className={claseInput} />
             </Campo>
             <Campo id="numeroContrato" etiqueta="Núm. de contrato" opcional error={errores.numeroContrato} className="col-span-12 sm:col-span-5">
-              <input {...props('numeroContrato')} maxLength={30} inputMode="numeric" className={`${claseInput} cifras`} />
+              <input {...props('numeroContrato')} maxLength={30} inputMode="numeric" className={`${claseInput} tabular-nums`} />
             </Campo>
           </div>
 
@@ -538,7 +538,7 @@ export function NuevoReporte() {
               placeholder="Qué viste, desde cuándo pasa y a quién afecta."
               className={`${claseInput} h-auto py-3 leading-relaxed`}
             />
-            <p className="mt-1 text-right text-xs text-slate-500 cifras">{form.descripcion.length} de 2000</p>
+            <p className="mt-1 text-right text-xs text-slate-500 tabular-nums">{form.descripcion.length} de 2000</p>
           </Campo>
         </Paso>
 

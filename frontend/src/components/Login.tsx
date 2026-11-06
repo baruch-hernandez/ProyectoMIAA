@@ -149,7 +149,7 @@ export const Login: React.FC = () => {
                 <p className="font-semibold">{codigoError === 'CUENTA_BLOQUEADA' ? 'Cuenta bloqueada' : 'Demasiados intentos'}</p>
                 <p>{error}</p>
                 {segundosRestantes > 0 && (
-                  <p className="mt-1 font-semibold cifras" aria-live="off">Tiempo restante: {formatoEspera(segundosRestantes)}</p>
+                  <p className="mt-1 font-semibold tabular-nums" aria-live="off">Tiempo restante: {formatoEspera(segundosRestantes)}</p>
                 )}
               </div>
             </div>

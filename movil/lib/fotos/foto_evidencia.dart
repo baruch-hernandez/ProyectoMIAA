@@ -5,14 +5,13 @@ import '../ubicacion/ubicacion.dart';
 /// De dónde salió la foto (tarea 3.4: trazabilidad de auditoría).
 enum OrigenFoto {
   camara('Cámara'),
-  galeria('Galería'),
-  archivos('Archivos');
+  galeria('Galería');
 
   const OrigenFoto(this.etiqueta);
 
   final String etiqueta;
 
-  /// Como se guarda y se manda: CAMARA, GALERIA, ARCHIVOS.
+  /// Como se guarda y se manda: CAMARA o GALERIA.
   String get clave => name.toUpperCase();
 
   static OrigenFoto desdeClave(String? clave) =>
@@ -107,7 +106,7 @@ class FotoEvidencia {
   /// Cuándo se adjuntó al reporte (UTC).
   final DateTime fechaAdjunta;
 
-  /// Dónde se tomó (solo cámara de la app). null con galería o archivos.
+  /// Dónde se tomó (solo cámara de la app). null con galería.
   final LecturaGps? gps;
 
   /// servidor − celular al tomarla, en ms. null = la hora no se pudo verificar con el servidor.

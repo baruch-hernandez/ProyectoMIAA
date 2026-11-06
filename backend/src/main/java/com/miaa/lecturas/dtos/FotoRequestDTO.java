@@ -16,7 +16,7 @@ import java.time.Instant;
  * @param datos          "data:image/jpeg;base64,..." (la resolución la mide el servidor)
  * @param fechaCaptura   cuándo se TOMÓ, en ISO-8601: "2026-10-09T20:02:15Z"
  * @param origenFecha    de dónde sacó el front esa hora (OBTURADOR, EXIF, ARCHIVO o SUBIDA)
- * @param origenFoto     con qué se agregó en la app (CAMARA, GALERIA o ARCHIVOS). La web no lo manda
+ * @param origenFoto     con qué se agregó en la app (CAMARA o GALERIA). La web no lo manda
  * @param latitud        Historia 3: dónde se tomó (solo la cámara de la app; la web y la galería no lo mandan)
  * @param longitud       (las tres coordenadas van juntas o ninguna: lo revisa ReporteService)
  * @param precisionGps   radio de error del GPS en metros

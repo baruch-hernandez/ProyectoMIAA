@@ -279,7 +279,7 @@ DateTime? parsearFechaExif(String? texto, String? zona) {
   if (fechaExif != null && creible(fechaExif)) {
     return (fecha: fechaExif.toUtc(), origen: OrigenFechaFoto.exif);
   }
-  // Galería/archivos: la fecha del archivo vale solo si es anterior a cuando se eligió
+  // Galería: la fecha del archivo vale solo si es anterior a cuando se eligió
   // (si es "de ahorita", es la de la copia que hizo el selector).
   if (fechaArchivo != null &&
       creible(fechaArchivo) &&

@@ -18,7 +18,7 @@ flutter run --dart-define-from-file=config/dev.json
 
 | Tarea | Dónde |
 |---|---|
-| 1.1 Dependencias | `pubspec.yaml`: `camera`, `image_picker`, `file_picker`, `permission_handler`, `path_provider` e `image` (compresión y EXIF) |
+| 1.1 Dependencias | `pubspec.yaml`: `camera`, `image_picker`, `permission_handler`, `path_provider` e `image` (compresión y EXIF) |
 | 1.2 Permisos | `android/app/src/main/AndroidManifest.xml`: `CAMERA`, `READ_MEDIA_IMAGES` y `READ_EXTERNAL_STORAGE` con `maxSdkVersion="32"`. La cámara se marca `required="false"`. |
 | 1.3 minSdk | `android/app/build.gradle.kts`: `minSdk = maxOf(flutter.minSdkVersion, 24)`. CameraX pide 23 y permission_handler pide 24. |
 | 1.4 Servicio de permisos | `lib/permisos/servicio_permisos.dart` (granted / denied / permanentlyDenied / restricted) y `asegurarPermiso()` en `lib/permisos/dialogo_permiso.dart` |
@@ -30,8 +30,7 @@ flutter run --dart-define-from-file=config/dev.json
 | 3.1 Cámara integrada | `lib/fotos/pantalla_camara.dart`: CameraX a 1080p, enfoque al tocar, flash y linterna |
 | 3.1 Resolución y compresión | `lib/fotos/procesador_fotos.dart`: lado largo de 1920 px, JPEG con calidad de 85 a 62 hasta pesar ≤ 1.7 MB, mínimo 1280×720. Corre en otro hilo (isolate). |
 | 3.2 Galería | `FuenteFotosDispositivo.desdeGaleria()` en `lib/fotos/fuentes_fotos.dart` (image_picker) |
-| 3.3 Explorador de archivos | `FuenteFotosDispositivo.desdeArchivos()` (file_picker, solo jpg, jpeg y png) |
-| 3.4 Metadatos `origen_fecha_foto` | `resolverFechaCaptura()` (EXIF → ARCHIVO → SUBIDA). Se guarda en `FotoEvidencia.aJson()` con el origen CAMARA, GALERIA o ARCHIVOS. |
+| 3.4 Metadatos `origen_fecha_foto` | `resolverFechaCaptura()` (EXIF → ARCHIVO → SUBIDA). Se guarda en `FotoEvidencia.aJson()` con el origen CAMARA o GALERIA. |
 | Borrador persistente | `lib/reportes/almacen_borrador.dart`: carpeta privada de la app. Si se cierra la app, el reporte y sus fotos siguen ahí. |
 | Envío | `lib/reportes/api_reportes.dart`: `POST /reportes`, con el mismo formato que `ReporteRequestDTO` |
 | 4.1 Botón deshabilitado | `test/formulario_reporte_test.dart` |
@@ -89,8 +88,8 @@ La prueba de integración usa en el emulador **el procesamiento y el disco reale
 | P4 | Tomar una foto movida a propósito → en la vista previa, hacer zoom | Se nota que no se lee. Al tocar «Repetir foto», la cámara se reabre y esa foto NO aparece en el reporte. | ☐ |
 | P5 | Tomar una foto nítida del medidor → «Usar foto» | Aparece la miniatura «Cámara · hh:mm», con «Hora: OBTURADOR». **Enviar reporte** se habilita. | ☐ |
 | P6 | **Galería** → elegir `medidor.jpg` → «Usar foto» | La miniatura dice «Galería» y la hora es la del EXIF de la foto, no la de ahorita | ☐ |
-| P7 | **Archivos** → navegar a Pictures → elegir un PNG | Se adjunta. Los PDF ni siquiera aparecen, por el filtro. | ☐ |
-| P8 | **Archivos** → elegir una imagen de 800×600 | Mensaje «La foto mide 800×600…» y no se adjunta | ☐ |
+| P7 | Formulario de nuevo reporte | Solo aparecen los botones **Cámara** y **Galería** | ☐ |
+| P8 | **Galería** → elegir una imagen de 800×600 | Mensaje «La foto mide 800×600…» y no se adjunta | ☐ |
 | P9 | Quitar todas las fotos (la ✕ de cada miniatura) | **Enviar reporte** se deshabilita y aparece «Agrega al menos una foto…» | ☐ |
 | P10 | Con 2 fotos, cerrar la app desde recientes → abrirla → Nuevo reporte | El borrador sigue ahí, con sus 2 fotos y los campos que ya habías escrito | ☐ |
 | P11 | Con el backend prendido, llenar el formulario → Enviar | «Reporte enviado». El reporte aparece en el panel web con la hora de captura y su origen. | ☐ |
@@ -105,5 +104,5 @@ Anota en cada caso el modelo o la API del emulador y una captura. Te sirven de e
 - **Galería en Android 13+.** `image_picker` usa el Photo Picker del sistema, que en realidad no necesita `READ_MEDIA_IMAGES`. El permiso se pide igual porque así lo marca la tarea 1.2.
   - Si la app se publica en Google Play, revisa su política: Play restringe `READ_MEDIA_IMAGES` a apps cuyo propósito principal son las fotos. En ese caso convendría quitarlo y quedarse con el Photo Picker.
 - **"Permanentemente denegado" en Android** solo lo informa `request()`, nunca `status`. Así lo marca la guía de `permission_handler` 13, y el código nunca guarda ese veredicto: al volver de Ajustes, consulta de nuevo.
-- **`origenFoto`** (CAMARA, GALERIA o ARCHIVOS) viaja en la solicitud y el backend lo guarda en `fotos_reporte.origen_foto`.
+- **`origenFoto`** (CAMARA o GALERIA) viaja en la solicitud y el backend lo guarda en `fotos_reporte.origen_foto`.
 - **La latitud y la longitud** van en `null` hasta la tarea del GPS.

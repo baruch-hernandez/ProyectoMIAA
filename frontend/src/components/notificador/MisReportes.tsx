@@ -114,7 +114,7 @@ export function MisReportes() {
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h2 id="titulo-pendientes" className="flex items-center gap-2 text-lg font-extrabold text-[#7a5600]">
-                <CloudOff size={20} aria-hidden="true" /> Pendientes de enviar <span className="cifras">{pendientes.length}</span>
+                <CloudOff size={20} aria-hidden="true" /> Pendientes de enviar <span className="tabular-nums">{pendientes.length}</span>
               </h2>
               <p className="text-sm text-[#7a5600]">Guardados en este celular. Se envían solos cuando hay señal.</p>
             </div>

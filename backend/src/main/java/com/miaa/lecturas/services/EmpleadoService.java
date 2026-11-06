@@ -7,7 +7,6 @@ import com.miaa.lecturas.entities.Rol;
 import com.miaa.lecturas.entities.Usuario;
 import com.miaa.lecturas.repositories.ReporteRepository;
 import com.miaa.lecturas.repositories.UsuarioRepository;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,13 +17,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * ¿El empleado está ACTIVO o INACTIVO? (lo pidió el administrador)
- *
- * Regla "por actividad": está ACTIVO si inició sesión o subió un reporte en los
- * últimos N días. Si no, INACTIVO. Nadie tiene que marcarlo a mano: se calcula
- * solo.
- *
- * N se cambia en application.properties: miaa.empleados.dias-inactivo=7
+ * ¿El empleado está ACTIVO o INACTIVO? Sale de la presencia, no de días de actividad:
+ * ACTIVO con la sesión iniciada y latidos llegando; INACTIVO si cerró sesión o dejaron de
+ * llegar (pantalla o celular apagados, app al fondo o sin señal). Ver PresenciaService.
  */
 @Service
 public class EmpleadoService {
@@ -33,17 +28,14 @@ public class EmpleadoService {
     private final UsuarioRepository usuarioRepository;
     private final ReporteRepository reporteRepository;
     private final UbicacionService ubicacionService;
-    private final int diasInactivo;
 
     public EmpleadoService(UsuarioRepository usuarioRepository,
             ReporteRepository reporteRepository,
             UbicacionService ubicacionService,
-            PresenciaService presenciaService,
-            @Value("${miaa.empleados.dias-inactivo:7}") int diasInactivo) {
+            PresenciaService presenciaService) {
         this.usuarioRepository = usuarioRepository;
         this.reporteRepository = reporteRepository;
         this.ubicacionService = ubicacionService;
-        this.diasInactivo = diasInactivo;
         this.presenciaService = presenciaService;
     }
 
@@ -67,13 +59,13 @@ public class EmpleadoService {
                     Object[] s = stats.get(u.getId());
                     long total = s != null ? (Long) s[1] : 0L;
                     LocalDateTime ultimoReporte = s != null ? (LocalDateTime) s[2] : null;
-                    return armar(u, total, ultimoReporte, ahora, diasInactivo, enLinea.getOrDefault(u.getId(), false),
+                    return armar(u, total, ultimoReporte, ahora, enLinea.getOrDefault(u.getId(), false),
                             presenciaService.estado(u));
                 })
                 // Los dados de baja al final (mismo orden por nombre dentro de cada grupo)
                 .sorted(java.util.Comparator.comparing(e -> !e.habilitado()))
                 .toList();
-        return new EmpleadosDTO(diasInactivo, empleados);
+        return new EmpleadosDTO(empleados);
     }
 
     /**
@@ -82,18 +74,15 @@ public class EmpleadoService {
      * @param disponibilidad
      */
     static EmpleadoDTO armar(Usuario u, long totalReportes, LocalDateTime ultimoReporte,
-            LocalDateTime ahora, int diasInactivo, boolean enLinea,
+            LocalDateTime ahora, boolean enLinea,
             Disponibilidad disponibilidad) {
         LocalDateTime ultimaActividad = masReciente(u.getUltimoAcceso(), ultimoReporte);
         Long dias = ultimaActividad == null ? null : Math.max(0, Duration.between(ultimaActividad, ahora).toDays());
         // Un empleado dado de baja nunca cuenta como activo
-        boolean activo = u.estaHabilitado() && ultimaActividad != null
-                && ultimaActividad.isAfter(ahora.minusDays(diasInactivo));
+        Disponibilidad estado = u.estaHabilitado() ? disponibilidad : Disponibilidad.DESCONECTADO;
         return new EmpleadoDTO(u.getId(), u.getNombre(), u.getUsername(), u.getUltimoAcceso(),
-                ultimoReporte, totalReportes, ultimaActividad, activo, dias, enLinea, u.estaHabilitado(),
-                // Un empleado dado de baja nunca sale "en línea"
-                u.estaHabilitado() ? disponibilidad : Disponibilidad.DESCONECTADO, u.getUltimaConexion(),
-                u.getRol());
+                ultimoReporte, totalReportes, ultimaActividad, estado == Disponibilidad.EN_LINEA, dias, enLinea,
+                u.estaHabilitado(), estado, u.getUltimaConexion(), u.getRol());
     }
 
     private static LocalDateTime masReciente(LocalDateTime a, LocalDateTime b) {

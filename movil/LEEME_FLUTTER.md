@@ -27,7 +27,7 @@ notificador_miaa/
 │  ├─ presencia/
 │  │  └─ latido.dart                POST /usuarios/yo/conexion cada 30 s (tarea 2.4)
 │  ├─ inicio/
-│  │  └─ pantalla_inicio.dart       "Hola, …", estado En línea y GET /usuarios/yo
+│  │  └─ pantalla_inicio.dart       "Hola, …", estado Activo y GET /usuarios/yo
 │  └─ diagnostico/
 │     └─ pantalla_diagnostico.dart  prueba la conexión paso por paso
 └─ test/
@@ -95,8 +95,8 @@ flutter run --dart-define-from-file=config/celular.json
 1. Arranca el backend: `.\mvnw spring-boot:run` (con el perfil `https`, que ya trae `application.properties`).
 2. Corre la app, toca **"Probar conexión con el servidor"** y revisa que todo salga en verde.
 3. Entra con `notificador1` / `notificador1`:
-   - verás "Hola, Juan Pérez", el punto verde **En línea** y la respuesta de `/usuarios/yo` (con el aviso de privacidad pendiente, que es lo que sigue por programar);
-   - en el **panel web del admin → Empleados**, Juan Pérez sale **En línea**;
+   - verás "Hola, Juan Pérez", el punto verde **Activo** y la respuesta de `/usuarios/yo` (con el aviso de privacidad pendiente, que es lo que sigue por programar);
+   - en el **panel web del admin → Empleados**, Juan Pérez sale **Activo**;
    - al tocar **Cerrar sesión**, el admin lo ve "Últ. vez…".
 4. Entra con `admin`: la app debe **rechazarlo** ("Esta app es solo para notificadores").
 5. Mete mal la contraseña 5 veces: debe salir **"Cuenta bloqueada"**.
