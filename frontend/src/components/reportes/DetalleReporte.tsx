@@ -20,7 +20,7 @@ interface Props {
 /**
  * Detalle de un reporte. Lo usan el notificador y el administrador:
  *  - Si el backend dice `puedeEditar` (quien lo subió): puede agregar notas y quitar/poner fotos.
- *  - Si no (el admin): solo consulta. Los botones ni se muestran.
+ *  - Si no (el admin): no toca notas ni fotos, pero con `puedeCorregir` corrige los datos.
  * Ojo: esconder botones es comodidad; quien de verdad lo impide es el backend.
  */
 export function DetalleReporte({ volverA }: Props) {
@@ -183,7 +183,10 @@ export function DetalleReporte({ volverA }: Props) {
 
       {!editable && (
         <p className="inline-flex items-center gap-2 rounded-full bg-white border border-slate-200 px-3 py-1.5 text-sm text-slate-600">
-          <Eye size={16} aria-hidden="true" /> Solo consulta: este reporte lo subió {r.autor}.
+          <Eye size={16} aria-hidden="true" />
+          {r.puedeCorregir
+            ? `Este reporte lo subió ${r.autor}. Puedes corregir sus datos; las fotos no se cambian.`
+            : `Solo consulta: este reporte lo subió ${r.autor}.`}
         </p>
       )}
 
@@ -202,14 +205,15 @@ export function DetalleReporte({ volverA }: Props) {
           )}
         </p>
 
-        {/* Corregir o borrar: solo el autor y en las primeras horas (después queda como evidencia) */}
-        {r.puedeModificar && (
+        {/* Corregir: el autor en las primeras horas o el admin cuando sea. Borrar: solo el autor a tiempo. */}
+        {r.puedeCorregir && (
           <div className="mt-4 pt-4 border-t border-miaa-azul/15">
             <div className="flex flex-wrap items-center gap-2">
-              <Link to={`/reportes/${r.id}/editar`} className="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl bg-white text-sm font-bold text-miaa-marino hover:bg-blue-50">
+              {/* Relativo: /reportes/5/editar o /admin/reportes/5/editar según quién lo abra */}
+              <Link to="editar" className="inline-flex items-center gap-1.5 h-10 px-4 rounded-xl bg-white text-sm font-bold text-miaa-marino hover:bg-blue-50">
                 <Pencil size={15} aria-hidden="true" /> Corregir datos
               </Link>
-              {confirmandoBorrar ? (
+              {!r.puedeModificar ? null : confirmandoBorrar ? (
                 <span className="inline-flex flex-wrap items-center gap-1.5 text-sm">
                   <span className="font-semibold text-red-800">¿Borrar este reporte con sus fotos y notas?</span>
                   <button type="button" onClick={borrar} disabled={borrando} className="inline-flex items-center gap-1.5 h-10 px-3 rounded-xl font-bold text-white bg-red-700 hover:bg-red-800 disabled:opacity-60">

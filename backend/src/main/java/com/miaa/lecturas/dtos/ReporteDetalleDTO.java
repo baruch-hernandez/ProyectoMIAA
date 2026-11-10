@@ -8,8 +8,10 @@ import java.util.List;
  *
  * @param puedeEditar     true solo para quien lo subió: puede agregar notas y quitar/poner fotos.
  * @param puedeModificar  true si además todavía está a tiempo de corregir o borrar el reporte.
+ * @param puedeCorregir   true si puede corregir domicilio, ubicación o descripción:
+ *                        el autor a tiempo (= puedeModificar) o cualquier ADMIN.
  * @param modificableHasta hasta cuándo puede corregirlo o borrarlo (null si no es suyo).
- *                    El ADMIN lo ve en false (solo consulta). El front lo usa para mostrar
+ *                    El ADMIN los ve en false (no toca notas ni fotos). El front lo usa para mostrar
  *                    u ocultar botones, pero quien de verdad lo hace cumplir es ReporteService.
  */
 public record ReporteDetalleDTO(
@@ -34,5 +36,6 @@ public record ReporteDetalleDTO(
         List<NotaDTO> notas,
         boolean puedeEditar,
         boolean puedeModificar,
-        LocalDateTime modificableHasta) {
+        LocalDateTime modificableHasta,
+        boolean puedeCorregir) {
 }

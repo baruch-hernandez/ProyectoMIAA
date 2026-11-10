@@ -3,6 +3,7 @@ package com.miaa.lecturas.services;
 import com.miaa.lecturas.config.UsuarioPrincipal;
 import com.miaa.lecturas.dtos.FotoDTO;
 import com.miaa.lecturas.dtos.FotoRequestDTO;
+import com.miaa.lecturas.dtos.ReporteDetalleDTO;
 import com.miaa.lecturas.dtos.ReporteEdicionDTO;
 import com.miaa.lecturas.dtos.ReporteResumenDTO;
 import com.miaa.lecturas.entities.OrigenFechaFoto;
@@ -24,8 +25,10 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -44,6 +47,8 @@ class ReporteServiceTest {
 
     private ReporteRepository reportes;
     private FotoReporteRepository fotos;
+    private NotaReporteRepository notas;
+    private UsuarioRepository usuarios;
     private LimiteAguascalientes limiteAgs;
     private ReporteService servicio;
 
@@ -51,13 +56,14 @@ class ReporteServiceTest {
     void preparar() {
         reportes = mock(ReporteRepository.class);
         fotos = mock(FotoReporteRepository.class);
-        NotaReporteRepository notas = mock(NotaReporteRepository.class);
+        notas = mock(NotaReporteRepository.class);
+        usuarios = mock(UsuarioRepository.class);
         when(notas.buscarPorReporte(any())).thenReturn(List.of());
         limiteAgs = mock(LimiteAguascalientes.class);
         ValidadorFotos validador = mock(ValidadorFotos.class);
         when(validador.validar(any())).thenReturn(new ValidadorFotos.Medidas(1920, 1080));
         when(fotos.save(any())).thenAnswer(i -> i.getArgument(0));
-        servicio = new ReporteService(reportes, fotos, notas, mock(UsuarioRepository.class),
+        servicio = new ReporteService(reportes, fotos, notas, usuarios,
                 limiteAgs, validador, 24);
     }
 
@@ -95,10 +101,24 @@ class ReporteServiceTest {
     }
 
     @Test
-    void elAdminLoVePeroNoLoCambia() {
+    void elAdminCorrigeLosDatosAunqueHayaPasadoElPlazoYQuedaNota() {
+        reporte(25);
+        when(usuarios.findById(ADMIN.id())).thenReturn(Optional.of(new Usuario()));
+
+        ReporteDetalleDTO d = servicio.editar(ADMIN, 5L, edicion());
+
+        assertEquals("Descripción corregida", d.descripcion());
+        assertTrue(d.puedeCorregir());
+        assertFalse(d.puedeModificar()); // no borra ni toca fotos
+        verify(notas).save(any());
+    }
+
+    @Test
+    void elAdminNoBorraElReporteNiSusFotos() {
         reporte(1);
-        assertEquals(5L, servicio.detalle(ADMIN, 5L).id());
         assertEquals(403, status(assertThrows(ResponseStatusException.class, () -> servicio.borrar(ADMIN, 5L))));
+        assertEquals(403, status(assertThrows(ResponseStatusException.class, () -> servicio.borrarFoto(ADMIN, 5L, 7L))));
+        verify(fotos, never()).delete(any());
     }
 
     @Test

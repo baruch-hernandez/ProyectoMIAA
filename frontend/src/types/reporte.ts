@@ -104,6 +104,8 @@ export interface ReporteDetalle {
   puedeModificar: boolean;
   /** Hasta cuándo puede corregirlo o borrarlo */
   modificableHasta: string | null;
+  /** Puede corregir domicilio, ubicación o descripción: el autor a tiempo o cualquier admin */
+  puedeCorregir: boolean;
 }
 
 /** GET /usuarios/empleados  ↔  EmpleadoDTO.java */

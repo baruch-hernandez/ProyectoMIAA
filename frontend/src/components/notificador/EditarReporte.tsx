@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, LoaderCircle } from 'lucide-react';
 import { reportesApi, leerError } from '../../services/reportesApi';
 import type { Coordenadas, ReporteDetalle, ReporteEdicion } from '../../types/reporte';
@@ -27,12 +27,14 @@ function aCampos(r: ReporteDetalle): Campos {
 }
 
 /**
- * Corregir domicilio, ubicación o descripción de un reporte propio, en las primeras
- * horas después de enviarlo. Las fotos se cambian desde el detalle (en el mismo plazo).
+ * Corregir domicilio, ubicación o descripción. El notificador, el suyo y en las primeras horas
+ * (las fotos se cambian desde el detalle, en el mismo plazo); el admin, cualquiera y cuando sea.
  */
 export function EditarReporte() {
   const id = Number(useParams().id);
   const navigate = useNavigate();
+  // El detalle de donde vino: /reportes/5 (notificador) o /admin/reportes/5 (admin)
+  const detalle = useLocation().pathname.replace(/\/editar\/?$/, '');
   const [reporte, setReporte] = useState<ReporteDetalle | null>(null);
   const [form, setForm] = useState<Campos | null>(null);
   const [ubicacion, setUbicacion] = useState<Coordenadas | null>(null);
@@ -58,12 +60,12 @@ export function EditarReporte() {
   }, [id]);
 
   const volver = (
-    <Link to={`/reportes/${id}`} className="inline-flex items-center gap-1.5 h-10 text-sm font-semibold text-miaa-azul hover:text-miaa-marino">
+    <Link to={detalle} className="inline-flex items-center gap-1.5 h-10 text-sm font-semibold text-miaa-azul hover:text-miaa-marino">
       <ArrowLeft size={18} aria-hidden="true" /> Volver al reporte
     </Link>
   );
 
-  if (errorCarga || (reporte && !reporte.puedeModificar)) {
+  if (errorCarga || (reporte && !reporte.puedeCorregir)) {
     return (
       <div className="max-w-xl">
         {volver}
@@ -109,7 +111,7 @@ export function EditarReporte() {
     setErrores({});
     try {
       await reportesApi.editar(id, { ...form, latitud: ubicacion?.lat ?? null, longitud: ubicacion?.lng ?? null });
-      navigate(`/reportes/${id}`, { replace: true, state: { editado: true } });
+      navigate(detalle, { replace: true, state: { editado: true } });
     } catch (err) {
       const { mensaje, errores: porCampo } = leerError(err);
       setErrorGeneral(mensaje);
@@ -125,7 +127,8 @@ export function EditarReporte() {
       {volver}
       <h1 className="mt-1 text-3xl font-extrabold text-miaa-marino">Corregir reporte</h1>
       <p className="mt-1 text-slate-600">
-        <span className="tabular-nums font-semibold">{reporte.folio}</span> · El administrador verá que fue editado.
+        <span className="tabular-nums font-semibold">{reporte.folio}</span> ·{' '}
+        {reporte.puedeEditar ? 'El administrador verá que fue editado.' : `Lo subió ${reporte.autor}. Quedará una nota con tu nombre en el reporte.`}
         {reporte.modificableHasta && <> Puedes corregirlo hasta el {formatoFecha(reporte.modificableHasta)}</>}
       </p>
 
@@ -184,7 +187,7 @@ export function EditarReporte() {
         </Paso>
 
         <div className="sticky bottom-20 md:bottom-4 z-20 flex gap-3 p-3 -mx-3 rounded-2xl bg-white/95 backdrop-blur border border-slate-200 shadow-lg shadow-miaa-marino/10">
-          <Link to={`/reportes/${id}`} className="inline-flex items-center justify-center h-12 px-5 rounded-xl font-semibold text-slate-700 hover:bg-slate-100">
+          <Link to={detalle} className="inline-flex items-center justify-center h-12 px-5 rounded-xl font-semibold text-slate-700 hover:bg-slate-100">
             Cancelar
           </Link>
           <button type="submit" disabled={guardando} className="flex-1 inline-flex items-center justify-center gap-2 h-12 px-6 rounded-xl bg-miaa-marino text-white font-bold hover:bg-blue-800 disabled:opacity-60 transition-colors">

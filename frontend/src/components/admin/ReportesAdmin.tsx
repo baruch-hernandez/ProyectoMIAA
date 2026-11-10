@@ -6,7 +6,7 @@ import { ListaReportes } from '../reportes/ListaReportes';
 
 /**
  * El administrador ve los reportes de TODOS los empleados, del más nuevo al más viejo.
- * Solo consulta: no hay filtros ni exportar (MIAA pidió quitarlos).
+ * Sin filtros ni exportar (MIAA pidió quitarlos). Los datos se corrigen desde el detalle.
  */
 export function ReportesAdmin() {
   const [reportes, setReportes] = useState<ReporteResumen[]>([]);

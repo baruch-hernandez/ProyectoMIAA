@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronRight, MapPin, RefreshCw, UserPlus } from 'lucide-react';
+import { ChevronRight, MapPin, RefreshCw, Search, UserPlus } from 'lucide-react';
 import { usuariosApi } from '../../services/usuariosApi';
 import { leerError } from '../../services/reportesApi';
 import type { Empleado, EmpleadosRespuesta } from '../../types/reporte';
 import { fechaRelativa, formatoFecha } from '../../utils/catalogos';
 import { nombreRol } from '../../utils/roles';
+import { claseInput } from '../../utils/estilos';
 
 function EstadoEmpleado({ activo, habilitado = true }: { activo: boolean; habilitado?: boolean }) {
   if (!habilitado) {
@@ -51,6 +52,15 @@ function textoInactividad(e: Empleado): string {
   return e.diasSinActividad === 1 ? '1 día sin actividad' : `${e.diasSinActividad} días sin actividad`;
 }
 
+type FiltroEstado = 'todos' | 'activo' | 'inactivo' | 'baja';
+
+function estadoDe(e: Empleado): Exclude<FiltroEstado, 'todos'> {
+  if (!e.habilitado) return 'baja';
+  return e.activo ? 'activo' : 'inactivo';
+}
+
+/** Para buscar sin importar mayúsculas ni acentos: "jose" encuentra a "José". */
+const normalizar = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
 export function EmpleadosAdmin() {
   const navigate = useNavigate();
@@ -58,6 +68,8 @@ export function EmpleadosAdmin() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [recarga, setRecarga] = useState(0);
+  const [busqueda, setBusqueda] = useState('');
+  const [filtro, setFiltro] = useState<FiltroEstado>('todos');
 
   useEffect(() => {
     let ignorar = false;
@@ -83,6 +95,10 @@ export function EmpleadosAdmin() {
 
   const empleados = datos?.empleados ?? [];
   const activos = empleados.filter((e) => e.activo).length;
+  const termino = normalizar(busqueda.trim());
+  const visibles = empleados.filter((e) =>
+    (filtro === 'todos' || estadoDe(e) === filtro) && normalizar(`${e.nombre} ${e.username}`).includes(termino));
+  const limpiarFiltros = () => { setBusqueda(''); setFiltro('todos'); };
 
   return (
     <div className="space-y-6">
@@ -139,6 +155,41 @@ export function EmpleadosAdmin() {
         </div>
       ) : datos && (
         <>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="relative w-full sm:max-w-sm">
+              <label htmlFor="buscar-empleado" className="sr-only">Buscar empleado por nombre</label>
+              <Search size={18} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+              <input
+                id="buscar-empleado"
+                type="search"
+                value={busqueda}
+                onChange={(ev) => setBusqueda(ev.target.value)}
+                placeholder="Buscar por nombre"
+                autoComplete="off"
+                className={`${claseInput} pl-10`}
+              />
+            </div>
+            <div className="w-full sm:w-52">
+              <label htmlFor="filtro-estado" className="sr-only">Filtrar por estado</label>
+              <select id="filtro-estado" value={filtro} onChange={(ev) => setFiltro(ev.target.value as FiltroEstado)} className={claseInput}>
+                <option value="todos">Todos los estados</option>
+                <option value="activo">Activos</option>
+                <option value="inactivo">Inactivos</option>
+                <option value="baja">Dados de baja</option>
+              </select>
+            </div>
+            <p className="text-sm text-slate-500 sm:ml-auto" aria-live="polite">
+              <span className="tabular-nums">{visibles.length}</span> de <span className="tabular-nums">{empleados.length}</span>
+            </p>
+          </div>
+
+          {visibles.length === 0 ? (
+            <div className="rounded-2xl border-2 border-dashed border-slate-300 bg-white/60 p-10 text-center">
+              <p className="font-bold text-miaa-marino">Ningún empleado coincide con la búsqueda.</p>
+              <button type="button" onClick={limpiarFiltros} className="mt-2 text-sm font-semibold text-miaa-azul underline">Quitar filtros</button>
+            </div>
+          ) : (
+          <>
           {/* Tabla (pantallas medianas en adelante) */}
           <div className="hidden md:block rounded-2xl bg-white border border-slate-200 overflow-hidden">
             <table className="w-full text-left text-sm">
@@ -155,7 +206,7 @@ export function EmpleadosAdmin() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {empleados.map((e) => (
+                {visibles.map((e) => (
                   // Toda la fila es clicable con el mouse; el nombre es un enlace real (teclado y lectores de pantalla)
                   <tr key={e.id} onClick={() => navigate(`/admin/empleados/${e.id}`)} className="cursor-pointer hover:bg-blue-50/50 transition-colors">
                     <td className="px-5 py-3.5">
@@ -180,7 +231,7 @@ export function EmpleadosAdmin() {
 
           {/* Tarjetas (celular) */}
           <ul className="md:hidden space-y-3">
-            {empleados.map((e) => (
+            {visibles.map((e) => (
               <li key={e.id}>
                 <Link to={`/admin/empleados/${e.id}`} className="block rounded-2xl bg-white border border-slate-200 p-4 hover:border-miaa-azul transition-colors">
                 <div className="flex items-start justify-between gap-3">
@@ -210,6 +261,8 @@ export function EmpleadosAdmin() {
               </li>
             ))}
           </ul>
+          </>
+          )}
         </>
       )}
     </div>
