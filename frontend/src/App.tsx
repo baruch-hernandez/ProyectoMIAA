@@ -24,11 +24,12 @@ function App() {
         {/* Con sesión, pero ANTES de todo lo demás: contraseña temporal y aviso de privacidad */}
         <Route path="/cuenta/requisitos" element={<RequisitosCuenta />} />
 
-        {/* ADMIN: solo consulta los reportes y el estado de los empleados */}
+        {/* ADMIN: consulta y corrige reportes, y ve el estado de los empleados */}
         <Route element={<ProtectedRoute allowedRole="ADMIN" />}>
           <Route element={<AdminLayout />}>
             <Route path="/admin" element={<ReportesAdmin />} />
             <Route path="/admin/reportes/:id" element={<DetalleReporte volverA={{ to: '/admin', texto: 'Reportes' }} />} />
+            <Route path="/admin/reportes/:id/editar" element={<EditarReporte />} />
             <Route path="/admin/empleados" element={<EmpleadosAdmin />} />
             <Route path="/admin/empleados/nuevo" element={<NuevoEmpleado />} />
             <Route path="/admin/empleados/:id" element={<UbicacionEmpleado />} />

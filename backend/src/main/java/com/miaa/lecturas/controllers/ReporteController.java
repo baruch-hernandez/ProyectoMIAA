@@ -31,16 +31,16 @@ import java.util.List;
  *
  *  NOTIFICADOR
  *   POST   /reportes                         subir un reporte (con clienteId no se duplica al reenviar)
- *   PUT    /reportes/{id}                    corregir domicilio/descripción (primeras 24 h)
  *   DELETE /reportes/{id}                    borrarlo (primeras 24 h)
  *   GET    /reportes/mios                    mis reportes
  *   POST   /reportes/{id}/notas              agregar una nota
  *   POST   /reportes/{id}/fotos              poner una foto (máx. 3, primeras 24 h)
  *   DELETE /reportes/{id}/fotos/{fotoId}     quitar una foto (primeras 24 h)
- *  ADMIN (solo consulta)
+ *  ADMIN
  *   GET    /reportes                         los reportes de todos los empleados
  *  AMBOS
  *   GET    /reportes/{id}                    detalle (el notificador solo los suyos)
+ *   PUT    /reportes/{id}                    corregir datos (el notificador, el suyo y a tiempo; el admin, cualquiera)
  *
  * @PreAuthorize dice QUÉ ROL entra; ReporteService decide sobre QUÉ reporte.
  * Los nombres en @PathVariable("id") van explícitos para que funcione aunque el IDE
@@ -83,7 +83,7 @@ public class ReporteController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('NOTIFICADOR')")
+    @PreAuthorize("hasAnyRole('NOTIFICADOR', 'ADMIN')")
     public ReporteDetalleDTO editar(@AuthenticationPrincipal UsuarioPrincipal yo,
                                     @PathVariable("id") Long id,
                                     @Valid @RequestBody ReporteEdicionDTO request) {

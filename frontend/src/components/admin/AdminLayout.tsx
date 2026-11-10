@@ -12,7 +12,7 @@ interface Destino {
   end?: boolean;
 }
 
-// El administrador SOLO consulta: los reportes de los empleados y si están activos.
+// El administrador consulta y corrige los reportes de los empleados, y ve si están activos.
 const DESTINOS: Destino[] = [
   { to: '/admin', texto: 'Reportes', icono: ClipboardList, end: false },
   { to: '/admin/empleados', texto: 'Empleados', icono: Users },

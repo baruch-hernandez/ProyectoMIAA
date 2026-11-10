@@ -43,7 +43,9 @@ import java.util.stream.Stream;
  *  - NOTIFICADOR: sube reportes, ve SOLO los suyos y les agrega notas cuando quiera.
  *    Puede CORREGIR, BORRAR o quitar/poner FOTOS solo en las primeras N horas (configurable):
  *    después queda fijo como evidencia.
- *  - ADMIN: ve TODOS los reportes, pero solo para consultar (no los cambia).
+ *  - ADMIN: ve TODOS los reportes y puede corregir sus datos (domicilio, ubicación, descripción)
+ *    en cualquier momento. No borra reportes ni toca fotos (son la evidencia), y cada corrección
+ *    deja una nota con su nombre.
  */
 @Service
 public class ReporteService {
@@ -118,15 +120,19 @@ public class ReporteService {
     }
 
     // =====================================================================
-    // Corregir o borrar (NOTIFICADOR, solo el suyo y a tiempo)
+    // Corregir (NOTIFICADOR, solo el suyo y a tiempo; ADMIN, cualquiera) o borrar (NOTIFICADOR)
     // =====================================================================
 
     @Transactional
     public ReporteDetalleDTO editar(UsuarioPrincipal yo, Long id, ReporteEdicionDTO req) {
-        Reporte r = obtenerParaModificar(yo, id);
+        Reporte r = yo.esAdmin() ? obtenerParaVer(yo, id) : obtenerParaModificar(yo, id);
         validarDatos(req);
         aplicarDatos(r, req);
-        r.setFechaEdicion(LocalDateTime.now()); // el admin verá "Editado"
+        r.setFechaEdicion(LocalDateTime.now()); // se verá "Editado"
+        if (yo.esAdmin()) {
+            // Rastro de auditoría: el notificador y otros admins ven quién lo corrigió y cuándo
+            notaRepository.save(new NotaReporte(r, usuarioActual(yo), "Datos del reporte corregidos por el administrador."));
+        }
         return aDetalle(r, notaRepository.buscarPorReporte(id), yo);
     }
 
@@ -225,7 +231,7 @@ public class ReporteService {
         return r;
     }
 
-    /** Cambiar (notas/fotos): SOLO quien lo subió. El ADMIN solo consulta. */
+    /** Cambiar (notas/fotos): SOLO quien lo subió. El ADMIN solo corrige datos (ver editar). */
     private Reporte obtenerParaEditar(UsuarioPrincipal yo, Long id) {
         Reporte r = obtenerParaVer(yo, id);
         if (!esAutor(yo, r)) {
@@ -383,6 +389,7 @@ public class ReporteService {
                 notas.stream().map(NotaDTO::desde).toList(),
                 esAutor(yo, r),
                 esAutor(yo, r) && dentroDeVentana(r.getFechaCreacion(), LocalDateTime.now(), horasParaModificar),
-                esAutor(yo, r) && r.getFechaCreacion() != null ? r.getFechaCreacion().plusHours(horasParaModificar) : null);
+                esAutor(yo, r) && r.getFechaCreacion() != null ? r.getFechaCreacion().plusHours(horasParaModificar) : null,
+                yo.esAdmin() || (esAutor(yo, r) && dentroDeVentana(r.getFechaCreacion(), LocalDateTime.now(), horasParaModificar)));
     }
 }
