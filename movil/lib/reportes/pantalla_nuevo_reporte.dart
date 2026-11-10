@@ -18,6 +18,7 @@ import '../ubicacion/pantalla_elegir_ubicacion.dart';
 import '../ubicacion/ubicacion.dart';
 import 'almacen_borrador.dart';
 import 'borrador_reporte.dart';
+import 'campo_tipo_predio.dart';
 import 'reglas_reporte.dart' as reglas;
 
 /// Manda el reporte al backend (en la app real: ApiReportes.crear).
@@ -96,7 +97,7 @@ class _PantallaNuevoReporteState extends State<PantallaNuevoReporte> {
   final _municipio = GlobalKey<FormFieldState<String>>();
   late final Map<String, TextEditingController> _textos = {
     for (final c in CampoReporte.todos)
-      if (c != CampoReporte.municipio) c: TextEditingController(text: widget.borrador.campo(c)),
+      if (!CampoReporte.listas.contains(c)) c: TextEditingController(text: widget.borrador.campo(c)),
   };
   late final FuenteFotos _fuente = widget.fuente ?? FuenteFotosDispositivo();
   bool _procesando = false;
@@ -441,6 +442,14 @@ class _PantallaNuevoReporteState extends State<PantallaNuevoReporte> {
                   ),
                   _texto(CampoReporte.referencias, 'Referencias', largoMaximo: 255, ayuda: 'Opcional: entre qué calles, color de la casa…'),
                   _texto(CampoReporte.numeroContrato, 'Número de contrato', largoMaximo: 30, ayuda: 'Opcional'),
+                  const SizedBox(height: 8),
+                  Text('Predio', style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 12),
+                  CampoTipoPredio(
+                    valor: _b.campo(CampoReporte.tipoPredio),
+                    alCambiar: (t) => _b.ponerCampo(CampoReporte.tipoPredio, t),
+                  ),
+                  _texto(CampoReporte.claveCatastral, 'Clave catastral', largoMaximo: 30, ayuda: 'Opcional'),
                   const SizedBox(height: 8),
                   Text('Descripción', style: Theme.of(context).textTheme.titleMedium),
                   const SizedBox(height: 12),

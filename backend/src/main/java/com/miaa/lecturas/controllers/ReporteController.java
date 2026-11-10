@@ -33,13 +33,13 @@ import java.util.List;
  *   POST   /reportes                         subir un reporte (con clienteId no se duplica al reenviar)
  *   DELETE /reportes/{id}                    borrarlo (primeras 24 h)
  *   GET    /reportes/mios                    mis reportes
- *   POST   /reportes/{id}/notas              agregar una nota
  *   POST   /reportes/{id}/fotos              poner una foto (máx. 3, primeras 24 h)
  *   DELETE /reportes/{id}/fotos/{fotoId}     quitar una foto (primeras 24 h)
  *  ADMIN
  *   GET    /reportes                         los reportes de todos los empleados
  *  AMBOS
  *   GET    /reportes/{id}                    detalle (el notificador solo los suyos)
+ *   POST   /reportes/{id}/notas              agregar una nota (el notificador al suyo; el admin a cualquiera)
  *   PUT    /reportes/{id}                    corregir datos (el notificador, el suyo y a tiempo; el admin, cualquiera)
  *
  * @PreAuthorize dice QUÉ ROL entra; ReporteService decide sobre QUÉ reporte.
@@ -98,7 +98,7 @@ public class ReporteController {
     }
 
     @PostMapping("/{id}/notas")
-    @PreAuthorize("hasRole('NOTIFICADOR')")
+    @PreAuthorize("hasAnyRole('NOTIFICADOR', 'ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
     public NotaDTO agregarNota(@AuthenticationPrincipal UsuarioPrincipal yo,
                                @PathVariable("id") Long id,

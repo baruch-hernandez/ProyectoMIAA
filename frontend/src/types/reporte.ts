@@ -40,6 +40,9 @@ export interface ReporteRequest {
   municipio: string;
   referencias: string;
   numeroContrato: string;
+  /** Clave de TIPOS_PREDIO (obligatorio) */
+  tipoPredio: string;
+  claveCatastral: string;
   latitud: number | null;
   longitud: number | null;
   descripcion: string;
@@ -88,6 +91,9 @@ export interface ReporteDetalle {
   municipio: string;
   referencias: string | null;
   numeroContrato: string | null;
+  /** null solo en reportes de antes de que existiera el campo */
+  tipoPredio: string | null;
+  claveCatastral: string | null;
   latitud: number | null;
   longitud: number | null;
   descripcion: string;
@@ -106,6 +112,8 @@ export interface ReporteDetalle {
   modificableHasta: string | null;
   /** Puede corregir domicilio, ubicación o descripción: el autor a tiempo o cualquier admin */
   puedeCorregir: boolean;
+  /** Puede escribir notas: quien lo subió o cualquier admin (es su conversación) */
+  puedeAnotar: boolean;
 }
 
 /** GET /usuarios/empleados  ↔  EmpleadoDTO.java */

@@ -4,6 +4,7 @@ import '../core/api.dart';
 import '../ubicacion/mapa_ags.dart';
 import '../ubicacion/ubicacion.dart';
 import 'api_reportes.dart';
+import 'borrador_reporte.dart' show tiposPredio;
 import 'pantalla_editar_reporte.dart';
 
 /// Fecha del backend (LocalDateTime, hora de Aguascalientes) → "28/10/2026 10:15".
@@ -145,7 +146,8 @@ class _TarjetaReporte extends StatelessWidget {
 }
 
 /// Un reporte completo: domicilio, ubicación, fotos y notas. Si todavía está a tiempo
-/// (puedeModificar, lo decide el backend), ofrece corregirlo.
+/// (puedeModificar, lo decide el backend), ofrece corregirlo. Las notas son la conversación
+/// con el admin: las suyas salen destacadas y se le puede responder.
 class PantallaDetalleReporte extends StatefulWidget {
   const PantallaDetalleReporte({super.key, required this.api, required this.id, this.conMosaicos = true});
 
@@ -154,6 +156,8 @@ class PantallaDetalleReporte extends StatefulWidget {
   final bool conMosaicos;
 
   static const llaveCorregir = Key('btn-corregir-reporte');
+  static const llaveNota = Key('campo-nota');
+  static const llaveEnviarNota = Key('btn-enviar-nota');
 
   @override
   State<PantallaDetalleReporte> createState() => _PantallaDetalleReporteState();
@@ -162,6 +166,8 @@ class PantallaDetalleReporte extends StatefulWidget {
 class _PantallaDetalleReporteState extends State<PantallaDetalleReporte> {
   Map<String, dynamic>? _reporte;
   String? _error;
+  final _nota = TextEditingController();
+  bool _enviandoNota = false;
 
   @override
   void initState() {
@@ -179,6 +185,30 @@ class _PantallaDetalleReporteState extends State<PantallaDetalleReporte> {
       });
     } catch (e) {
       if (mounted) setState(() => _error = ApiError.de(e).mensaje);
+    }
+  }
+
+  @override
+  void dispose() {
+    _nota.dispose();
+    super.dispose();
+  }
+
+  Future<void> _enviarNota() async {
+    final texto = _nota.text.trim();
+    if (texto.isEmpty || _enviandoNota) return;
+    setState(() => _enviandoNota = true);
+    try {
+      await widget.api.agregarNota(widget.id, texto);
+      _nota.clear();
+      await _cargar(); // trae la nota con su fecha y autor reales
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(ApiError.de(e).mensaje)));
+    } finally {
+      if (mounted) setState(() => _enviandoNota = false);
     }
   }
 
@@ -245,6 +275,8 @@ class _PantallaDetalleReporteState extends State<PantallaDetalleReporte> {
         Text('Col. ${r['colonia']}, C.P. ${r['codigoPostal']}, ${r['municipio']}'),
         if (opcional('referencias') case final ref?) Text('Referencias: $ref'),
         if (opcional('numeroContrato') case final contrato?) Text('Contrato: $contrato'),
+        if (tiposPredio[r['tipoPredio']] case final tipo?) Text('Predio: $tipo'),
+        if (opcional('claveCatastral') case final clave?) Text('Clave catastral: $clave'),
         if (lat != null && lng != null) ...[
           const SizedBox(height: 12),
           VistaUbicacion(
@@ -272,15 +304,51 @@ class _PantallaDetalleReporteState extends State<PantallaDetalleReporte> {
               ),
           ],
         ),
-        if (notas.isNotEmpty) ...[
+        if (notas.isNotEmpty || r['puedeAnotar'] == true) ...[
           const SizedBox(height: 16),
           Text('Notas', style: tema.textTheme.titleMedium),
+          if (notas.isEmpty) Text('Sin notas todavía.', style: tema.textTheme.bodySmall),
           for (final n in notas)
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: Text('${n['texto']}'),
-              subtitle: Text('${n['autor']} · ${fechaReporte(context, n['fechaCreacion'])}'),
+            if (n['autorRol'] == 'ADMIN')
+              Card(
+                margin: const EdgeInsets.symmetric(vertical: 4),
+                color: tema.colorScheme.secondaryContainer,
+                child: ListTile(
+                  leading: const Icon(Icons.admin_panel_settings),
+                  title: Text('${n['texto']}'),
+                  subtitle: Text('Administrador · ${n['autor']} · ${fechaReporte(context, n['fechaCreacion'])}'),
+                ),
+              )
+            else
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text('${n['texto']}'),
+                subtitle: Text('${n['autor']} · ${fechaReporte(context, n['fechaCreacion'])}'),
+              ),
+          if (r['puedeAnotar'] == true) ...[
+            const SizedBox(height: 8),
+            TextField(
+              key: PantallaDetalleReporte.llaveNota,
+              controller: _nota,
+              maxLength: 1000,
+              minLines: 2,
+              maxLines: 5,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: InputDecoration(
+                labelText: notas.any((n) => n['autorRol'] == 'ADMIN') ? 'Responder o agregar nota' : 'Agregar nota',
+                border: const OutlineInputBorder(),
+              ),
             ),
+            FilledButton.icon(
+              key: PantallaDetalleReporte.llaveEnviarNota,
+              style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+              onPressed: _enviandoNota ? null : _enviarNota,
+              icon: _enviandoNota
+                  ? const SizedBox.square(dimension: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Icon(Icons.send),
+              label: Text(_enviandoNota ? 'Enviando…' : 'Enviar nota'),
+            ),
+          ],
         ],
       ],
     );

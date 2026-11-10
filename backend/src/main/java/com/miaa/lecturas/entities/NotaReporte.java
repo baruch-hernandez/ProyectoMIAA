@@ -7,7 +7,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-/** Bitácora de un reporte: comentarios que agrega el notificador después de subirlo. */
+/** Bitácora de un reporte: la conversación entre el notificador que lo subió y el admin. */
 @Entity
 @Table(name = "notas_reporte", indexes = @Index(name = "idx_notas_reporte", columnList = "reporte_id"))
 @Getter

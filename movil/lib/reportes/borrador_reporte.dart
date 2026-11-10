@@ -25,6 +25,16 @@ const municipiosAguascalientes = [
   'Tepezalá',
 ];
 
+/// Tipos de predio: clave que entiende el backend (DatosReporte.TIPOS_PREDIO) → lo que se lee.
+const tiposPredio = {
+  'HABITACIONAL': 'Habitacional',
+  'COMERCIAL': 'Comercial',
+  'INDUSTRIAL': 'Industrial',
+  'BALDIO': 'Baldío',
+  'EN_CONSTRUCCION': 'En construcción',
+  'DESHABITADO': 'Deshabitado',
+};
+
 /// Nombres de los campos, iguales a ReporteRequestDTO del backend.
 class CampoReporte {
   CampoReporte._();
@@ -37,6 +47,8 @@ class CampoReporte {
   static const municipio = 'municipio';
   static const referencias = 'referencias';
   static const numeroContrato = 'numeroContrato';
+  static const tipoPredio = 'tipoPredio';
+  static const claveCatastral = 'claveCatastral';
   static const descripcion = 'descripcion';
 
   static const todos = [
@@ -48,11 +60,16 @@ class CampoReporte {
     municipio,
     referencias,
     numeroContrato,
+    tipoPredio,
+    claveCatastral,
     descripcion,
   ];
 
+  /// Se eligen de una lista: no llevan campo de texto.
+  static const listas = {municipio, tipoPredio};
+
   /// Opcionales: si van vacíos se mandan como null.
-  static const opcionales = {numeroInterior, referencias, numeroContrato};
+  static const opcionales = {numeroInterior, referencias, numeroContrato, claveCatastral};
 }
 
 /// UUID v4 (para "clienteId": si se reintenta el envío, el backend no duplica el reporte).

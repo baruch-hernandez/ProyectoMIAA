@@ -3,6 +3,7 @@ package com.miaa.lecturas.services;
 import com.miaa.lecturas.config.UsuarioPrincipal;
 import com.miaa.lecturas.dtos.UbicacionEmpleadoDTO;
 import com.miaa.lecturas.dtos.UbicacionRequestDTO;
+import com.miaa.lecturas.entities.Rol;
 import com.miaa.lecturas.entities.UbicacionEmpleado;
 import com.miaa.lecturas.entities.Usuario;
 import com.miaa.lecturas.repositories.UbicacionEmpleadoRepository;
@@ -15,6 +16,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -88,6 +90,19 @@ public class UbicacionService {
         @SuppressWarnings("null")
         UbicacionEmpleado u = ubicacionRepository.findById(empleadoId).orElse(null);
         return armar(empleado, u, Instant.now(), segundosEnLinea);
+    }
+
+    /** ADMIN, mapa general: todos los notificadores activos (dos consultas, no una por empleado). */
+    @SuppressWarnings("null")
+    @Transactional(readOnly = true)
+    public List<UbicacionEmpleadoDTO> deTodos() {
+        Instant ahora = Instant.now();
+        Map<Long, UbicacionEmpleado> ubicaciones = ubicacionRepository.findAll().stream()
+                .collect(Collectors.toMap(UbicacionEmpleado::getUsuarioId, u -> u));
+        return usuarioRepository.findByRolOrderByNombreAsc(Rol.NOTIFICADOR).stream()
+                .filter(Usuario::estaHabilitado)
+                .map(e -> armar(e, ubicaciones.get(e.getId()), ahora, segundosEnLinea))
+                .toList();
     }
 
     /** Para la tabla de empleados: ¿quién está en línea ahorita? (una sola consulta) */

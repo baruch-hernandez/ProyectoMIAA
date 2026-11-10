@@ -19,7 +19,7 @@ class PantallaInicio extends StatefulWidget {
 }
 
 class _PantallaInicioState extends State<PantallaInicio> with WidgetsBindingObserver {
-  late final Latido _latido = Latido(widget.sesion.api);
+  late final Latido _latido = Latido(widget.sesion.api, posicion: posicionSiHayPermiso);
   Map<String, dynamic>? _cuenta;
   String? _errorCuenta;
   bool _saliendo = false;
@@ -148,7 +148,9 @@ class _TarjetaDisponibilidad extends StatelessWidget {
       child: ListTile(
         leading: Icon(Icons.circle, color: ok ? Colors.green : Colors.grey, size: 18),
         title: Text(ok ? 'Activo' : 'Sin conexión con el servidor'),
-        subtitle: Text(latido.ultimoError ?? 'Último latido: $hora · enviados: ${latido.enviados}'),
+        subtitle: Text(latido.ultimoError ??
+            'Último latido: $hora · enviados: ${latido.enviados}\n'
+                '${latido.ultimaUbicacion == null ? 'Ubicación: sin compartir (falta permiso o GPS apagado)' : 'Ubicación compartida con el administrador'}'),
         trailing: IconButton(
           tooltip: 'Mandar latido ahora',
           icon: const Icon(Icons.favorite),

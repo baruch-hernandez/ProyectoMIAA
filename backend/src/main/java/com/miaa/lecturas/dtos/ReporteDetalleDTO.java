@@ -10,6 +10,7 @@ import java.util.List;
  * @param puedeModificar  true si además todavía está a tiempo de corregir o borrar el reporte.
  * @param puedeCorregir   true si puede corregir domicilio, ubicación o descripción:
  *                        el autor a tiempo (= puedeModificar) o cualquier ADMIN.
+ * @param puedeAnotar     true si puede escribir notas: quien lo subió o cualquier ADMIN.
  * @param modificableHasta hasta cuándo puede corregirlo o borrarlo (null si no es suyo).
  *                    El ADMIN los ve en false (no toca notas ni fotos). El front lo usa para mostrar
  *                    u ocultar botones, pero quien de verdad lo hace cumplir es ReporteService.
@@ -25,6 +26,8 @@ public record ReporteDetalleDTO(
         String municipio,
         String referencias,
         String numeroContrato,
+        String tipoPredio,
+        String claveCatastral,
         Double latitud,
         Double longitud,
         String descripcion,
@@ -37,5 +40,6 @@ public record ReporteDetalleDTO(
         boolean puedeEditar,
         boolean puedeModificar,
         LocalDateTime modificableHasta,
-        boolean puedeCorregir) {
+        boolean puedeCorregir,
+        boolean puedeAnotar) {
 }

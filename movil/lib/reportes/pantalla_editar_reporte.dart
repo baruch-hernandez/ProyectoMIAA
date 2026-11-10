@@ -10,6 +10,7 @@ import '../ubicacion/pantalla_elegir_ubicacion.dart';
 import '../ubicacion/ubicacion.dart';
 import 'api_reportes.dart';
 import 'borrador_reporte.dart';
+import 'campo_tipo_predio.dart';
 import 'reglas_reporte.dart' as reglas;
 
 /// Corregir domicilio, ubicación o descripción de un reporte propio en las primeras horas
@@ -49,8 +50,9 @@ class _PantallaEditarReporteState extends State<PantallaEditarReporte> {
   final _form = GlobalKey<FormState>();
   late final Map<String, TextEditingController> _textos = {
     for (final c in CampoReporte.todos)
-      if (c != CampoReporte.municipio) c: TextEditingController(text: '${widget.reporte[c] ?? ''}'),
+      if (!CampoReporte.listas.contains(c)) c: TextEditingController(text: '${widget.reporte[c] ?? ''}'),
   };
+  late String? _tipoPredio = widget.reporte[CampoReporte.tipoPredio] as String?;
   late String _municipio = municipiosAguascalientes.contains(widget.reporte[CampoReporte.municipio])
       ? widget.reporte[CampoReporte.municipio] as String
       : municipiosAguascalientes.first;
@@ -93,6 +95,7 @@ class _PantallaEditarReporteState extends State<PantallaEditarReporte> {
       for (final MapEntry(key: campo, value: c) in _textos.entries)
         campo: c.text.trim().isEmpty && CampoReporte.opcionales.contains(campo) ? null : c.text.trim(),
       CampoReporte.municipio: _municipio,
+      CampoReporte.tipoPredio: _tipoPredio,
       'latitud': _ubicacion?.lat,
       'longitud': _ubicacion?.lng,
     };
@@ -185,6 +188,8 @@ class _PantallaEditarReporteState extends State<PantallaEditarReporte> {
               ),
               _texto(CampoReporte.referencias, 'Referencias', largoMaximo: 255),
               _texto(CampoReporte.numeroContrato, 'Número de contrato', largoMaximo: 30),
+              CampoTipoPredio(valor: _tipoPredio, alCambiar: (t) => _tipoPredio = t),
+              _texto(CampoReporte.claveCatastral, 'Clave catastral', largoMaximo: 30),
               Text('Ubicación', style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 8),
               if (u != null) ...[

@@ -10,6 +10,7 @@ import 'package:movil/fotos/pantalla_vista_previa.dart';
 import 'package:movil/fotos/procesador_fotos.dart';
 import 'package:movil/reportes/almacen_borrador.dart';
 import 'package:movil/reportes/borrador_reporte.dart';
+import 'package:movil/reportes/campo_tipo_predio.dart';
 import 'package:movil/reportes/pantalla_nuevo_reporte.dart';
 
 import 'apoyo/falsos.dart';
@@ -84,6 +85,7 @@ void main() {
       final s = b.aSolicitud();
       expect(s['calle'], 'Madero');
       expect(s['numeroInterior'], isNull, reason: 'opcional vacío = null');
+      expect(s['claveCatastral'], isNull);
       expect(s['municipio'], 'Aguascalientes');
       expect(s['clienteId'], matches(RegExp(r'^[0-9a-f-]{36}$')));
       final foto = (s['fotos'] as List).single as Map;
@@ -202,7 +204,14 @@ void main() {
       await tester.pumpAndSettle();
       expect(enviada, isNull);
       expect(find.text('La calle es obligatoria'), findsOneWidget);
+      expect(find.text('Elige el tipo de predio'), findsOneWidget);
 
+      await tester.ensureVisible(find.byKey(CampoTipoPredio.llave));
+      await tester.tap(find.byKey(CampoTipoPredio.llave));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Comercial').last);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('campo-claveCatastral')), ' 01-002-0003 ');
       await tester.enterText(find.byKey(const Key('campo-calle')), 'Av. Convención');
       await tester.enterText(find.byKey(const Key('campo-numeroExterior')), '120');
       await tester.enterText(find.byKey(const Key('campo-colonia')), 'Centro');
@@ -213,6 +222,8 @@ void main() {
 
       expect(enviada, isNotNull);
       expect(enviada!['codigoPostal'], '20000');
+      expect(enviada!['tipoPredio'], 'COMERCIAL');
+      expect(enviada!['claveCatastral'], '01-002-0003');
       expect((enviada!['fotos'] as List), hasLength(1));
       expect(b.fotos, isEmpty, reason: 'después de enviar, el borrador queda limpio');
       expect(find.text('Inicio'), findsOneWidget, reason: 'regresa a la pantalla anterior');

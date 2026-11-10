@@ -7,6 +7,10 @@ package com.miaa.lecturas.dtos;
  * Así ReporteService aplica los datos con UN solo método para los dos casos.
  */
 public interface DatosReporte {
+
+    /** Los tipos de predio que se pueden elegir (los mismos en la web y en la app). */
+    String TIPOS_PREDIO = "HABITACIONAL|COMERCIAL|INDUSTRIAL|BALDIO|EN_CONSTRUCCION|DESHABITADO";
+
     String calle();
     String numeroExterior();
     String numeroInterior();
@@ -15,6 +19,8 @@ public interface DatosReporte {
     String municipio();
     String referencias();
     String numeroContrato();
+    String tipoPredio();
+    String claveCatastral();
     Double latitud();
     Double longitud();
     String descripcion();

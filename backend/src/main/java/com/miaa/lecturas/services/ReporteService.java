@@ -40,12 +40,13 @@ import java.util.stream.Stream;
  *  - El servicio DECIDE: quién puede ver/cambiar qué y qué datos son válidos.
  *
  * Quién puede hacer qué:
- *  - NOTIFICADOR: sube reportes, ve SOLO los suyos y les agrega notas cuando quiera.
+ *  - NOTIFICADOR: sube reportes, ve SOLO los suyos y les agrega notas cuando quiera
+ *    (también para responder las del admin).
  *    Puede CORREGIR, BORRAR o quitar/poner FOTOS solo en las primeras N horas (configurable):
  *    después queda fijo como evidencia.
  *  - ADMIN: ve TODOS los reportes y puede corregir sus datos (domicilio, ubicación, descripción)
  *    en cualquier momento. No borra reportes ni toca fotos (son la evidencia), y cada corrección
- *    deja una nota con su nombre.
+ *    deja una nota con su nombre. Puede escribir notas en cualquier reporte (para el notificador).
  */
 @Service
 public class ReporteService {
@@ -171,12 +172,12 @@ public class ReporteService {
     }
 
     // =====================================================================
-    // Notas y fotos (solo quien subió el reporte)
+    // Notas (quien lo subió y el admin: es su conversación) y fotos (solo quien lo subió)
     // =====================================================================
 
     @Transactional
     public NotaDTO agregarNota(UsuarioPrincipal yo, Long reporteId, String texto) {
-        Reporte r = obtenerParaEditar(yo, reporteId);
+        Reporte r = yo.esAdmin() ? obtenerParaVer(yo, reporteId) : obtenerParaEditar(yo, reporteId);
         NotaReporte nota = notaRepository.save(new NotaReporte(r, usuarioActual(yo), texto.trim()));
         // Sin save(r): JPA detecta el cambio al cerrar la transacción (dirty checking).
         r.setFechaActualizacion(LocalDateTime.now());
@@ -284,6 +285,8 @@ public class ReporteService {
         r.setMunicipio(d.municipio());
         r.setReferencias(textoOpcional(d.referencias()));
         r.setNumeroContrato(textoOpcional(d.numeroContrato()));
+        r.setTipoPredio(d.tipoPredio());
+        r.setClaveCatastral(textoOpcional(d.claveCatastral()));
         r.setLatitud(d.latitud());
         r.setLongitud(d.longitud());
         r.setDescripcion(d.descripcion().trim());
@@ -378,6 +381,8 @@ public class ReporteService {
                 r.getMunicipio(),
                 r.getReferencias(),
                 r.getNumeroContrato(),
+                r.getTipoPredio(),
+                r.getClaveCatastral(),
                 r.getLatitud(),
                 r.getLongitud(),
                 r.getDescripcion(),
@@ -390,6 +395,7 @@ public class ReporteService {
                 esAutor(yo, r),
                 esAutor(yo, r) && dentroDeVentana(r.getFechaCreacion(), LocalDateTime.now(), horasParaModificar),
                 esAutor(yo, r) && r.getFechaCreacion() != null ? r.getFechaCreacion().plusHours(horasParaModificar) : null,
-                yo.esAdmin() || (esAutor(yo, r) && dentroDeVentana(r.getFechaCreacion(), LocalDateTime.now(), horasParaModificar)));
+                yo.esAdmin() || (esAutor(yo, r) && dentroDeVentana(r.getFechaCreacion(), LocalDateTime.now(), horasParaModificar)),
+                yo.esAdmin() || esAutor(yo, r));
     }
 }

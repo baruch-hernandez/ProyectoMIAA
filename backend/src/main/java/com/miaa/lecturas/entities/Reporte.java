@@ -50,6 +50,18 @@ public class Reporte {
     @Column(name = "numero_contrato", length = 30)
     private String numeroContrato;
 
+    // ---------- Predio ----------
+    /**
+     * HABITACIONAL, COMERCIAL... (ver ReporteRequestDTO). String y no enum para que Hibernate no cree
+     * un CHECK que luego no se actualiza (ver EsquemaFotos). Null solo en reportes de antes del campo.
+     */
+    @Column(name = "tipo_predio", length = 20)
+    private String tipoPredio;
+
+    /** Clave catastral del predio (opcional). */
+    @Column(name = "clave_catastral", length = 30)
+    private String claveCatastral;
+
     private Double latitud;
     private Double longitud;
 

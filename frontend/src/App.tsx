@@ -5,6 +5,7 @@ import { AdminLayout } from './components/admin/AdminLayout';
 import { ReportesAdmin } from './components/admin/ReportesAdmin';
 import { EmpleadosAdmin } from './components/admin/EmpleadosAdmin';
 import { UbicacionEmpleado } from './components/admin/UbicacionEmpleado';
+import { MapaNotificadores } from './components/admin/MapaNotificadores';
 import { NotificadorLayout } from './components/notificador/NotificadorLayout';
 import { MisReportes } from './components/notificador/MisReportes';
 import { NuevoReporte } from './components/notificador/NuevoReporte';
@@ -33,6 +34,7 @@ function App() {
             <Route path="/admin/empleados" element={<EmpleadosAdmin />} />
             <Route path="/admin/empleados/nuevo" element={<NuevoEmpleado />} />
             <Route path="/admin/empleados/:id" element={<UbicacionEmpleado />} />
+            <Route path="/admin/mapa" element={<MapaNotificadores />} />
             <Route path="/admin/password" element={<CambiarPassword />} />
           </Route>
         </Route>

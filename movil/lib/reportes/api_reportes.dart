@@ -31,6 +31,10 @@ class ApiReportes {
   Future<Map<String, dynamic>> editar(int id, Map<String, dynamic> datos) =>
       _mapa(() => _api.dio.put('/reportes/$id', data: datos, options: _conFotos));
 
+  /// POST /reportes/{id}/notas: una nota nueva (también para responder al admin).
+  Future<Map<String, dynamic>> agregarNota(int id, String texto) =>
+      _mapa(() => _api.dio.post('/reportes/$id/notas', data: {'texto': texto}));
+
   static Future<Map<String, dynamic>> _mapa(Future<Response<dynamic>> Function() peticion) => _llamar(() async {
         final datos = (await peticion()).data;
         return datos is Map ? datos.cast<String, dynamic>() : <String, dynamic>{};

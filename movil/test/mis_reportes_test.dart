@@ -14,6 +14,7 @@ class ApiReportesFalsa implements ApiReportes {
   bool aTiempo;
   ApiError? errorAlEditar;
   Map<String, dynamic>? ultimaEdicion;
+  String? ultimaNota;
 
   late Map<String, dynamic> reporte = {
     'id': 7,
@@ -26,6 +27,8 @@ class ApiReportesFalsa implements ApiReportes {
     'municipio': 'Aguascalientes',
     'referencias': null,
     'numeroContrato': null,
+    'tipoPredio': 'HABITACIONAL',
+    'claveCatastral': '01-001-0001',
     'latitud': null,
     'longitud': null,
     'descripcion': 'Medidor sin sello en la entrada',
@@ -34,6 +37,7 @@ class ApiReportesFalsa implements ApiReportes {
     'fotos': <dynamic>[],
     'notas': <dynamic>[],
     'puedeEditar': true,
+    'puedeAnotar': true,
     'puedeModificar': aTiempo,
     'modificableHasta': '2026-10-29T10:15:00',
   };
@@ -65,6 +69,14 @@ class ApiReportesFalsa implements ApiReportes {
   }
 
   @override
+  Future<Map<String, dynamic>> agregarNota(int id, String texto) async {
+    ultimaNota = texto;
+    final nota = {'id': 2, 'texto': texto, 'autor': 'Juan Pérez', 'autorRol': 'NOTIFICADOR', 'fechaCreacion': '2026-10-29T09:00:00'};
+    reporte = {...reporte, 'notas': [...reporte['notas'] as List, nota]};
+    return nota;
+  }
+
+  @override
   Future<Map<String, dynamic>> crear(Map<String, dynamic> solicitud) => throw UnimplementedError();
 }
 
@@ -85,6 +97,8 @@ void main() {
     await tester.tap(find.byKey(const Key('reporte-7')));
     await tester.pumpAndSettle();
     expect(find.text('Medidor sin sello en la entrada'), findsOneWidget);
+    expect(find.text('Predio: Habitacional'), findsOneWidget);
+    expect(find.text('Clave catastral: 01-001-0001'), findsOneWidget);
     expect(find.byKey(PantallaDetalleReporte.llaveCorregir), findsOneWidget);
   });
 
@@ -104,6 +118,8 @@ void main() {
     expect(api.ultimaEdicion!['calle'], 'Av. Madero');
     expect(api.ultimaEdicion!['referencias'], isNull, reason: 'opcional vacío se manda null');
     expect(api.ultimaEdicion!['municipio'], 'Aguascalientes');
+    expect(api.ultimaEdicion!['tipoPredio'], 'HABITACIONAL', reason: 'lo que no se toca se manda igual');
+    expect(api.ultimaEdicion!['claveCatastral'], '01-001-0001');
     expect(find.text('Cambios guardados.'), findsOneWidget);
 
     await tester.pageBack();
@@ -124,6 +140,21 @@ void main() {
     expect(find.text('Debe ser un C.P. de Aguascalientes (20xxx)'), findsOneWidget);
   });
 
+  testWidgets('un reporte de antes del campo pide elegir el tipo de predio', (tester) async {
+    final api = ApiReportesFalsa();
+    api.reporte = {...api.reporte, 'tipoPredio': null};
+    await tester.binding.setSurfaceSize(const Size(800, 2400)); // que el campo se dibuje
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(MaterialApp(
+      home: PantallaEditarReporte(api: api, reporte: api.reporte, conMosaicos: false),
+    ));
+    await tester.tap(find.byKey(PantallaEditarReporte.llaveGuardar));
+    await tester.pumpAndSettle();
+
+    expect(api.ultimaEdicion, isNull);
+    expect(find.text('Elige el tipo de predio'), findsOneWidget);
+  });
+
   testWidgets('si el backend dice que ya pasó el plazo, se muestra su mensaje', (tester) async {
     final api = ApiReportesFalsa(errorAlEditar: ApiError('Ya pasaron las 24 h para corregir', status: 403));
     await tester.pumpWidget(MaterialApp(
@@ -132,6 +163,31 @@ void main() {
     await tester.tap(find.byKey(PantallaEditarReporte.llaveGuardar));
     await tester.pumpAndSettle();
     expect(find.text('Ya pasaron las 24 h para corregir'), findsOneWidget);
+  });
+
+  testWidgets('ve la nota del admin destacada y le responde', (tester) async {
+    final api = ApiReportesFalsa(aTiempo: false); // las notas no tienen plazo
+    api.reporte = {
+      ...api.reporte,
+      'notas': [
+        {'id': 1, 'texto': '¿Puedes confirmar el número?', 'autor': 'Ana', 'autorRol': 'ADMIN', 'fechaCreacion': '2026-10-29T08:00:00'},
+      ],
+    };
+    await abrirLista(tester, api);
+    await tester.tap(find.byKey(const Key('reporte-7')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('¿Puedes confirmar el número?'), findsOneWidget);
+    expect(find.byIcon(Icons.admin_panel_settings), findsOneWidget);
+    expect(find.text('Responder o agregar nota'), findsOneWidget);
+
+    await tester.enterText(find.byKey(PantallaDetalleReporte.llaveNota), '  Sí, es el 120.  ');
+    await tester.ensureVisible(find.byKey(PantallaDetalleReporte.llaveEnviarNota));
+    await tester.tap(find.byKey(PantallaDetalleReporte.llaveEnviarNota));
+    await tester.pumpAndSettle();
+
+    expect(api.ultimaNota, 'Sí, es el 120.');
+    expect(find.text('Sí, es el 120.'), findsOneWidget); // ya en la lista, y el campo quedó vacío
   });
 
   testWidgets('pasado el plazo no se ofrece corregir', (tester) async {

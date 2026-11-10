@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Camera, Check, CircleCheck, Crosshair, LoaderCircle, LocateFixed, RotateCcw, TriangleAlert } from 'lucide-react';
 import { esErrorDeRed, reportesApi, leerError } from '../../services/reportesApi';
 import type { Coordenadas, ReporteRequest } from '../../types/reporte';
-import { MUNICIPIOS } from '../../utils/catalogos';
+import { MUNICIPIOS, TIPOS_PREDIO } from '../../utils/catalogos';
 import { guardarPendiente } from '../../utils/colaReportes';
 import { obtenerUsuario } from '../../utils/sesion';
 import { uuid } from '../../utils/uuid';
@@ -54,6 +54,8 @@ const VACIO: CamposTexto = {
   municipio: 'Aguascalientes',
   referencias: '',
   numeroContrato: '',
+  tipoPredio: '',
+  claveCatastral: '',
   descripcion: '',
 };
 
@@ -512,6 +514,16 @@ export function NuevoReporte() {
             </Campo>
             <Campo id="numeroContrato" etiqueta="Núm. de contrato" opcional error={errores.numeroContrato} className="col-span-12 sm:col-span-5">
               <input {...props('numeroContrato')} maxLength={30} inputMode="numeric" className={`${claseInput} tabular-nums`} />
+            </Campo>
+
+            <Campo id="tipoPredio" etiqueta="Tipo de predio" error={errores.tipoPredio} className="col-span-12 sm:col-span-5">
+              <select {...props('tipoPredio')} required className={claseInput}>
+                <option value="" disabled>Elige uno</option>
+                {Object.entries(TIPOS_PREDIO).map(([clave, nombre]) => <option key={clave} value={clave}>{nombre}</option>)}
+              </select>
+            </Campo>
+            <Campo id="claveCatastral" etiqueta="Clave catastral" opcional error={errores.claveCatastral} className="col-span-12 sm:col-span-7">
+              <input {...props('claveCatastral')} maxLength={30} className={`${claseInput} tabular-nums`} />
             </Campo>
           </div>
 

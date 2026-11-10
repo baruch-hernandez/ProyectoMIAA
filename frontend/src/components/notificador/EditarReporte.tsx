@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, LoaderCircle } from 'lucide-react';
 import { reportesApi, leerError } from '../../services/reportesApi';
 import type { Coordenadas, ReporteDetalle, ReporteEdicion } from '../../types/reporte';
-import { formatoFecha, MUNICIPIOS } from '../../utils/catalogos';
+import { formatoFecha, MUNICIPIOS, TIPOS_PREDIO } from '../../utils/catalogos';
 import { claseInput } from '../../utils/estilos';
 import { dentroDeAguascalientes } from '../../utils/limiteAgs';
 import { MapaUbicacion } from '../mapa/MapaUbicacion';
@@ -22,6 +22,8 @@ function aCampos(r: ReporteDetalle): Campos {
     municipio: r.municipio,
     referencias: r.referencias ?? '',
     numeroContrato: r.numeroContrato ?? '',
+    tipoPredio: r.tipoPredio ?? '', // reportes viejos: obliga a elegir uno
+    claveCatastral: r.claveCatastral ?? '',
     descripcion: r.descripcion,
   };
 }
@@ -176,6 +178,15 @@ export function EditarReporte() {
             </Campo>
             <Campo id="numeroContrato" etiqueta="Núm. de contrato" opcional error={errores.numeroContrato} className="col-span-12 sm:col-span-5">
               <input {...props('numeroContrato')} maxLength={30} inputMode="numeric" className={`${claseInput} tabular-nums`} />
+            </Campo>
+            <Campo id="tipoPredio" etiqueta="Tipo de predio" error={errores.tipoPredio} className="col-span-12 sm:col-span-5">
+              <select {...props('tipoPredio')} required className={claseInput}>
+                <option value="" disabled>Elige uno</option>
+                {Object.entries(TIPOS_PREDIO).map(([clave, nombre]) => <option key={clave} value={clave}>{nombre}</option>)}
+              </select>
+            </Campo>
+            <Campo id="claveCatastral" etiqueta="Clave catastral" opcional error={errores.claveCatastral} className="col-span-12 sm:col-span-7">
+              <input {...props('claveCatastral')} maxLength={30} className={`${claseInput} tabular-nums`} />
             </Campo>
           </div>
         </Paso>

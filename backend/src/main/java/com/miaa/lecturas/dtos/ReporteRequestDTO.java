@@ -47,6 +47,13 @@ public record ReporteRequestDTO(
         @Size(max = 30, message = "Máximo 30 caracteres")
         String numeroContrato,
 
+        @NotBlank(message = "Elige el tipo de predio")
+        @Pattern(regexp = DatosReporte.TIPOS_PREDIO, message = "Tipo de predio no válido")
+        String tipoPredio,
+
+        @Size(max = 30, message = "Máximo 30 caracteres")
+        String claveCatastral,
+
         // Filtro rápido con un rectángulo; el contorno real lo revisa LimiteAguascalientes
         @DecimalMin(value = "21.5", message = "La ubicación está fuera de Aguascalientes")
         @DecimalMax(value = "22.6", message = "La ubicación está fuera de Aguascalientes")

@@ -5,24 +5,13 @@ import { ArrowLeft, ExternalLink, LocateFixed, MapPinOff, WifiOff } from 'lucide
 import { usuariosApi } from '../../services/usuariosApi';
 import { leerError } from '../../services/reportesApi';
 import type { UbicacionEmpleado as Ubicacion } from '../../types/reporte';
-import { formatoFecha } from '../../utils/catalogos';
+import { CONSULTA_MS, formatoFecha, haceCuanto } from '../../utils/catalogos';
 import { dentroDeAguascalientes, PROPS_MAPA_AGS } from '../../utils/limiteAgs';
 import { CapaLimiteAgs } from '../mapa/CapaLimiteAgs';
 import '../mapa/iconosLeaflet';
 import { CuentaEmpleadoPanel } from './CuentaEmpleadoPanel';
 import type { RolUsuario } from '../../utils/sesion';
 
-/** Cada cuánto pregunta el admin (solo mientras esta pantalla esté abierta y visible). */
-const CONSULTA_MS = 5_000;
-
-/** "hace 12 s", "hace 3 min", "hace 2 h" */
-function haceCuanto(segundos: number): string {
-  if (segundos < 60) return `hace ${segundos} s`;
-  const min = Math.floor(segundos / 60);
-  if (min < 60) return `hace ${min} min`;
-  const h = Math.floor(min / 60);
-  return h < 24 ? `hace ${h} h` : `hace ${Math.floor(h / 24)} d`;
-}
 
 /** Mueve el mapa hacia el empleado cada vez que cambia de posición (si "Seguir" está activo). */
 function Seguir({ lat, lng, activo }: { lat: number; lng: number; activo: boolean }) {

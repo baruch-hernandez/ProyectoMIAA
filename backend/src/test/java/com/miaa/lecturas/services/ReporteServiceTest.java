@@ -32,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -91,7 +92,21 @@ class ReporteServiceTest {
 
     private static ReporteEdicionDTO edicion() {
         return new ReporteEdicionDTO("Madero", "120", null, "Centro", "20000", "Aguascalientes",
-                null, null, null, null, "Descripción corregida");
+                null, null, "BALDIO", "  01-001-0002 ", null, null, "Descripción corregida");
+    }
+
+    @Test
+    void elTipoDePredioEsObligatorioYDeLaLista() {
+        try (var fabrica = Validation.buildDefaultValidatorFactory()) {
+            var validador = fabrica.getValidator();
+            assertTrue(validador.validate(edicion()).isEmpty());
+            var sinTipo = new ReporteEdicionDTO("Madero", "120", null, "Centro", "20000", "Aguascalientes",
+                    null, null, null, null, null, null, "Descripción corregida");
+            var inventado = new ReporteEdicionDTO("Madero", "120", null, "Centro", "20000", "Aguascalientes",
+                    null, null, "CASA", null, null, null, "Descripción corregida");
+            assertEquals("tipoPredio", validador.validate(sinTipo).iterator().next().getPropertyPath().toString());
+            assertEquals("Tipo de predio no válido", validador.validate(inventado).iterator().next().getMessage());
+        }
     }
 
     @Test
@@ -108,6 +123,8 @@ class ReporteServiceTest {
         ReporteDetalleDTO d = servicio.editar(ADMIN, 5L, edicion());
 
         assertEquals("Descripción corregida", d.descripcion());
+        assertEquals("BALDIO", d.tipoPredio());
+        assertEquals("01-001-0002", d.claveCatastral());
         assertTrue(d.puedeCorregir());
         assertFalse(d.puedeModificar()); // no borra ni toca fotos
         verify(notas).save(any());
@@ -119,6 +136,21 @@ class ReporteServiceTest {
         assertEquals(403, status(assertThrows(ResponseStatusException.class, () -> servicio.borrar(ADMIN, 5L))));
         assertEquals(403, status(assertThrows(ResponseStatusException.class, () -> servicio.borrarFoto(ADMIN, 5L, 7L))));
         verify(fotos, never()).delete(any());
+    }
+
+    @Test
+    void elAdminYElAutorConversanPorNotasPeroOtroNotificadorNo() {
+        reporte(25); // las notas no tienen plazo
+        when(usuarios.findById(any())).thenReturn(Optional.of(new Usuario()));
+        when(notas.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        assertTrue(servicio.detalle(ADMIN, 5L).puedeAnotar());
+        servicio.agregarNota(ADMIN, 5L, "¿Puedes confirmar el número exterior?");
+        servicio.agregarNota(AUTOR, 5L, "Sí, es el 120.");
+
+        verify(notas, times(2)).save(any());
+        assertEquals(404, status(assertThrows(ResponseStatusException.class,
+                () -> servicio.agregarNota(OTRO, 5L, "No es mío"))));
     }
 
     @Test

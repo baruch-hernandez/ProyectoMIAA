@@ -1,5 +1,5 @@
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { ClipboardList, KeyRound, LogOut, Users } from 'lucide-react';
+import { ClipboardList, KeyRound, LogOut, Map as IconoMapa, Users } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cerrarSesion, obtenerUsuario } from '../../utils/sesion';
 import { Marca } from '../Marca';
@@ -12,10 +12,11 @@ interface Destino {
   end?: boolean;
 }
 
-// El administrador consulta y corrige los reportes de los empleados, y ve si están activos.
+// El administrador consulta y corrige los reportes de los empleados, ve si están activos y dónde andan.
 const DESTINOS: Destino[] = [
   { to: '/admin', texto: 'Reportes', icono: ClipboardList, end: false },
   { to: '/admin/empleados', texto: 'Empleados', icono: Users },
+  { to: '/admin/mapa', texto: 'Mapa', icono: IconoMapa },
 ];
 
 export function AdminLayout() {
@@ -29,9 +30,9 @@ export function AdminLayout() {
     navigate('/', { replace: true });
   };
 
-  // "Reportes" queda activo en /admin y en /admin/reportes/:id, pero no en /admin/empleados
+  // "Reportes" queda activo en /admin y en /admin/reportes/:id, pero no en las otras secciones
   const claseActiva = (to: string, isActive: boolean) =>
-    to === '/admin' ? isActive && !pathname.startsWith('/admin/empleados') : isActive;
+    to === '/admin' ? pathname === '/admin' || pathname.startsWith('/admin/reportes') : isActive;
 
   return (
     <div className="min-h-dvh bg-miaa-fondo lg:flex">

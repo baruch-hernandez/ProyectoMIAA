@@ -24,6 +24,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 /**
  * Empleados (solo ADMIN). Todo el controlador exige el rol con @PreAuthorize a nivel clase.
  *
@@ -35,6 +37,7 @@ import org.springframework.web.bind.annotation.RestController;
  *   PUT  /usuarios/empleados/{id}/habilitado    dar de baja / reactivar
  *   POST /usuarios/empleados/{id}/desbloquear   quitar el bloqueo por intentos fallidos
  *   GET  /usuarios/empleados/{id}/ubicacion     ubicación en vivo
+ *   GET  /usuarios/ubicaciones                  ubicación en vivo de todos (mapa general)
  */
 @RestController
 @RequestMapping({ "/usuarios", "/api/v1/usuarios" })
@@ -69,6 +72,15 @@ public class UsuarioController {
     @GetMapping("/empleados/{id}/ubicacion")
     public UbicacionEmpleadoDTO ubicacion(@PathVariable("id") Long id) {
         return ubicacionService.deEmpleado(id);
+    }
+
+    /**
+     * GET /usuarios/ubicaciones (solo ADMIN)
+     * Todos los notificadores activos con su última ubicación, para el mapa general (cada 5 s).
+     */
+    @GetMapping("/ubicaciones")
+    public List<UbicacionEmpleadoDTO> ubicaciones() {
+        return ubicacionService.deTodos();
     }
 
     @PostMapping("/empleados")

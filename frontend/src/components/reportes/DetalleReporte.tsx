@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Camera, CircleCheck, Eye, LoaderCircle, MapPin, Pencil, Send, Trash2, X } from 'lucide-react';
 import { reportesApi, leerError } from '../../services/reportesApi';
 import type { Foto, ReporteDetalle } from '../../types/reporte';
-import { formatoFecha, fechaRelativa } from '../../utils/catalogos';
+import { formatoFecha, fechaRelativa, TIPOS_PREDIO } from '../../utils/catalogos';
 import { prepararFoto, textoHoraFoto } from '../../utils/fotos';
 import { MapaUbicacion } from '../mapa/MapaUbicacion';
 import { MiniaturaFoto } from './MiniaturaFoto';
@@ -19,8 +19,9 @@ interface Props {
 
 /**
  * Detalle de un reporte. Lo usan el notificador y el administrador:
- *  - Si el backend dice `puedeEditar` (quien lo subió): puede agregar notas y quitar/poner fotos.
- *  - Si no (el admin): no toca notas ni fotos, pero con `puedeCorregir` corrige los datos.
+ *  - Si el backend dice `puedeEditar` (quien lo subió): puede quitar/poner fotos.
+ *  - Si no (el admin): no toca fotos, pero con `puedeCorregir` corrige los datos.
+ *  - Notas (`puedeAnotar`): son la conversación entre quien lo subió y el admin.
  * Ojo: esconder botones es comodidad; quien de verdad lo impide es el backend.
  */
 export function DetalleReporte({ volverA }: Props) {
@@ -292,10 +293,12 @@ export function DetalleReporte({ volverA }: Props) {
               <br />
               <span className="tabular-nums">C.P. {r.codigoPostal}</span>, {r.municipio}
             </p>
-            {(r.referencias || r.numeroContrato) && (
+            {(r.referencias || r.numeroContrato || r.tipoPredio || r.claveCatastral) && (
               <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
                 {r.referencias && (<><dt className="text-slate-500">Referencias</dt><dd className="text-slate-800">{r.referencias}</dd></>)}
                 {r.numeroContrato && (<><dt className="text-slate-500">Contrato</dt><dd className="tabular-nums text-slate-800">{r.numeroContrato}</dd></>)}
+                {r.tipoPredio && (<><dt className="text-slate-500">Predio</dt><dd className="text-slate-800">{TIPOS_PREDIO[r.tipoPredio] ?? r.tipoPredio}</dd></>)}
+                {r.claveCatastral && (<><dt className="text-slate-500">Clave catastral</dt><dd className="tabular-nums text-slate-800">{r.claveCatastral}</dd></>)}
               </dl>
             )}
             {ubicacion && <div className="mt-4"><MapaUbicacion valor={ubicacion} altoClase="h-56" /></div>}
@@ -317,33 +320,43 @@ export function DetalleReporte({ volverA }: Props) {
 
           {r.notas.length === 0 ? (
             <p className="mt-3 text-sm text-slate-600">
-              {editable ? 'Sin notas todavía. Agrega lo que observes después de subir el reporte.' : 'Sin notas.'}
+              {editable
+                ? 'Sin notas todavía. Agrega lo que observes después de subir el reporte.'
+                : r.puedeAnotar ? `Sin notas. Escribe una y ${r.autor} la verá en su reporte.` : 'Sin notas.'}
             </p>
           ) : (
             <ol className="mt-4 relative border-l-2 border-miaa-bruma ml-1.5 space-y-5">
-              {r.notas.map((n) => (
-                <li key={n.id} className="pl-5 relative">
-                  <span className="absolute -left-[7px] top-1.5 size-3 rounded-full ring-4 ring-white bg-miaa-azul" aria-hidden="true" />
-                  <p className="text-sm">
-                    <span className="font-bold text-miaa-marino">{n.autor}</span>{' '}
-                    <span className="text-slate-500">{fechaRelativa(n.fechaCreacion)}</span>
-                  </p>
-                  <p className="mt-0.5 text-slate-800 whitespace-pre-wrap">{n.texto}</p>
-                </li>
-              ))}
+              {r.notas.map((n) => {
+                const deAdmin = n.autorRol === 'ADMIN';
+                return (
+                  <li key={n.id} className="pl-5 relative">
+                    <span className={`absolute -left-[7px] top-1.5 size-3 rounded-full ring-4 ring-white ${deAdmin ? 'bg-miaa-marino' : 'bg-miaa-azul'}`} aria-hidden="true" />
+                    <p className="text-sm">
+                      <span className="font-bold text-miaa-marino">{n.autor}</span>
+                      {deAdmin && (
+                        <span className="ml-1.5 inline-flex items-center rounded-md bg-blue-50 px-1.5 py-0.5 text-[0.7rem] font-bold text-miaa-marino align-middle">Administrador</span>
+                      )}{' '}
+                      <span className="text-slate-500" title={formatoFecha(n.fechaCreacion)}>{fechaRelativa(n.fechaCreacion)}</span>
+                    </p>
+                    <p className={`mt-1 text-slate-800 whitespace-pre-wrap ${deAdmin ? 'rounded-xl bg-blue-50 px-3 py-2' : ''}`}>{n.texto}</p>
+                  </li>
+                );
+              })}
             </ol>
           )}
 
-          {editable && (
+          {r.puedeAnotar && (
             <form onSubmit={enviarNota} className="mt-6">
-              <label htmlFor="nueva-nota" className="block text-sm font-semibold text-miaa-marino mb-1.5">Agregar nota</label>
+              <label htmlFor="nueva-nota" className="block text-sm font-semibold text-miaa-marino mb-1.5">
+                {!editable ? `Nota para ${r.autor}` : r.notas.some((n) => n.autorRol === 'ADMIN') ? 'Responder o agregar nota' : 'Agregar nota'}
+              </label>
               <textarea
                 id="nueva-nota"
                 value={nota}
                 onChange={(e) => setNota(e.target.value)}
                 maxLength={1000}
                 rows={3}
-                placeholder="Escribe lo que observaste…"
+                placeholder={editable ? 'Escribe lo que observaste o tu respuesta…' : 'Escribe una indicación o pregunta…'}
                 className="w-full px-4 py-3 rounded-xl border border-slate-300 text-base leading-relaxed focus:border-miaa-cielo focus:outline-none focus:ring-4 focus:ring-miaa-cielo/20"
               />
               {errorNota && <p className="mt-1.5 text-sm text-red-700">{errorNota}</p>}
