@@ -3,10 +3,10 @@ import { ubicacionApi } from '../services/ubicacionApi';
 
 export type EstadoUbicacion = 'iniciando' | 'compartiendo' | 'sin-permiso' | 'no-disponible' | 'error';
 
-/** Mínimo entre envíos aunque el celular reporte movimiento seguido (ahorra datos y batería). */
-const INTERVALO_MIN_MS = 10_000;
-/** "Latido": aunque no se mueva, avisa cada 20 s que sigue conectado (el backend da 60 s de margen). */
-const LATIDO_MS = 20_000;
+/** Mínimo entre envíos aunque el celular reporte movimiento seguido. */
+const INTERVALO_MIN_MS = 1_000;
+/** "Latido": aunque no se mueva, avisa cada segundo que sigue conectado (el backend da 2 s de margen). */
+const LATIDO_MS = 1_000;
 
 const hayGeolocalizacion = typeof navigator !== 'undefined' && 'geolocation' in navigator;
 
@@ -14,9 +14,9 @@ const hayGeolocalizacion = typeof navigator !== 'undefined' && 'geolocation' in 
  * Mientras el notificador tenga la app ABIERTA, comparte su ubicación con el admin.
  *
  *  - watchPosition: el navegador avisa cada vez que cambia la posición.
- *  - Se manda al backend como máximo cada 10 s. Si se movió antes, NO se descarta: se
- *    agenda para cuando se cumplan los 10 s (si no, el admin lo vería tarde).
- *  - Cada 20 s se manda aunque no se mueva (latido), para que siga "en línea".
+ *  - Se manda al backend como máximo cada segundo. Si se movió antes, NO se descarta: se
+ *    agenda para cuando se cumpla el segundo (si no, el admin lo vería tarde).
+ *  - Cada segundo se manda aunque no se mueva (latido), para que siga "en línea".
  *  - Sin red, el envío falla en silencio: el admin lo verá "sin conexión" y la última posición.
  *    Al volver la red ('online'), se manda de inmediato.
  *
@@ -38,7 +38,8 @@ export function useCompartirUbicacion(): EstadoUbicacion {
     const enviar = () => {
       window.clearTimeout(pendiente);
       pendiente = undefined;
-      if (!ultima || enviando) return;
+      // Oculta = pausada (usePresencia ya avisó): un envío suelto la volvería a mostrar en línea
+      if (!ultima || enviando || document.hidden) return;
       enviando = true;
       ultimoEnvio = Date.now();
       const { latitude, longitude, accuracy } = ultima.coords;
@@ -67,7 +68,7 @@ export function useCompartirUbicacion(): EstadoUbicacion {
 
     const latido = window.setInterval(() => {
       if (Date.now() - ultimoEnvio >= LATIDO_MS) enviar();
-    }, 5_000);
+    }, LATIDO_MS);
 
     const alVolverLaRed = () => enviar();
     window.addEventListener('online', alVolverLaRed);

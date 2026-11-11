@@ -34,7 +34,7 @@ export function formatoFecha(iso: string): string {
 }
 
 /** Cada cuánto pregunta el admin por las ubicaciones (solo con el mapa abierto y visible). */
-export const CONSULTA_MS = 5_000;
+export const CONSULTA_MS = 1_000;
 
 /** "hace 12 s", "hace 3 min", "hace 2 h" */
 export function haceCuanto(segundos: number): string {

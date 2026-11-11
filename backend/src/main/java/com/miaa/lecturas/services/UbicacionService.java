@@ -24,8 +24,8 @@ import java.util.stream.Collectors;
  * Ubicación en vivo de los notificadores.
  *
  * Cómo funciona ("casi tiempo real" sin WebSockets):
- *  1. El celular del notificador manda su posición cada ~20 s (POST /ubicacion).
- *  2. El admin, mientras tiene abierto el mapa, pregunta cada 5 s (GET .../ubicacion).
+ *  1. El celular del notificador manda su posición cada segundo (POST /ubicacion).
+ *  2. El admin, mientras tiene abierto el mapa, pregunta cada segundo (GET .../ubicacion).
  *  3. "En línea" = el servidor recibió algo en los últimos N segundos y no cerró sesión.
  *     Si el celular se queda sin red, deja de llegar → pasa solo a "sin conexión".
  */

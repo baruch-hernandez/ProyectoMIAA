@@ -5,9 +5,14 @@ import api from './api';
  * nadie puede marcar "en línea" a otro.
  */
 export const presenciaApi = {
-  /** "Sigo aquí": se manda cada 30 s mientras la app esté abierta (usePresencia). */
+  /** "Sigo aquí": se manda cada segundo mientras la app esté a la vista (usePresencia). */
   latido: async () => {
     await api.post('/usuarios/yo/conexion');
+  },
+
+  /** La pestaña se ocultó o se apagó la pantalla: sale inactivo al instante. */
+  pausar: async () => {
+    await api.delete('/usuarios/yo/conexion');
   },
 
   /** Avisa al backend que cerró sesión: sale DESCONECTADO al instante (tarea 2.2). */

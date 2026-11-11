@@ -360,7 +360,7 @@ En la app, [config/*.json](movil/config/):
 
 - `API_URL`: URL del backend;
 - `CERT_DEV`: confiar en el certificado de desarrollo;
-- `LATIDO_SEGUNDOS`: cada cuánto se manda el latido.
+- `LATIDO_SEGUNDOS` (opcional, 1 por defecto): cada cuánto se manda el latido. El backend da 2 s de margen (`miaa.presencia.segundos-en-linea`), así que si lo subes, sube también ese valor.
 
 ---
 

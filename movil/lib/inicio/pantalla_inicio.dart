@@ -20,7 +20,7 @@ class PantallaInicio extends StatefulWidget {
 }
 
 class _PantallaInicioState extends State<PantallaInicio> with WidgetsBindingObserver {
-  late final Latido _latido = Latido(widget.sesion.api, posicion: posicionSiHayPermiso);
+  late final Latido _latido = Latido(widget.sesion.api, gps: lecturasSiHayPermiso);
   Map<String, dynamic>? _cuenta;
   String? _errorCuenta;
   bool _saliendo = false;
@@ -40,13 +40,13 @@ class _PantallaInicioState extends State<PantallaInicio> with WidgetsBindingObse
     super.dispose();
   }
 
-  /// App a la vista → latido; app al fondo o pantalla apagada → sin latido (sale inactivo).
+  /// App a la vista → latido cada segundo; app al fondo o pantalla apagada → avisa y sale inactivo.
   @override
   void didChangeAppLifecycleState(AppLifecycleState estado) {
     if (estado == AppLifecycleState.resumed) {
       _latido.iniciar();
-    } else if (estado == AppLifecycleState.paused || estado == AppLifecycleState.hidden) {
-      _latido.detener();
+    } else if ((estado == AppLifecycleState.paused || estado == AppLifecycleState.hidden) && _latido.activo) {
+      _latido.pausar(); // hidden y paused llegan seguidos: solo se avisa una vez
     }
   }
 

@@ -73,6 +73,7 @@ class Api {
   static Future<Api> crear({
     required String? Function() token,
     required void Function(ApiError error) alExpirar,
+    void Function()? alRequisitoPendiente,
   }) async {
     final dio = Dio(BaseOptions(
       baseUrl: Config.apiUrl,
@@ -104,6 +105,8 @@ class Api {
         final esLogin = error.requestOptions.path.contains('/auth/login');
         if (error.response?.statusCode == 401 && !esLogin) {
           alExpirar(ApiError.de(error));
+        } else if (error.response?.statusCode == 403 && ApiError.de(error).codigo == 'REQUISITO_PENDIENTE') {
+          alRequisitoPendiente?.call(); // p. ej. el admin le restableció la contraseña con la sesión abierta
         }
         handler.next(error);
       },

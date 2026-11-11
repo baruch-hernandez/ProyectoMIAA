@@ -9,24 +9,27 @@ import 'apoyo/falsos.dart';
 void main() {
   const punto = LecturaGps(lat: 21.88, lng: -102.29, precision: 8);
 
-  test('con permiso y GPS prendido regresa la lectura', () async {
-    final l = await posicionSiHayPermiso(
+  test('con permiso y GPS prendido entrega las lecturas', () async {
+    final lecturas = await lecturasSiHayPermiso(
       permisos: PermisosFalsos(estado: EstadoPermiso.concedido),
-      gps: FuenteGpsFalsa(lecturas: [punto]),
-    );
-    expect(l?.lat, 21.88);
+      gps: FuenteGpsFalsa(lecturas: [punto, punto]),
+    ).toList();
+    expect(lecturas, hasLength(2));
+    expect(lecturas.first.lat, 21.88);
   });
 
   test('sin permiso no lee el GPS ni muestra el diálogo', () async {
     final permisos = PermisosFalsos();
-    final l = await posicionSiHayPermiso(permisos: permisos, gps: FuenteGpsFalsa(lecturas: [punto]));
-    expect(l, isNull);
+    final lecturas = await lecturasSiHayPermiso(permisos: permisos, gps: FuenteGpsFalsa(lecturas: [punto])).toList();
+    expect(lecturas, isEmpty);
     expect(permisos.solicitudes, 0);
   });
 
-  test('con la ubicación del celular apagada o sin lecturas regresa null', () async {
-    final permisos = PermisosFalsos(estado: EstadoPermiso.concedido);
-    expect(await posicionSiHayPermiso(permisos: permisos, gps: FuenteGpsFalsa(lecturas: [punto], activo: false)), isNull);
-    expect(await posicionSiHayPermiso(permisos: permisos, gps: FuenteGpsFalsa()), isNull);
+  test('con la ubicación del celular apagada no entrega nada', () async {
+    final lecturas = await lecturasSiHayPermiso(
+      permisos: PermisosFalsos(estado: EstadoPermiso.concedido),
+      gps: FuenteGpsFalsa(lecturas: [punto], activo: false),
+    ).toList();
+    expect(lecturas, isEmpty);
   });
 }

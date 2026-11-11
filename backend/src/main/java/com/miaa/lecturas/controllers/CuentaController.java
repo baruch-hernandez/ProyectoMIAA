@@ -6,10 +6,12 @@ import com.miaa.lecturas.dtos.CambioPasswordDTO;
 import com.miaa.lecturas.dtos.CuentaDTO;
 import com.miaa.lecturas.services.CuentaService;
 import com.miaa.lecturas.services.PresenciaService;
+import com.miaa.lecturas.services.UbicacionService;
 import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -25,6 +27,8 @@ import org.springframework.web.bind.annotation.RestController;
  *   GET  /usuarios/yo
  *   PUT  /usuarios/yo/password           { actual, nueva }
  *   POST /usuarios/yo/aviso-privacidad   { version }
+ *   POST /usuarios/yo/conexion           latido "sigo aquí" (cada segundo)
+ *   DELETE /usuarios/yo/conexion         la app se pausó: inactivo al instante
  */
 @RestController
 @RequestMapping({ "/usuarios/yo", "/api/v1/usuarios/yo" })
@@ -32,10 +36,13 @@ public class CuentaController {
 
     private final PresenciaService presenciaService;
     private final CuentaService cuentaService;
+    private final UbicacionService ubicacionService;
 
-    public CuentaController(CuentaService cuentaService, PresenciaService presenciaService) {
+    public CuentaController(CuentaService cuentaService, PresenciaService presenciaService,
+                            UbicacionService ubicacionService) {
         this.cuentaService = cuentaService;
         this.presenciaService = presenciaService;
+        this.ubicacionService = ubicacionService;
     }
 
     @GetMapping
@@ -60,4 +67,13 @@ public class CuentaController {
 public void checarVida(@AuthenticationPrincipal UsuarioPrincipal user) {
     presenciaService.vidaChecar(user.id());
 }
+
+    /** La app se fue al fondo o se apagó la pantalla: sale inactivo y del mapa al instante. */
+    @SuppressWarnings("null")
+    @DeleteMapping("/conexion")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void pausar(@AuthenticationPrincipal UsuarioPrincipal yo) {
+        presenciaService.desconectar(yo.id());
+        ubicacionService.dejarDeCompartir(yo);
+    }
 }

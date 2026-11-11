@@ -1,19 +1,17 @@
 import { useEffect } from 'react';
 import { presenciaApi } from '../services/presenciaApi';
 
-/** Cada cuánto avisa "sigo aquí". El backend da 60 s de margen (miaa.presencia.segundos-en-linea). */
-const LATIDO_MS = 30_000;
+/** Cada cuánto avisa "sigo aquí". El backend da 2 s de margen (miaa.presencia.segundos-en-linea). */
+const LATIDO_MS = 1_000;
 
 /**
  * Mientras la app esté A LA VISTA, manda un latido al backend para salir "Activo"
  * en el panel del administrador (tarea 2.4).
  *
- *  - Al montar (entró o recargó la página) manda uno de inmediato.
- *  - Luego cada 30 s. El backend lo da por INACTIVO si pasan 60 s sin latido: un latido
- *    perdido no lo hace parpadear, pero si cierra la pestaña o se queda sin red, sale
- *    inactivo solo.
- *  - Con la pestaña oculta (otra pestaña o pantalla apagada) no manda nada. El navegador no
- *    distingue esos dos casos. Al volver, manda uno al instante.
+ *  - Al montar (entró o recargó la página) manda uno de inmediato y luego cada segundo.
+ *  - Con la pestaña oculta (otra pestaña o pantalla apagada) avisa que se pausó y sale inactivo
+ *    al instante. Si ese aviso no llega (sin red, navegador cerrado), el backend lo da por
+ *    inactivo solo a los 2 s sin latido. Al volver, manda uno al instante.
  *  - Al volver la red ('online') también manda uno al instante.
  *  - Si un latido falla (sin red), se ignora: el siguiente lo intenta otra vez.
  */
@@ -35,6 +33,7 @@ export function usePresencia(): void {
 
     const alCambiarVisibilidad = () => {
       if (document.visibilityState === 'visible') latir();
+      else presenciaApi.pausar().catch(() => { /* sin red: el backend lo pasa a inactivo a los 2 s */ });
     };
     document.addEventListener('visibilitychange', alCambiarVisibilidad);
     window.addEventListener('online', latir);

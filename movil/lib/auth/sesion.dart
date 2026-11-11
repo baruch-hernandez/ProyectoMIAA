@@ -79,7 +79,11 @@ class Sesion extends ChangeNotifier {
 
   static Future<Sesion> iniciar() async {
     final sesion = Sesion._(const FlutterSecureStorage());
-    sesion.api = await Api.crear(token: () => sesion._token, alExpirar: sesion._expirada);
+    sesion.api = await Api.crear(
+      token: () => sesion._token,
+      alExpirar: sesion._expirada,
+      alRequisitoPendiente: () => sesion.marcarRequisitos(pendientes: true),
+    );
     await sesion._restaurar();
     return sesion;
   }
@@ -143,6 +147,25 @@ class Sesion extends ChangeNotifier {
     } catch (_) {
       // no importa: el backend lo marcará desconectado solo
     }
+  }
+
+  /// pendientes = true: la app muestra la pantalla de requisitos (p. ej. el admin le restableció
+  /// la contraseña con la sesión abierta y el backend respondió REQUISITO_PENDIENTE).
+  /// false: ya cambió la contraseña y aceptó el aviso; la app pasa al inicio.
+  /// Qué falta exactamente lo pregunta la pantalla al backend (GET /usuarios/yo).
+  Future<void> marcarRequisitos({required bool pendientes}) async {
+    final u = usuario;
+    if (u == null || u.tieneRequisitos == pendientes) return;
+    usuario = Usuario(
+      id: u.id,
+      username: u.username,
+      nombre: u.nombre,
+      rol: u.rol,
+      debeCambiarPassword: pendientes,
+      avisoPendiente: false,
+    );
+    await _almacen.write(key: _llaveUsuario, value: jsonEncode(usuario!.aJson()));
+    notifyListeners();
   }
 
   void _expirada(ApiError error) {

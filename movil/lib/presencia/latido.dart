@@ -8,35 +8,35 @@ import '../permisos/servicio_permisos.dart';
 import '../ubicacion/fuente_gps.dart';
 import '../ubicacion/ubicacion.dart';
 
-/// Lee dónde está el celular, o null si no se puede (sin permiso, GPS apagado, sin señal).
-typedef LeerPosicion = Future<LecturaGps?> Function();
+/// Abre las lecturas del GPS para el mapa del admin (vacías si no se puede).
+typedef EscucharGps = Stream<LecturaGps> Function();
 
-/// Una lectura del GPS SOLO si ya hay permiso y la ubicación está prendida: el latido nunca
+/// Lecturas del GPS SOLO si ya hay permiso y la ubicación está prendida: el latido nunca
 /// muestra diálogos (el permiso se pide al tomar la primera foto o al tocar «Mi ubicación»).
-Future<LecturaGps?> posicionSiHayPermiso({
+Stream<LecturaGps> lecturasSiHayPermiso({
   ServicioPermisos permisos = const ServicioPermisosAndroid(),
   FuenteGps gps = const FuenteGpsDispositivo(),
-}) async {
-  try {
-    if (!(await permisos.consultar(TipoPermiso.ubicacion)).permitido) return null;
-    if (!await gps.servicioActivo()) return null;
-    return await gps.lecturas().first.timeout(const Duration(seconds: 15));
-  } catch (_) {
-    return null; // sin señal a tiempo: se intenta en el siguiente latido
-  }
+}) async* {
+  if (!(await permisos.consultar(TipoPermiso.ubicacion)).permitido) return;
+  if (!await gps.servicioActivo()) return;
+  yield* gps.lecturas();
 }
 
-/// Tarea 2.4: "sigo aquí" al backend cada 30 s → el admin ve al notificador "Activo".
-/// Con la pantalla apagada o la app al fondo se detiene y pasa a inactivo; al volver, avisa de inmediato.
-/// En cada latido también manda la ubicación (POST /ubicacion) para el mapa del admin.
+/// Tarea 2.4: "sigo aquí" al backend cada segundo → el admin ve al notificador "Activo".
+/// Con la pantalla apagada o la app al fondo se detiene y avisa que se pausó (sale inactivo al
+/// instante); al volver, late de inmediato. En cada latido también manda la última lectura del
+/// GPS (POST /ubicacion) para el mapa del admin.
 class Latido extends ChangeNotifier {
-  Latido(this._api, {this.posicion});
+  Latido(this._api, {this.gps});
 
   final Api _api;
 
   /// null = no manda ubicación (solo "sigo aquí").
-  final LeerPosicion? posicion;
+  final EscucharGps? gps;
+
   Timer? _timer;
+  StreamSubscription<LecturaGps>? _lecturas;
+  LecturaGps? _ultimaLectura;
   bool _enviando = false;
   bool _cerrado = false;
 
@@ -47,23 +47,55 @@ class Latido extends ChangeNotifier {
   /// Cuándo llegó al servidor la última ubicación (null = todavía ninguna).
   DateTime? ultimaUbicacion;
 
+  /// true mientras el admin está recibiendo la ubicación: lo muestra BarraUbicacion en todas las
+  /// pantallas (el aviso de privacidad promete un indicador "GPS"). Es global porque la barra
+  /// vive arriba de todas las pantallas y el latido solo dentro de Inicio.
+  static final compartiendo = ValueNotifier<bool>(false);
+
   bool get activo => _timer != null;
 
   void iniciar() {
     detener();
-    latir();
     _timer = Timer.periodic(const Duration(seconds: Config.latidoSegundos), (_) => latir());
+    _escucharGps(); // ya, no hasta el 10.º latido: al volver a la app el mapa lo muestra enseguida
+    latir();
     notifyListeners();
   }
 
   void detener() {
+    compartiendo.value = false;
     _timer?.cancel();
     _timer = null;
+    _lecturas?.cancel();
+    _lecturas = null;
+    _ultimaLectura = null; // al volver, no se manda un punto viejo como si fuera de ahora
+  }
+
+  /// La app se pausó (pantalla apagada, al fondo): deja de latir y sale inactivo al instante.
+  /// Si no hay red, el backend lo da por inactivo solo a los 2 s sin latido.
+  Future<void> pausar() async {
+    detener();
+    try {
+      await _api.dio.delete('/usuarios/yo/conexion').timeout(const Duration(seconds: 2));
+    } catch (_) {}
+  }
+
+  /// Si el GPS no está escuchando (sin permiso todavía, o se cortó), lo intenta de nuevo.
+  /// Así, en cuanto el notificador da el permiso (p. ej. en su primera foto), empieza a compartir.
+  void _escucharGps() {
+    final abrir = gps;
+    if (abrir == null || _lecturas != null || _timer == null) return;
+    _lecturas = abrir().listen(
+      (l) => _ultimaLectura = l,
+      onError: (Object _) {},
+      onDone: () => _lecturas = null,
+    );
   }
 
   Future<void> latir() async {
     if (_enviando || _cerrado) return;
     _enviando = true;
+    if (enviados % 10 == 0) _escucharGps(); // reintento cada ~10 s, no en cada latido
     try {
       await _api.dio.post('/usuarios/yo/conexion'); // 204 sin cuerpo
       ultimoOk = DateTime.now();
@@ -72,6 +104,7 @@ class Latido extends ChangeNotifier {
       await _mandarUbicacion();
     } catch (e) {
       ultimoError = ApiError.de(e).mensaje; // sin red: se reintenta en el siguiente latido
+      compartiendo.value = false;
     } finally {
       _enviando = false;
       // La pantalla pudo cerrarse mientras esperábamos la respuesta (p. ej. al cerrar sesión)
@@ -80,10 +113,8 @@ class Latido extends ChangeNotifier {
   }
 
   Future<void> _mandarUbicacion() async {
-    final leer = posicion;
-    if (leer == null) return;
-    final l = await leer();
-    // Si mientras leía el GPS la app se fue al fondo o cerró sesión, ya no se manda
+    final l = _ultimaLectura;
+    // Si mientras tanto la app se pausó o cerró sesión, ya no se manda
     if (l == null || _cerrado || _timer == null) return;
     try {
       await _api.dio.post('/ubicacion', data: {
@@ -93,8 +124,10 @@ class Latido extends ChangeNotifier {
         'fecha': DateTime.now().toUtc().toIso8601String(),
       });
       ultimaUbicacion = DateTime.now();
+      compartiendo.value = _timer != null; // si se pausó mientras tanto, ya no se comparte
     } catch (_) {
       // sin red: el admin lo verá "sin conexión" con el último punto
+      compartiendo.value = false;
     }
   }
 

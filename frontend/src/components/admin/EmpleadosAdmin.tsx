@@ -34,7 +34,7 @@ function Cuando({ iso }: { iso: string | null }) {
 }
 
 /** Cada cuánto se refresca la lista sola, para ver quién entra o sale. */
-const REFRESCO_MS = 5_000;
+const REFRESCO_MS = 1_000;
 
 /** Etiqueta chica junto al nombre: solo se marca a los administradores (la mayoría son notificadores). */
 function EtiquetaRol({ rol }: { rol: Empleado['rol'] }) {
@@ -81,7 +81,7 @@ export function EmpleadosAdmin() {
     return () => { ignorar = true; };
   }, [recarga]);
 
-  // Se actualiza sola cada 5 s (sin el esqueleto de carga: la tabla se queda en pantalla)
+  // Se actualiza sola cada segundo (sin el esqueleto de carga: la tabla se queda en pantalla)
   useEffect(() => {
     const intervalo = window.setInterval(() => setRecarga((n) => n + 1), REFRESCO_MS);
     return () => window.clearInterval(intervalo);

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
+import 'auth/api_cuenta.dart';
 import 'auth/pantalla_login.dart';
+import 'auth/pantalla_requisitos.dart';
 import 'auth/sesion.dart';
 import 'inicio/pantalla_inicio.dart';
+import 'presencia/barra_ubicacion.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,12 +31,26 @@ class AppMiaa extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: _marino, primary: _marino),
         useMaterial3: true,
       ),
-      // La "puerta": con sesión → Inicio; sin sesión → Login. Cambia sola cuando Sesion avisa.
+      // Indicador "GPS" encima de todas las pantallas mientras se comparte la ubicación
+      builder: (context, navegador) => BarraUbicacion(child: navegador!),
+      // La "puerta": sin sesión → Login; con contraseña temporal o aviso pendiente → Requisitos;
+      // si no → Inicio. Cambia sola cuando Sesion avisa.
       home: ListenableBuilder(
         listenable: sesion,
-        builder: (context, _) => sesion.conSesion
-            ? PantallaInicio(key: ValueKey(sesion.usuario?.id), sesion: sesion)
-            : PantallaLogin(sesion: sesion),
+        builder: (context, _) {
+          final u = sesion.usuario;
+          if (!sesion.conSesion || u == null) return PantallaLogin(sesion: sesion);
+          if (u.tieneRequisitos) {
+            return PantallaRequisitos(
+              key: ValueKey('requisitos-${u.id}'),
+              api: ApiCuenta(sesion.api),
+              nombre: u.nombre,
+              alTerminar: () => sesion.marcarRequisitos(pendientes: false),
+              alSalir: sesion.salir,
+            );
+          }
+          return PantallaInicio(key: ValueKey(u.id), sesion: sesion);
+        },
       ),
     );
   }
