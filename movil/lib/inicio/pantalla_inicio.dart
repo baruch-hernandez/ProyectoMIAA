@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../auth/sesion.dart';
 import '../core/api.dart';
+import '../core/config.dart';
 import '../diagnostico/pantalla_diagnostico.dart';
 import '../presencia/latido.dart';
 import '../reportes/api_reportes.dart';
@@ -29,7 +30,7 @@ class _PantallaInicioState extends State<PantallaInicio> with WidgetsBindingObse
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _latido.iniciar();
-    _cargarCuenta();
+    if (Config.herramientasDev) _cargarCuenta(); // solo la usa la tarjeta de prueba
   }
 
   @override
@@ -71,13 +72,14 @@ class _PantallaInicioState extends State<PantallaInicio> with WidgetsBindingObse
       appBar: AppBar(
         title: const Text('MIAA Notificador'),
         actions: [
-          IconButton(
-            tooltip: 'Probar conexión',
-            icon: const Icon(Icons.network_check),
-            onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-              builder: (_) => PantallaDiagnostico(sesion: widget.sesion),
-            )),
-          ),
+          if (Config.herramientasDev)
+            IconButton(
+              tooltip: 'Probar conexión',
+              icon: const Icon(Icons.network_check),
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => PantallaDiagnostico(sesion: widget.sesion),
+              )),
+            ),
           IconButton(
             tooltip: 'Cerrar sesión',
             icon: _saliendo
@@ -114,20 +116,23 @@ class _PantallaInicioState extends State<PantallaInicio> with WidgetsBindingObse
               icon: const Icon(Icons.list_alt),
               label: const Text('Mis reportes'),
             ),
-            const SizedBox(height: 16),
-            ListenableBuilder(
-              listenable: _latido,
-              builder: (context, _) => _TarjetaDisponibilidad(latido: _latido),
-            ),
-            const SizedBox(height: 12),
-            _TarjetaCuenta(cuenta: _cuenta, error: _errorCuenta),
-            const SizedBox(height: 24),
-            Text(
-              'Esta es la pantalla de prueba del sprint: confirma que el login, el token, '
-              'el latido y el logout funcionan contra el backend real. '
-              'Desliza hacia abajo para volver a consultar /usuarios/yo.',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
+            // El latido sigue corriendo siempre; aquí solo se oculta su tarjeta de prueba
+            if (Config.herramientasDev) ...[
+              const SizedBox(height: 16),
+              ListenableBuilder(
+                listenable: _latido,
+                builder: (context, _) => _TarjetaDisponibilidad(latido: _latido),
+              ),
+              const SizedBox(height: 12),
+              _TarjetaCuenta(cuenta: _cuenta, error: _errorCuenta),
+              const SizedBox(height: 24),
+              Text(
+                'Esta es la pantalla de prueba del sprint: confirma que el login, el token, '
+                'el latido y el logout funcionan contra el backend real. '
+                'Desliza hacia abajo para volver a consultar /usuarios/yo.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
           ],
         ),
       ),

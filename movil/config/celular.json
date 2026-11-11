@@ -1,5 +1,5 @@
 {
-  "API_URL": "https://144.46.52.45:8500/api/v1",
+  "API_URL": "https://144.46.52.66:8500/api/v1",
   "CERT_DEV": "true",
   "LATIDO_SEGUNDOS": "30"
 }

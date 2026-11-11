@@ -16,6 +16,10 @@ class Config {
   /// Cada cuánto se avisa "sigo aquí" al backend (tarea 2.4). El backend da 60 s de margen.
   static const latidoSegundos = int.fromEnvironment('LATIDO_SEGUNDOS', defaultValue: 30);
 
+  /// Muestra lo que solo sirve para desarrollar: "Probar conexión", la tarjeta del latido y la
+  /// respuesta de /usuarios/yo. Para verlas: --dart-define=HERRAMIENTAS_DEV=true
+  static const herramientasDev = bool.fromEnvironment('HERRAMIENTAS_DEV');
+
   /// Geocodificador (coordenadas → dirección). Nominatim público solo para desarrollo:
   /// en producción, un servidor propio de MIAA.
   static const geocoderUrl = String.fromEnvironment(

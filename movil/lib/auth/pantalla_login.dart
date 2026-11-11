@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../core/api.dart';
+import '../core/config.dart';
 import '../diagnostico/pantalla_diagnostico.dart';
 import 'sesion.dart';
 
@@ -133,14 +134,16 @@ class _PantallaLoginState extends State<PantallaLogin> {
                         ? const SizedBox.square(dimension: 22, child: CircularProgressIndicator(strokeWidth: 2.5))
                         : Text(_espera > 0 ? 'Espera $_espera s' : 'Entrar'),
                   ),
-                  const SizedBox(height: 12),
-                  TextButton.icon(
-                    onPressed: () => Navigator.of(context).push(MaterialPageRoute(
-                      builder: (_) => PantallaDiagnostico(sesion: widget.sesion),
-                    )),
-                    icon: const Icon(Icons.network_check),
-                    label: const Text('Probar conexión con el servidor'),
-                  ),
+                  if (Config.herramientasDev) ...[
+                    const SizedBox(height: 12),
+                    TextButton.icon(
+                      onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                        builder: (_) => PantallaDiagnostico(sesion: widget.sesion),
+                      )),
+                      icon: const Icon(Icons.network_check),
+                      label: const Text('Probar conexión con el servidor'),
+                    ),
+                  ],
                 ],
               ),
             ),
