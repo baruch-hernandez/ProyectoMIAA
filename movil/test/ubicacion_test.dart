@@ -5,6 +5,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:movil/fotos/foto_evidencia.dart';
 import 'package:movil/permisos/dialogo_permiso.dart';
 import 'package:movil/permisos/servicio_permisos.dart';
 import 'package:movil/reportes/almacen_borrador.dart';
@@ -124,13 +125,11 @@ void main() {
   });
 
   group('BorradorReporte con ubicación', () {
-    test('la solicitud lleva latitud/longitud y se guarda en el celular', () async {
+    test('la ubicación se guarda en el celular', () async {
       final almacen = AlmacenBorradorEnMemoria();
-      final b = BorradorReporte.nuevo(almacen)
+      BorradorReporte.nuevo(almacen)
         ..ponerUbicacion(const Ubicacion(lat: 21.8824, lng: -102.2826, precision: 9, fuente: FuenteUbicacion.gps))
         ..marcarEditado(CampoReporte.calle);
-      expect(b.aSolicitud()['latitud'], 21.8824);
-      expect(b.aSolicitud()['longitud'], -102.2826);
 
       await Future<void>.delayed(Duration.zero); // deja terminar el guardado
       final reabierto = await BorradorReporte.cargar(almacen);
@@ -152,10 +151,12 @@ void main() {
       expect(b.editadosGps, {CampoReporte.calle}, reason: 'el municipio por defecto no cuenta como escrito');
     });
 
-    test('sin ubicación se mandan null (el backend la acepta opcional)', () {
-      final s = BorradorReporte.nuevo(AlmacenBorradorEnMemoria()).aSolicitud();
-      expect(s['latitud'], isNull);
-      expect(s['longitud'], isNull);
+    test('Sprint 4: con foto pero sin ubicación no se puede enviar', () async {
+      final b = BorradorReporte.nuevo(AlmacenBorradorEnMemoria());
+      await b.agregarFoto(fotoProcesada(), OrigenFoto.camara);
+      expect(b.puedeEnviar, isFalse);
+      b.ponerUbicacion(const Ubicacion(lat: 21.8824, lng: -102.2826));
+      expect(b.puedeEnviar, isTrue);
     });
   });
 

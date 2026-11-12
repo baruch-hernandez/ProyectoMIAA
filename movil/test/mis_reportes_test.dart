@@ -1,5 +1,6 @@
 // Mis reportes: la lista del notificador, el detalle y la corrección en las primeras horas.
 //   flutter test test/mis_reportes_test.dart
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:movil/core/api.dart';
@@ -77,7 +78,8 @@ class ApiReportesFalsa implements ApiReportes {
   }
 
   @override
-  Future<Map<String, dynamic>> crear(Map<String, dynamic> solicitud) => throw UnimplementedError();
+  Future<Map<String, dynamic>> sincronizar(List<Map<String, dynamic>> reportes, Map<String, Uint8List> archivos) =>
+      throw UnimplementedError();
 }
 
 Future<void> abrirLista(WidgetTester tester, ApiReportesFalsa api) async {

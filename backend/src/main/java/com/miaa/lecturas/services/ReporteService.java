@@ -5,6 +5,7 @@ import com.miaa.lecturas.dtos.DatosReporte;
 import com.miaa.lecturas.dtos.FotoDTO;
 import com.miaa.lecturas.dtos.FotoRequestDTO;
 import com.miaa.lecturas.dtos.NotaDTO;
+import com.miaa.lecturas.dtos.PaginaReportesDTO;
 import com.miaa.lecturas.dtos.ReporteDetalleDTO;
 import com.miaa.lecturas.dtos.ReporteEdicionDTO;
 import com.miaa.lecturas.dtos.ReporteRequestDTO;
@@ -18,6 +19,8 @@ import com.miaa.lecturas.repositories.NotaReporteRepository;
 import com.miaa.lecturas.repositories.ReporteRepository;
 import com.miaa.lecturas.repositories.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -111,6 +114,10 @@ public class ReporteService {
         Reporte r = new Reporte();
         aplicarDatos(r, req);
         r.setClienteId(req.clienteId());
+        if (req.fechaCaptura() != null) {
+            validadorFotos.validarFechaCaptura(req.fechaCaptura()); // ni del futuro ni absurda; de ayer sí
+            r.setFechaCaptura(req.fechaCaptura());
+        }
         r.setCreadoPor(usuarioActual(yo));
         // Si UNA foto no pasa, se lanza la excepción y la transacción se deshace completa:
         // no queda un reporte a medias.
@@ -157,12 +164,19 @@ public class ReporteService {
                 reporteRepository.contarNotasDeUsuario(yo.id()));
     }
 
-    /** ADMIN: los reportes de todos los empleados. */
+    /** Tamaño máximo de página que puede pedir el admin. */
+    public static final int MAX_TAMANO_PAGINA = 100;
+
+    /** ADMIN: los reportes de todos los empleados, por páginas (del más nuevo al más viejo). */
     @Transactional(readOnly = true)
-    public List<ReporteResumenDTO> todos() {
-        return aResumenes(reporteRepository.buscarTodos(),
-                reporteRepository.contarFotosDeTodos(),
-                reporteRepository.contarNotasDeTodos());
+    public PaginaReportesDTO todos(int pagina, int tamano) {
+        Page<Reporte> p = reporteRepository.buscarTodos(
+                PageRequest.of(Math.max(0, pagina), Math.min(Math.max(1, tamano), MAX_TAMANO_PAGINA)));
+        List<Long> ids = p.getContent().stream().map(Reporte::getId).toList();
+        List<ReporteResumenDTO> resumenes = ids.isEmpty() ? List.of()
+                : aResumenes(p.getContent(), reporteRepository.contarFotosDe(ids), reporteRepository.contarNotasDe(ids));
+        return new PaginaReportesDTO(resumenes, p.getTotalElements(), reporteRepository.contarAutores(),
+                p.getNumber(), p.hasNext());
     }
 
     @Transactional(readOnly = true)
@@ -390,6 +404,7 @@ public class ReporteService {
                 r.getFechaCreacion(),
                 r.getFechaActualizacion(),
                 r.getFechaEdicion(),
+                r.getFechaCaptura(),
                 r.getFotos().stream().map(FotoDTO::desde).toList(),
                 notas.stream().map(NotaDTO::desde).toList(),
                 esAutor(yo, r),

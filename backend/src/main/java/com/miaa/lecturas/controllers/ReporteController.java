@@ -5,13 +5,17 @@ import com.miaa.lecturas.dtos.FotoDTO;
 import com.miaa.lecturas.dtos.FotoRequestDTO;
 import com.miaa.lecturas.dtos.NotaDTO;
 import com.miaa.lecturas.dtos.NotaRequestDTO;
+import com.miaa.lecturas.dtos.PaginaReportesDTO;
 import com.miaa.lecturas.dtos.ReporteDetalleDTO;
 import com.miaa.lecturas.dtos.ReporteEdicionDTO;
 import com.miaa.lecturas.dtos.ReporteRequestDTO;
 import com.miaa.lecturas.dtos.ReporteResumenDTO;
+import com.miaa.lecturas.dtos.ResultadoSyncDTO;
 import com.miaa.lecturas.services.ReporteService;
+import com.miaa.lecturas.services.SincronizacionService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -21,22 +25,27 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Reportes de domicilios.
  *
  *  NOTIFICADOR
  *   POST   /reportes                         subir un reporte (con clienteId no se duplica al reenviar)
+ *   POST   /reportes/sync                    subir de golpe los guardados sin conexión (multipart, Sprint 4)
  *   DELETE /reportes/{id}                    borrarlo (primeras 24 h)
  *   GET    /reportes/mios                    mis reportes
  *   POST   /reportes/{id}/fotos              poner una foto (máx. 3, primeras 24 h)
  *   DELETE /reportes/{id}/fotos/{fotoId}     quitar una foto (primeras 24 h)
  *  ADMIN
- *   GET    /reportes                         los reportes de todos los empleados
+ *   GET    /reportes?pagina=0&tamano=50      los reportes de todos los empleados, por páginas
  *  AMBOS
  *   GET    /reportes/{id}                    detalle (el notificador solo los suyos)
  *   POST   /reportes/{id}/notas              agregar una nota (el notificador al suyo; el admin a cualquiera)
@@ -51,9 +60,11 @@ import java.util.List;
 public class ReporteController {
 
     private final ReporteService reporteService;
+    private final SincronizacionService sincronizacionService;
 
-    public ReporteController(ReporteService reporteService) {
+    public ReporteController(ReporteService reporteService, SincronizacionService sincronizacionService) {
         this.reporteService = reporteService;
+        this.sincronizacionService = sincronizacionService;
     }
 
     @PostMapping
@@ -64,6 +75,18 @@ public class ReporteController {
         return reporteService.crear(yo, request);
     }
 
+    /**
+     * Multipart: la parte "reportes" (JSON, lista) y una parte por foto (binaria), con el nombre que
+     * dice cada foto en "parte". Responde 200 aunque algún reporte se rechace (ver ResultadoSyncDTO).
+     */
+    @PostMapping(path = "/sync", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('NOTIFICADOR')")
+    public ResultadoSyncDTO sincronizar(@AuthenticationPrincipal UsuarioPrincipal yo,
+                                        @RequestPart("reportes") String reportes,
+                                        @RequestParam Map<String, MultipartFile> archivos) {
+        return sincronizacionService.sincronizar(yo, reportes, archivos);
+    }
+
     @GetMapping("/mios")
     @PreAuthorize("hasRole('NOTIFICADOR')")
     public List<ReporteResumenDTO> mios(@AuthenticationPrincipal UsuarioPrincipal yo) {
@@ -72,8 +95,9 @@ public class ReporteController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public List<ReporteResumenDTO> todos() {
-        return reporteService.todos();
+    public PaginaReportesDTO todos(@RequestParam(name = "pagina", defaultValue = "0") int pagina,
+                                   @RequestParam(name = "tamano", defaultValue = "50") int tamano) {
+        return reporteService.todos(pagina, tamano);
     }
 
     @GetMapping("/{id}")

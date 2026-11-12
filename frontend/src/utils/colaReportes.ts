@@ -87,7 +87,7 @@ let enCurso: Promise<number> | null = null;
 
 /**
  * Intenta enviar los pendientes de este usuario, del más viejo al más nuevo.
- *  - Si falla por la RED: se detiene (sigue sin señal; se reintenta después).
+ *  - Si falla por la RED o el servidor está caído (5xx): se detiene y se reintenta después.
  *  - Si el SERVIDOR lo rechaza (400/409…): lo marca con el error y sigue con los demás.
  *  - 401/403 (sesión vencida, requisitos pendientes): se detiene sin marcar nada.
  * Los marcados con error solo se reintentan si `incluirRechazados` (botón "Enviar ahora").
@@ -105,7 +105,8 @@ export function enviarPendientes(usuarioId: number, incluirRechazados = false): 
         enviados++;
       } catch (err) {
         const status = axios.isAxiosError(err) ? err.response?.status : undefined;
-        if (esErrorDeRed(err) || status === 401 || status === 403) break;
+        // 5xx = servidor caído o reiniciándose, no un reporte mal hecho: no se marca como rechazado
+        if (esErrorDeRed(err) || status === 401 || status === 403 || (status ?? 0) >= 500) break;
         await operar('readwrite', (a) => a.put({ ...p, error: leerError(err).mensaje, intentos: p.intentos + 1 }));
       }
     }

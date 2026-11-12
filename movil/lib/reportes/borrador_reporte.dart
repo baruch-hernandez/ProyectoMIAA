@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -172,9 +171,10 @@ class BorradorReporte extends ChangeNotifier {
     unawaited(_guardar());
   }
 
-  /// Tarea 2.2: el reporte NO se puede enviar mientras no tenga al menos una foto.
-  /// (Los demás campos los valida el formulario al tocar "Enviar".)
-  bool get puedeEnviar => _fotos.isNotEmpty;
+  /// Tarea 2.2: el reporte NO se puede enviar sin al menos una foto, y desde el Sprint 4 tampoco
+  /// sin ubicación (un reporte hecho sin red debe traer dónde se hizo). Los demás campos los valida
+  /// el formulario al tocar "Enviar".
+  bool get puedeEnviar => _fotos.isNotEmpty && _ubicacion != null;
 
   bool get completoDeFotos => _fotos.length >= ReglasFoto.maxFotos;
 
@@ -246,22 +246,19 @@ class BorradorReporte extends ChangeNotifier {
         'fotos': [for (final f in _fotos) f.aJson()],
       };
 
-  /// El cuerpo de POST /reportes (ReporteRequestDTO).
-  Map<String, dynamic> aSolicitud() {
+  /// Lo que se guarda en la bandeja de salida (reportes_offline.datos) y viaja a POST /reportes/sync:
+  /// los campos de ReporteRequestDTO y los metadatos de cada foto. La ubicación va en sus columnas, y
+  /// los bytes de las fotos en archivos: cada foto dice en "archivo" cómo se llama el suyo.
+  Map<String, dynamic> aDatosOffline() {
     final datos = <String, dynamic>{};
     for (final nombre in CampoReporte.todos) {
       final valor = campo(nombre).trim();
       datos[nombre] = valor.isEmpty && CampoReporte.opcionales.contains(nombre) ? null : valor;
     }
-    // Opcional: si no hay punto se mandan null (el backend lo acepta). Si viene, el backend
-    // revisa que esté dentro del contorno del estado.
-    datos['latitud'] = _ubicacion?.lat;
-    datos['longitud'] = _ubicacion?.lng;
-    datos['clienteId'] = clienteId;
     datos['fotos'] = [
       for (final f in _fotos)
         {
-          'datos': 'data:image/jpeg;base64,${base64Encode(f.bytes)}',
+          'archivo': '${f.id}.jpg',
           'fechaCaptura': f.fechaCaptura.toUtc().toIso8601String(),
           'origenFecha': f.origenFecha.clave,
           'origenFoto': f.origen.clave,

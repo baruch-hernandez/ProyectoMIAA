@@ -5,6 +5,8 @@ import 'package:movil/reportes/almacen_borrador.dart';
 import 'package:movil/reportes/borrador_reporte.dart';
 import 'package:movil/reportes/pantalla_nuevo_reporte.dart';
 
+import 'apoyo/falsos.dart';
+
 void main() {
   testWidgets('3.4 El formulario solo ofrece Cámara y Galería, y bloquea el envío sin fotos', (tester) async {
     // Configurar ventana suficientemente alta para renderizar el formulario sin cortes
@@ -18,7 +20,7 @@ void main() {
       MaterialApp(
         home: PantallaNuevoReporte(
           borrador: borrador,
-          enviar: (_) async {},
+          enviar: enviadoAlServidor,
           ubicarAlAbrir: false,
           conMosaicos: false,
         ),

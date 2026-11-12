@@ -2,6 +2,7 @@ package com.miaa.lecturas.controllers;
 
 import com.miaa.lecturas.config.UsuarioPrincipal;
 import com.miaa.lecturas.dtos.UbicacionRequestDTO;
+import com.miaa.lecturas.services.PresenciaService;
 import com.miaa.lecturas.services.UbicacionService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -17,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * El notificador comparte SU ubicación (nadie puede mandar la de otro: el id sale del token).
  *
- *   POST   /ubicacion   { latitud, longitud, precision, fecha }   → 204
+ *   POST   /ubicacion   { latitud, longitud, precision, fecha }   → 204 (también cuenta como latido)
  *   DELETE /ubicacion   al cerrar sesión: deja de aparecer "en línea" → 204
  */
 @RestController
@@ -26,9 +27,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class UbicacionController {
 
     private final UbicacionService ubicacionService;
+    private final PresenciaService presenciaService;
 
-    public UbicacionController(UbicacionService ubicacionService) {
+    public UbicacionController(UbicacionService ubicacionService, PresenciaService presenciaService) {
         this.ubicacionService = ubicacionService;
+        this.presenciaService = presenciaService;
     }
 
     @PostMapping
@@ -36,6 +39,8 @@ public class UbicacionController {
     public void actualizar(@AuthenticationPrincipal UsuarioPrincipal yo,
                            @Valid @RequestBody UbicacionRequestDTO request) {
         ubicacionService.actualizar(yo, request);
+        // También cuenta como latido: el celular manda UNA petición por segundo, no dos
+        presenciaService.vidaChecar(yo.id());
     }
 
     @DeleteMapping

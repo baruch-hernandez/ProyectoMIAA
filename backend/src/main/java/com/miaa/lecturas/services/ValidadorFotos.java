@@ -73,10 +73,10 @@ public class ValidadorFotos {
     public void validarFechaCaptura(Instant fechaCaptura) {
         Instant ahora = Instant.now();
         if (fechaCaptura.isAfter(ahora.plus(10, ChronoUnit.MINUTES))) {
-            throw error("La hora de captura de una foto está en el futuro. Revisa la fecha y hora del celular.");
+            throw error("La hora de captura (de un reporte o una foto) está en el futuro. Revisa la fecha y hora del celular.");
         }
         if (fechaCaptura.isBefore(Instant.parse("2000-01-01T00:00:00Z"))) {
-            throw error("La hora de captura de una foto no es válida. Revisa la fecha y hora del celular.");
+            throw error("La hora de captura (de un reporte o una foto) no es válida. Revisa la fecha y hora del celular.");
         }
     }
 

@@ -71,21 +71,29 @@ export function EmpleadosAdmin() {
   const [busqueda, setBusqueda] = useState('');
   const [filtro, setFiltro] = useState<FiltroEstado>('todos');
 
+  // Se actualiza sola cada segundo (sin el esqueleto de carga: la tabla se queda en pantalla).
+  // Encadenado, no setInterval: la siguiente consulta sale cuando terminó la anterior (nunca se
+  // enciman si el servidor tarda), y con la pestaña oculta no se consulta.
   useEffect(() => {
     let ignorar = false;
-    usuariosApi
-      .empleados()
-      .then((d) => { if (!ignorar) setDatos(d); })
-      .catch((err) => { if (!ignorar) setError(leerError(err).mensaje); })
-      .finally(() => { if (!ignorar) setCargando(false); });
-    return () => { ignorar = true; };
+    let siguiente: number | undefined;
+    const programar = () => {
+      if (!ignorar) siguiente = window.setTimeout(() => setRecarga((n) => n + 1), REFRESCO_MS);
+    };
+    if (document.hidden) {
+      programar();
+    } else {
+      usuariosApi
+        .empleados()
+        .then((d) => { if (!ignorar) setDatos(d); })
+        .catch((err) => { if (!ignorar) setError(leerError(err).mensaje); })
+        .finally(() => {
+          if (!ignorar) setCargando(false);
+          programar();
+        });
+    }
+    return () => { ignorar = true; window.clearTimeout(siguiente); };
   }, [recarga]);
-
-  // Se actualiza sola cada segundo (sin el esqueleto de carga: la tabla se queda en pantalla)
-  useEffect(() => {
-    const intervalo = window.setInterval(() => setRecarga((n) => n + 1), REFRESCO_MS);
-    return () => window.clearInterval(intervalo);
-  }, []);
 
   const recargar = () => {
     setCargando(true);

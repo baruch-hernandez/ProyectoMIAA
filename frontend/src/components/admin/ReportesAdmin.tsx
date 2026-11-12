@@ -1,15 +1,18 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { reportesApi, leerError } from '../../services/reportesApi';
-import type { ReporteResumen } from '../../types/reporte';
+import type { PaginaReportes, ReporteResumen } from '../../types/reporte';
 import { ListaReportes } from '../reportes/ListaReportes';
 
 /**
  * El administrador ve los reportes de TODOS los empleados, del más nuevo al más viejo.
  * Sin filtros ni exportar (MIAA pidió quitarlos). Los datos se corrigen desde el detalle.
+ * Llegan de 50 en 50 ("Ver más"): con meses de reportes, traerlos todos de golpe sería muy lento.
  */
 export function ReportesAdmin() {
   const [reportes, setReportes] = useState<ReporteResumen[]>([]);
+  const [ultima, setUltima] = useState<PaginaReportes | null>(null);
+  const [pagina, setPagina] = useState(0);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [recarga, setRecarga] = useState(0);
@@ -17,21 +20,32 @@ export function ReportesAdmin() {
   useEffect(() => {
     let ignorar = false;
     reportesApi
-      .todos()
-      .then((data) => { if (!ignorar) setReportes(data); })
+      .todos(pagina)
+      .then((data) => {
+        if (ignorar) return;
+        setUltima(data);
+        setReportes((antes) => (pagina === 0 ? data.reportes : [...antes, ...data.reportes]));
+      })
       .catch((err) => { if (!ignorar) setError(leerError(err).mensaje); })
       .finally(() => { if (!ignorar) setCargando(false); });
     return () => { ignorar = true; };
-  }, [recarga]);
+  }, [pagina, recarga]);
 
   const recargar = () => {
     setCargando(true);
     setError(null);
+    setPagina(0);
     setRecarga((n) => n + 1);
   };
 
+  const verMas = () => {
+    setCargando(true);
+    setPagina((p) => p + 1);
+  };
+
+  const total = ultima?.total ?? 0;
   // Cuántos empleados distintos han reportado (dato de contexto, no es filtro)
-  const empleadosConReportes = useMemo(() => new Set(reportes.map((r) => r.autorId)).size, [reportes]);
+  const empleadosConReportes = ultima?.empleados ?? 0;
 
   return (
     <div className="space-y-6">
@@ -39,8 +53,8 @@ export function ReportesAdmin() {
         <div>
           <h1 className="text-3xl font-extrabold text-miaa-marino">Reportes</h1>
           <p className="mt-1 text-slate-600">
-            <span className="tabular-nums font-semibold text-miaa-marino">{reportes.length}</span>{' '}
-            {reportes.length === 1 ? 'reporte' : 'reportes'} de{' '}
+            <span className="tabular-nums font-semibold text-miaa-marino">{total}</span>{' '}
+            {total === 1 ? 'reporte' : 'reportes'} de{' '}
             <span className="tabular-nums font-semibold text-miaa-marino">{empleadosConReportes}</span>{' '}
             {empleadosConReportes === 1 ? 'empleado' : 'empleados'}, del más reciente al más antiguo.
           </p>
@@ -72,7 +86,21 @@ export function ReportesAdmin() {
           <p className="mt-1 text-sm text-slate-600">Aquí aparecerán los que suban los notificadores desde campo.</p>
         </div>
       ) : (
-        <ListaReportes reportes={reportes} enlace={(id) => `/admin/reportes/${id}`} mostrarAutor />
+        <>
+          <ListaReportes reportes={reportes} enlace={(id) => `/admin/reportes/${id}`} mostrarAutor />
+          {ultima?.hayMas && (
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={verMas}
+                disabled={cargando}
+                className="inline-flex items-center gap-2 h-11 px-5 rounded-xl font-semibold text-miaa-azul bg-white border border-slate-200 hover:bg-slate-50 disabled:opacity-50"
+              >
+                {cargando ? 'Cargando…' : `Ver más (${reportes.length} de ${total})`}
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

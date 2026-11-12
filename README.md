@@ -94,7 +94,7 @@ ProyectoMIAA/
 
 | Herramienta | Versión | Para qué |
 | --- | --- | --- |
-| JDK | 17 o más (probado con 21) | Backend. Trae `keytool` para el certificado |
+| JDK | 17.0.5+ o 21 (probado con 21) | Backend. Trae `keytool` para el certificado. **No uses el 18.0.2**: no sabe que México quitó el horario de verano y de abril a octubre las horas salen 1 h adelantadas (al arrancar, el backend lo avisa en el log). Revisa `JAVA_HOME` |
 | PostgreSQL | 14 o más | Base de datos |
 | Node.js | 22 LTS (Vite 8 pide ≥ 20.19) | Panel web |
 | Flutter | estable reciente (Dart ≥ 3.13) | App móvil |
@@ -225,7 +225,7 @@ Un reporte tiene:
 | El punto debe caer **dentro del contorno de Aguascalientes** | [LimiteAguascalientes.java](backend/src/main/java/com/miaa/lecturas/services/LimiteAguascalientes.java), con el mismo contorno en la web (`limiteAgs.ts`) y en la app (`limite_ags.dart`) |
 | El notificador solo puede editar o borrar **sus** reportes, y solo durante **24 h** | [ReporteService.java](backend/src/main/java/com/miaa/lecturas/services/ReporteService.java) |
 | Después de 24 h ya no se edita, pero se pueden agregar **notas** | `POST /reportes/{id}/notas` |
-| Un reporte reenviado (se cortó la señal) **no se duplica** | Cada reporte lleva un `clienteId` (UUID) generado en el dispositivo |
+| Un reporte reenviado (se cortó la señal) **no se duplica** | Cada reporte lleva un UUID generado en el dispositivo (`clienteId` en `POST /reportes`, `clientSyncId` en `/reportes/sync`), guardado en la columna UNIQUE `client_sync_id` |
 
 Las fotos se guardan en la base como texto base64 (columna `datos` de `fotos_reporte`).
 
@@ -254,15 +254,21 @@ Cada foto también manda `origenFecha` (OBTURADOR, EXIF, ARCHIVO o SUBIDA) para 
 
 ### 6.4 Sin señal
 
-- **App:** el reporte en curso se guarda como **borrador** en la carpeta privada de la app, una por usuario. Si se cierra la app, el reporte y sus fotos siguen ahí.
+- **App, mientras se llena:** el reporte en curso se guarda como **borrador** en la carpeta privada de la app, una por usuario. Si se cierra la app, el reporte y sus fotos siguen ahí.
+- **App, al tocar "Enviar" (Sprint 4):** el reporte **siempre** se guarda primero en el celular y después se intenta mandar. Así, aunque no haya señal, no se pierde.
+  - Los datos van a la tabla SQLite `reportes_offline` ([bd_local.dart](movil/lib/sincronizacion/bd_local.dart), con migraciones). Las fotos, ya comprimidas, van a `<documentos>/reportes_offline/<uuid>/`.
+  - Sin red, el formulario avisa **"Guardado en dispositivo (sin conexión)"** y el inicio muestra **"Reportes pendientes por sincronizar: N"**.
+  - [SyncManager](movil/lib/sincronizacion/sync_manager.dart) manda los pendientes solo, en lotes de 5, a `POST /reportes/sync`, con el JWT de la sesión. Lo hace al volver la red ([connectivity_plus](movil/lib/sincronizacion/servicio_conectividad.dart)), al abrir o volver a la app, y cada minuto mientras haya pendientes. Sin red no intenta nada.
+  - Si el servidor rechaza un reporte (p. ej. fuera del estado), queda como **rechazado** en el inicio, con el motivo, y se puede descartar.
+  - **Límite:** solo sincroniza con la app abierta y con sesión. No usamos `workmanager`: en segundo plano el sistema mata el proceso, el token puede vencer, y el notificador vuelve a abrir la app de todos modos. Lo pendiente sale al abrirla.
 - **Web:** si no hay red al enviar, el reporte se guarda en **IndexedDB** ([colaReportes.ts](frontend/src/utils/colaReportes.ts)) y se envía solo cuando vuelve la conexión.
 
 ### 6.5 Presencia y ubicación en vivo
 
-- **Activo / Inactivo:** con la sesión iniciada y la app a la vista, la app y la web mandan un latido cada 30 s (`POST /usuarios/yo/conexion`). Al cerrar sesión pasa a inactivo de inmediato. Si no llega nada en 60 s (pantalla o celular apagados, app al fondo o cerrada, pestaña oculta o sin señal), también.
+- **Activo / Inactivo:** con la sesión iniciada y la app a la vista, la app y la web mandan un latido cada segundo (`POST /usuarios/yo/conexion`; si el celular ya tiene GPS, manda solo `POST /ubicacion`, que también cuenta como latido: una petición por segundo, no dos). Al cerrar sesión, apagar la pantalla o mandar la app al fondo, avisan (`DELETE /usuarios/yo/conexion`) y pasa a inactivo de inmediato. Si no llega nada en 2 s (celular sin señal o apagado de golpe), también.
 - **Ubicación del notificador** ([UbicacionService.java](backend/src/main/java/com/miaa/lecturas/services/UbicacionService.java)):
-  - el celular manda su posición cada ~20 s (`POST /ubicacion`);
-  - el admin, con el mapa abierto, consulta cada 5 s.
+  - el celular manda su posición con cada latido (`POST /ubicacion`);
+  - el admin, con el mapa abierto, consulta cada segundo.
   - Es "casi tiempo real" sin WebSockets.
 
 ---
@@ -280,8 +286,9 @@ Todas las rutas existen con y sin el prefijo `/api/v1`. Todas, menos el login, p
 | POST | `/usuarios/yo/aviso-privacidad` | cualquiera | Aceptar el aviso (con su versión) |
 | POST | `/usuarios/yo/conexion` | cualquiera | Latido "en línea" |
 | POST | `/reportes` | NOTIFICADOR | Crear reporte con fotos |
+| POST | `/reportes/sync` | NOTIFICADOR | Subir de golpe los guardados sin conexión: multipart, con la parte `reportes` (JSON) y una parte binaria por foto. Responde `{ sincronizados: [{clientSyncId, id, folio}], rechazados: [{clientSyncId, motivo, errores}] }`. Exige coordenadas, al menos 1 foto y `fechaCaptura` en UTC (termina en `Z`). Un `clientSyncId` repetido regresa el reporte de antes |
 | GET | `/reportes/mios` | NOTIFICADOR | Mis reportes |
-| GET | `/reportes` | ADMIN | Todos los reportes |
+| GET | `/reportes?pagina=0&tamano=50` | ADMIN | Todos los reportes, por páginas: `{ reportes, total, empleados, pagina, hayMas }` (máx. 100 por página) |
 | GET | `/reportes/{id}` | los dos* | Detalle (*el notificador solo ve los suyos) |
 | PUT / DELETE | `/reportes/{id}` | NOTIFICADOR | Editar o borrar (24 h) |
 | POST | `/reportes/{id}/notas` | NOTIFICADOR | Agregar nota |
@@ -309,10 +316,12 @@ roles ──< usuarios ──< reportes ──< fotos_reporte
 | Tabla | Campos clave |
 | --- | --- |
 | `usuarios` | username, hash BCrypt, rol, habilitado, `debe_cambiar_password`, versión y fecha del aviso aceptado, intentos fallidos, `bloqueado_hasta`, última conexión |
-| `reportes` | domicilio, municipio, latitud/longitud, descripción, `cliente_id` (UUID anti-duplicados), autor, fechas de creación y edición |
+| `reportes` | domicilio, municipio, latitud/longitud, descripción, `client_sync_id` (UUID anti-duplicados, índice UNIQUE), `fecha_captura` (cuándo se llenó, aunque llegue horas después), autor, fechas de creación y edición |
 | `fotos_reporte` | imagen (base64), ancho/alto, `fecha_captura` (timestamptz) y su origen, lat/lng/precisión del GPS, desfase del reloj |
 | `notas_reporte` | texto, autor, fecha |
 | `ubicaciones_empleado` | última posición, precisión, si está compartiendo |
+
+En el **celular**, la tabla SQLite `reportes_offline` es la bandeja de salida: `uuid_cliente`, descripción, latitud/longitud, `precision_gps`, `foto_path`, `fecha_captura_utc`, `sync_status` (`PENDIENTE_SINCRONIZAR` / `SINCRONIZADO` / `RECHAZADO`), `intentos` y el resto del reporte en JSON.
 
 [docs/esquema-usuarios-roles.sql](backend/docs/esquema-usuarios-roles.sql) tiene el SQL de referencia de usuarios y roles.
 
@@ -331,7 +340,7 @@ flutter analyze
 flutter test
 flutter test integration_test/ciclo_fotos_test.dart -d emulator-5554   # en emulador
 
-# Pruebas de sistema: auth, HTTPS, 100 usuarios simultáneos, aviso (pytest + Selenium)
+# Pruebas de sistema: auth, HTTPS, 100 usuarios simultáneos, aviso, sincronización offline (pytest + Selenium)
 # Necesitan el backend con: .\mvnw spring-boot:run "-Dspring-boot.run.profiles=https,pruebas"
 cd pruebas
 .\correr_pruebas.ps1
@@ -378,7 +387,7 @@ Un recorrido sugerido, de lo más simple a lo más interesante:
 4. **Geometría simple.** [LimiteAguascalientes](backend/src/main/java/com/miaa/lecturas/services/LimiteAguascalientes.java) decide si un punto está dentro del estado (punto en polígono).
 5. **Trabajo sin señal.** Hay dos enfoques para comparar:
    - la web: [colaReportes.ts](frontend/src/utils/colaReportes.ts), con IndexedDB y `clienteId` para no duplicar;
-   - la app: [borrador_reporte.dart](movil/lib/reportes/borrador_reporte.dart).
+   - la app: [borrador_reporte.dart](movil/lib/reportes/borrador_reporte.dart) mientras se llena, y [sync_manager.dart](movil/lib/sincronizacion/sync_manager.dart) con SQLite al enviar.
 6. **Hardware del celular.**
    - [pantalla_camara.dart](movil/lib/fotos/pantalla_camara.dart) y [reglas_gps.dart](movil/lib/ubicacion/reglas_gps.dart): cámara, GPS y cuándo dejar tomar la foto.
    - [procesador_fotos.dart](movil/lib/fotos/procesador_fotos.dart): comprimir en un isolate y escribir EXIF a mano.

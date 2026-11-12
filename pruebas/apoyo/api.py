@@ -64,6 +64,9 @@ class Api:
     def put(self, ruta, **kw):
         return self._pedir("PUT", ruta, **kw)
 
+    def delete(self, ruta, **kw):
+        return self._pedir("DELETE", ruta, **kw)
+
     # ---------- atajos ----------
     def login(self, usuario: str, password: str) -> requests.Response:
         return self.sesion.post(f"{self.base}/auth/login", json={"username": usuario, "password": password},

@@ -12,13 +12,16 @@ import 'package:movil/reportes/almacen_borrador.dart';
 import 'package:movil/reportes/borrador_reporte.dart';
 import 'package:movil/reportes/campo_tipo_predio.dart';
 import 'package:movil/reportes/pantalla_nuevo_reporte.dart';
+import 'package:movil/ubicacion/ubicacion.dart';
 
 import 'apoyo/falsos.dart';
+
+const _centro = Ubicacion(lat: 21.8818, lng: -102.2916, precision: 5, fuente: FuenteUbicacion.gps);
 
 void main() {
   group('BorradorReporte (2.2 / 3.4)', () {
     test('sin fotos no se puede enviar; con una sí; al quitarla, otra vez no', () async {
-      final b = BorradorReporte.nuevo(AlmacenBorradorEnMemoria());
+      final b = BorradorReporte.nuevo(AlmacenBorradorEnMemoria())..ponerUbicacion(_centro);
       expect(b.puedeEnviar, isFalse);
 
       final foto = await b.agregarFoto(fotoProcesada(), OrigenFoto.camara);
@@ -76,20 +79,21 @@ void main() {
       expect(reabierto.fotos.single.fechaCaptura, DateTime.utc(2026, 10, 27, 18, 30));
     });
 
-    test('la solicitud lleva las fotos como el backend las espera', () async {
+    test('lo que se guarda para sincronizar lleva las fotos como el backend las espera', () async {
       final b = BorradorReporte.nuevo(AlmacenBorradorEnMemoria())
         ..ponerCampo(CampoReporte.calle, '  Madero ')
         ..ponerCampo(CampoReporte.numeroInterior, '   ');
       await b.agregarFoto(fotoProcesada(origenFecha: OrigenFechaFoto.subida), OrigenFoto.galeria);
 
-      final s = b.aSolicitud();
+      final s = b.aDatosOffline();
       expect(s['calle'], 'Madero');
       expect(s['numeroInterior'], isNull, reason: 'opcional vacío = null');
       expect(s['claveCatastral'], isNull);
       expect(s['municipio'], 'Aguascalientes');
-      expect(s['clienteId'], matches(RegExp(r'^[0-9a-f-]{36}$')));
+      expect(b.clienteId, matches(RegExp(r'^[0-9a-f-]{36}$')));
       final foto = (s['fotos'] as List).single as Map;
-      expect(foto['datos'], startsWith('data:image/jpeg;base64,'));
+      expect(foto['archivo'], '${b.fotos.single.id}.jpg', reason: 'los bytes van en su archivo, no en el JSON');
+      expect(foto, isNot(contains('datos')));
       expect(foto['origenFecha'], 'SUBIDA');
       expect(foto['origenFoto'], 'GALERIA');
       expect(foto['fechaCaptura'], '2026-10-27T18:30:00.000Z');
@@ -130,6 +134,12 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(b.fotos, hasLength(1));
+      // Sprint 4: también hace falta la ubicación
+      expect(botonEnviarHabilitado(tester), isFalse);
+      expect(find.byKey(PantallaNuevoReporte.llaveAvisoUbicacion), findsOneWidget);
+      b.ponerUbicacion(_centro);
+      await tester.pump();
+      expect(find.byKey(PantallaNuevoReporte.llaveAvisoUbicacion), findsNothing);
       expect(botonEnviarHabilitado(tester), isTrue);
       expect(find.byKey(PantallaNuevoReporte.llaveAvisoFoto), findsNothing);
 
@@ -192,7 +202,15 @@ void main() {
     testWidgets('con foto, valida los campos y manda la solicitud completa', (tester) async {
       Map<String, dynamic>? enviada;
       final fuente = FuenteFalsa(galeria: [fotoCruda()]);
-      final b = await abrirFormulario(tester, fuente: fuente, enviar: (s) async => enviada = s);
+      final b = await abrirFormulario(
+        tester,
+        fuente: fuente,
+        borrador: BorradorReporte.nuevo(AlmacenBorradorEnMemoria())..ponerUbicacion(_centro),
+        enviar: (b) async {
+          enviada = b.aDatosOffline();
+          return enviadoAlServidor(b);
+        },
+      );
 
       await tester.tap(find.byKey(PantallaNuevoReporte.llaveGaleria));
       await tester.pumpAndSettle();

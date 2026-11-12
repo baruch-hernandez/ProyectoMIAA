@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -74,5 +75,8 @@ public record ReporteRequestDTO(
         // Id que genera el CELULAR (UUID). Si el reporte se guardó sin conexión y luego se
         // reintenta el envío, el servidor lo reconoce y no lo duplica. Opcional.
         @Pattern(regexp = "[0-9a-fA-F-]{36}", message = "clienteId debe ser un UUID")
-        String clienteId) implements DatosReporte {
+        String clienteId,
+
+        // Cuándo se llenó (UTC). Opcional: la web no lo manda; la app sí (puede ser de horas antes)
+        Instant fechaCaptura) implements DatosReporte {
 }

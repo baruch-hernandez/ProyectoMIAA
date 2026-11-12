@@ -24,8 +24,10 @@ Stream<LecturaGps> lecturasSiHayPermiso({
 
 /// Tarea 2.4: "sigo aquí" al backend cada segundo → el admin ve al notificador "Activo".
 /// Con la pantalla apagada o la app al fondo se detiene y avisa que se pausó (sale inactivo al
-/// instante); al volver, late de inmediato. En cada latido también manda la última lectura del
-/// GPS (POST /ubicacion) para el mapa del admin.
+/// instante); al volver, late de inmediato.
+///
+/// UNA petición por latido (datos móviles y batería): con lectura del GPS manda POST /ubicacion,
+/// que el backend también cuenta como latido; sin lectura, POST /usuarios/yo/conexion.
 class Latido extends ChangeNotifier {
   Latido(this._api, {this.gps});
 
@@ -96,12 +98,23 @@ class Latido extends ChangeNotifier {
     if (_enviando || _cerrado) return;
     _enviando = true;
     if (enviados % 10 == 0) _escucharGps(); // reintento cada ~10 s, no en cada latido
+    final l = _ultimaLectura;
     try {
-      await _api.dio.post('/usuarios/yo/conexion'); // 204 sin cuerpo
+      if (l == null) {
+        await _api.dio.post('/usuarios/yo/conexion'); // 204 sin cuerpo
+      } else {
+        await _api.dio.post('/ubicacion', data: {
+          'latitud': l.lat,
+          'longitud': l.lng,
+          'precision': l.precision,
+          'fecha': DateTime.now().toUtc().toIso8601String(),
+        });
+        ultimaUbicacion = DateTime.now();
+      }
       ultimoOk = DateTime.now();
       ultimoError = null;
       enviados++;
-      await _mandarUbicacion();
+      compartiendo.value = l != null && _timer != null; // si se pausó mientras tanto, ya no se comparte
     } catch (e) {
       ultimoError = ApiError.de(e).mensaje; // sin red: se reintenta en el siguiente latido
       compartiendo.value = false;
@@ -109,25 +122,6 @@ class Latido extends ChangeNotifier {
       _enviando = false;
       // La pantalla pudo cerrarse mientras esperábamos la respuesta (p. ej. al cerrar sesión)
       if (!_cerrado) notifyListeners();
-    }
-  }
-
-  Future<void> _mandarUbicacion() async {
-    final l = _ultimaLectura;
-    // Si mientras tanto la app se pausó o cerró sesión, ya no se manda
-    if (l == null || _cerrado || _timer == null) return;
-    try {
-      await _api.dio.post('/ubicacion', data: {
-        'latitud': l.lat,
-        'longitud': l.lng,
-        'precision': l.precision,
-        'fecha': DateTime.now().toUtc().toIso8601String(),
-      });
-      ultimaUbicacion = DateTime.now();
-      compartiendo.value = _timer != null; // si se pausó mientras tanto, ya no se comparte
-    } catch (_) {
-      // sin red: el admin lo verá "sin conexión" con el último punto
-      compartiendo.value = false;
     }
   }
 

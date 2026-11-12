@@ -11,9 +11,14 @@ import 'package:movil/permisos/servicio_permisos.dart';
 import 'package:movil/reportes/almacen_borrador.dart';
 import 'package:movil/reportes/borrador_reporte.dart';
 import 'package:movil/reportes/pantalla_nuevo_reporte.dart';
+import 'package:movil/sincronizacion/reportes_offline_dao.dart';
+import 'package:movil/sincronizacion/sync_manager.dart';
 import 'package:movil/ubicacion/fuente_gps.dart';
 import 'package:movil/ubicacion/geocodificador.dart';
 import 'package:movil/ubicacion/ubicacion.dart';
+
+/// El envío más simple: el servidor lo recibió a la primera.
+Future<ResultadoEnvio> enviadoAlServidor(BorradorReporte _) async => (estado: EstadoSync.sincronizado, error: null);
 
 /// Simula Android: `consultar` nunca dice "permanente" (igual que permission_handler 13);
 /// `solicitar` regresa lo que se le programe en [respuestas].
@@ -203,7 +208,7 @@ Future<BorradorReporte> abrirFormulario(
   navegador.currentState!.push(MaterialPageRoute<bool>(
     builder: (_) => PantallaNuevoReporte(
       borrador: b,
-      enviar: enviar ?? (_) async {},
+      enviar: enviar ?? enviadoAlServidor,
       permisos: permisos ?? PermisosFalsos(estado: EstadoPermiso.concedido),
       fuente: fuente ?? FuenteFalsa(),
       procesador: procesador ?? ProcesadorFalso(),

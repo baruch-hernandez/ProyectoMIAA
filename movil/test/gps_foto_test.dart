@@ -230,7 +230,7 @@ void main() {
     expect(foto.desfaseRelojMs, -120000);
     expect(foto.origenFecha, OrigenFechaFoto.obturador);
 
-    final enviada = (reabierto.aSolicitud()['fotos'] as List).single as Map;
+    final enviada = (reabierto.aDatosOffline()['fotos'] as List).single as Map;
     expect(enviada['latitud'], _plaza.lat);
     expect(enviada['longitud'], _plaza.lng);
     expect(enviada['precisionGps'], 0.8);

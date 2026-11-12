@@ -67,7 +67,7 @@ void main() {
     navegador.currentState!.push(MaterialPageRoute<bool>(
       builder: (_) => PantallaNuevoReporte(
         borrador: borrador,
-        enviar: (_) async {},
+        enviar: enviadoAlServidor,
         permisos: permisos,
         fuente: fuente,
         abrirCamara: camara.abrir, // procesador = el real (isolate)

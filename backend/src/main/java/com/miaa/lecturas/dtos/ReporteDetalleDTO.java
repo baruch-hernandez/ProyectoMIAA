@@ -1,5 +1,6 @@
 package com.miaa.lecturas.dtos;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -11,6 +12,7 @@ import java.util.List;
  * @param puedeCorregir   true si puede corregir domicilio, ubicación o descripción:
  *                        el autor a tiempo (= puedeModificar) o cualquier ADMIN.
  * @param puedeAnotar     true si puede escribir notas: quien lo subió o cualquier ADMIN.
+ * @param fechaCaptura    cuándo lo llenó el notificador (null en los de la web); con sin conexión, antes de fechaCreacion.
  * @param modificableHasta hasta cuándo puede corregirlo o borrarlo (null si no es suyo).
  *                    El ADMIN los ve en false (no toca notas ni fotos). El front lo usa para mostrar
  *                    u ocultar botones, pero quien de verdad lo hace cumplir es ReporteService.
@@ -35,6 +37,7 @@ public record ReporteDetalleDTO(
         LocalDateTime fechaCreacion,
         LocalDateTime fechaActualizacion,
         LocalDateTime fechaEdicion,
+        Instant fechaCaptura,
         List<FotoDTO> fotos,
         List<NotaDTO> notas,
         boolean puedeEditar,

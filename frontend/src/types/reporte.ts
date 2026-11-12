@@ -70,6 +70,15 @@ export interface ReporteResumen {
   editado: boolean;
 }
 
+/** GET /reportes (admin)  ↔  PaginaReportesDTO.java */
+export interface PaginaReportes {
+  reportes: ReporteResumen[];
+  total: number;
+  empleados: number;
+  pagina: number;
+  hayMas: boolean;
+}
+
 /** ↔ NotaDTO.java */
 export interface Nota {
   id: number;

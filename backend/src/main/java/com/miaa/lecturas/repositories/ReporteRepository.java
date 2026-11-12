@@ -2,6 +2,8 @@ package com.miaa.lecturas.repositories;
 
 import com.miaa.lecturas.entities.Reporte;
 import jakarta.persistence.LockModeType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -24,12 +26,16 @@ public interface ReporteRepository extends JpaRepository<Reporte, Long> {
             """)
     List<Reporte> buscarDeUsuario(@Param("usuarioId") Long usuarioId);
 
-    @Query("""
+    /** Una página, del más nuevo al más viejo (el admin no carga la historia completa de golpe). */
+    @Query(value = """
             SELECT r FROM Reporte r
               JOIN FETCH r.creadoPor
-            ORDER BY r.fechaCreacion DESC
-            """)
-    List<Reporte> buscarTodos();
+            ORDER BY r.fechaCreacion DESC, r.id DESC
+            """, countQuery = "SELECT COUNT(r) FROM Reporte r")
+    Page<Reporte> buscarTodos(Pageable pagina);
+
+    @Query("SELECT COUNT(DISTINCT r.creadoPor.id) FROM Reporte r")
+    long contarAutores();
 
     @Query("""
             SELECT r FROM Reporte r
@@ -55,11 +61,12 @@ public interface ReporteRepository extends JpaRepository<Reporte, Long> {
     // Se filtra por autor y NO con "IN (:ids)": PostgreSQL acepta máx. ~32 mil parámetros por
     // consulta, y con todos los ids la lista del admin tronaba al pasar de ese número de reportes.
 
-    @Query("SELECT f.reporte.id, COUNT(f) FROM FotoReporte f GROUP BY f.reporte.id")
-    List<Object[]> contarFotosDeTodos();
+    // Solo los de UNA página del admin (máx. 100 ids, muy lejos del límite de parámetros)
+    @Query("SELECT f.reporte.id, COUNT(f) FROM FotoReporte f WHERE f.reporte.id IN :ids GROUP BY f.reporte.id")
+    List<Object[]> contarFotosDe(@Param("ids") List<Long> ids);
 
-    @Query("SELECT n.reporte.id, COUNT(n) FROM NotaReporte n GROUP BY n.reporte.id")
-    List<Object[]> contarNotasDeTodos();
+    @Query("SELECT n.reporte.id, COUNT(n) FROM NotaReporte n WHERE n.reporte.id IN :ids GROUP BY n.reporte.id")
+    List<Object[]> contarNotasDe(@Param("ids") List<Long> ids);
 
     @Query("SELECT f.reporte.id, COUNT(f) FROM FotoReporte f WHERE f.reporte.creadoPor.id = :usuarioId GROUP BY f.reporte.id")
     List<Object[]> contarFotosDeUsuario(@Param("usuarioId") Long usuarioId);

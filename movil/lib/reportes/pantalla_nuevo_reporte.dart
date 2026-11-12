@@ -9,6 +9,8 @@ import '../fotos/pantalla_vista_previa.dart';
 import '../fotos/procesador_fotos.dart';
 import '../permisos/dialogo_permiso.dart';
 import '../permisos/servicio_permisos.dart';
+import '../sincronizacion/reportes_offline_dao.dart';
+import '../sincronizacion/sync_manager.dart';
 import '../ubicacion/afinador_gps.dart';
 import '../ubicacion/direccion_gps.dart';
 import '../ubicacion/fuente_gps.dart';
@@ -21,8 +23,8 @@ import 'borrador_reporte.dart';
 import 'campo_tipo_predio.dart';
 import 'reglas_reporte.dart' as reglas;
 
-/// Manda el reporte al backend (en la app real: ApiReportes.crear).
-typedef EnviarReporte = Future<void> Function(Map<String, dynamic> solicitud);
+/// Guarda el reporte en el celular y lo manda si hay red (en la app real: SyncManager.guardarYEnviar).
+typedef EnviarReporte = Future<ResultadoEnvio> Function(BorradorReporte borrador);
 
 /// Abre la cámara y regresa la foto tomada (en la app real: PantallaCamara.abrir).
 typedef AbrirCamara = Future<FotoCruda?> Function(BuildContext context);
@@ -71,6 +73,10 @@ class PantallaNuevoReporte extends StatefulWidget {
   static const llaveMapaFormulario = Key('btn-elegir-mapa');
   static const llaveEnviar = Key('btn-enviar-reporte');
   static const llaveAvisoFoto = Key('aviso-falta-foto');
+  static const llaveAvisoUbicacion = Key('aviso-falta-ubicacion');
+
+  /// El aviso de "Guardado en dispositivo (sin conexión)" (Sprint 4, tarea 2.5).
+  static const llaveGuardadoOffline = Key('aviso-guardado-offline');
   static const llaveCamara = Key('btn-foto-camara');
   static const llaveGaleria = Key('btn-foto-galeria');
 
@@ -228,11 +234,16 @@ class _PantallaNuevoReporteState extends State<PantallaNuevoReporte> {
     setState(() => _sugerencia = null);
   }
 
-  void _avisar(String texto) {
+  void _avisar(String texto, {IconData? icono, Key? llave}) {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(texto)));
+      ..showSnackBar(SnackBar(
+        key: llave,
+        content: icono == null
+            ? Text(texto)
+            : Row(children: [Icon(icono, color: Colors.white), const SizedBox(width: 12), Expanded(child: Text(texto))]),
+      ));
   }
 
   /// Tareas 3.1–3.3 + 2.3–2.5: permiso → cámara/galería → procesar → vista previa →
@@ -316,13 +327,23 @@ class _PantallaNuevoReporteState extends State<PantallaNuevoReporte> {
     }
     setState(() => _enviando = true);
     try {
-      await widget.enviar(_b.aSolicitud());
-      await _b.limpiar();
+      final r = await widget.enviar(_b);
+      await _b.limpiar(); // ya está a salvo en el celular (bandeja de salida), se haya enviado o no
       if (!mounted) return;
-      _avisar('Reporte enviado.');
+      switch (r.estado) {
+        case EstadoSync.sincronizado:
+          _avisar('Reporte enviado.', icono: Icons.cloud_done);
+        case EstadoSync.pendiente:
+          _avisar('Guardado en dispositivo (sin conexión). Se enviará solo al volver la señal.',
+              icono: Icons.cloud_off, llave: PantallaNuevoReporte.llaveGuardadoOffline);
+        case EstadoSync.rechazado:
+          _avisar('El servidor no aceptó el reporte: ${r.error}. Lo ves en "Pendientes" en el inicio.',
+              icono: Icons.error_outline);
+      }
       Navigator.of(context).pop(true);
     } catch (e) {
-      _avisar(ApiError.de(e).mensaje);
+      // Los errores de red no llegan aquí (los absorbe la bandeja de salida): esto es el disco
+      _avisar('No se pudo guardar el reporte en el celular (${ApiError.de(e).mensaje}). Sigue en el borrador.');
     } finally {
       if (mounted) setState(() => _enviando = false);
     }
@@ -464,22 +485,11 @@ class _PantallaNuevoReporteState extends State<PantallaNuevoReporte> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (!_b.puedeEnviar)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Row(
-                        children: [
-                          Icon(Icons.info_outline, size: 18, color: Theme.of(context).colorScheme.error),
-                          const SizedBox(width: 6),
-                          const Expanded(
-                            child: Text(
-                              'Agrega al menos una foto para poder enviar el reporte.',
-                              key: PantallaNuevoReporte.llaveAvisoFoto,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                  if (_b.fotos.isEmpty)
+                    const _Falta('Agrega al menos una foto para poder enviar el reporte.', llave: PantallaNuevoReporte.llaveAvisoFoto)
+                  else if (_b.ubicacion == null)
+                    const _Falta('Marca la ubicación del domicilio (GPS o mapa) para poder enviar el reporte.',
+                        llave: PantallaNuevoReporte.llaveAvisoUbicacion),
                   // Tarea 2.2: deshabilitado (onPressed: null) mientras no haya foto.
                   FilledButton.icon(
                     key: PantallaNuevoReporte.llaveEnviar,
@@ -498,6 +508,26 @@ class _PantallaNuevoReporteState extends State<PantallaNuevoReporte> {
       },
     );
   }
+}
+
+/// Lo que falta para poder enviar (arriba del botón).
+class _Falta extends StatelessWidget {
+  const _Falta(this.texto, {required this.llave});
+
+  final String texto;
+  final Key llave;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Row(
+          children: [
+            Icon(Icons.info_outline, size: 18, color: Theme.of(context).colorScheme.error),
+            const SizedBox(width: 6),
+            Expanded(child: Text(texto, key: llave)),
+          ],
+        ),
+      );
 }
 
 class _SeccionFotos extends StatelessWidget {

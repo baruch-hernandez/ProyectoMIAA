@@ -8,6 +8,12 @@ import '../presencia/latido.dart';
 import '../reportes/api_reportes.dart';
 import '../reportes/pantalla_mis_reportes.dart';
 import '../reportes/pantalla_nuevo_reporte.dart';
+import '../sincronizacion/almacen_fotos_offline.dart';
+import '../sincronizacion/bd_local.dart';
+import '../sincronizacion/reportes_offline_dao.dart';
+import '../sincronizacion/servicio_conectividad.dart';
+import '../sincronizacion/sync_manager.dart';
+import '../sincronizacion/tarjeta_pendientes.dart';
 
 /// Inicio después del login: nuevo reporte (Sprint 2), quién soy (GET /usuarios/yo) y el latido de la 2.4.
 class PantallaInicio extends StatefulWidget {
@@ -21,6 +27,14 @@ class PantallaInicio extends StatefulWidget {
 
 class _PantallaInicioState extends State<PantallaInicio> with WidgetsBindingObserver {
   late final Latido _latido = Latido(widget.sesion.api, gps: lecturasSiHayPermiso);
+  // Sprint 4: los reportes guardados sin conexión se mandan solos mientras la app está abierta
+  late final SyncManager _sync = SyncManager(
+    usuarioId: widget.sesion.usuario!.id, // Inicio solo se ve con sesión
+    dao: ReportesOfflineDao(bdLocal()),
+    fotos: AlmacenFotosOffline(),
+    red: ServicioConectividadDispositivo(),
+    enviarLote: ApiReportes(widget.sesion.api).sincronizar,
+  );
   Map<String, dynamic>? _cuenta;
   String? _errorCuenta;
   bool _saliendo = false;
@@ -30,6 +44,7 @@ class _PantallaInicioState extends State<PantallaInicio> with WidgetsBindingObse
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _latido.iniciar();
+    _sync.iniciar();
     if (Config.herramientasDev) _cargarCuenta(); // solo la usa la tarjeta de prueba
   }
 
@@ -37,6 +52,7 @@ class _PantallaInicioState extends State<PantallaInicio> with WidgetsBindingObse
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _latido.dispose();
+    _sync.dispose();
     super.dispose();
   }
 
@@ -45,6 +61,7 @@ class _PantallaInicioState extends State<PantallaInicio> with WidgetsBindingObse
   void didChangeAppLifecycleState(AppLifecycleState estado) {
     if (estado == AppLifecycleState.resumed) {
       _latido.iniciar();
+      _sync.sincronizar(); // lo que quedó pendiente mientras estuvo al fondo
     } else if ((estado == AppLifecycleState.paused || estado == AppLifecycleState.hidden) && _latido.activo) {
       _latido.pausar(); // hidden y paused llegan seguidos: solo se avisa una vez
     }
@@ -60,6 +77,23 @@ class _PantallaInicioState extends State<PantallaInicio> with WidgetsBindingObse
   }
 
   Future<void> _salir() async {
+    // Los pendientes son de este usuario en ESTE celular: si sale y no vuelve a entrar aquí, no llegan
+    final n = _sync.pendientes;
+    if (n > 0) {
+      final salir = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(n == 1 ? 'Tienes 1 reporte sin enviar' : 'Tienes $n reportes sin enviar'),
+          content: const Text('Se guardan en este celular y se envían cuando vuelvas a iniciar sesión '
+              'AQUÍ con señal. Si sales y usas otro celular, no llegarán.'),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Quedarme')),
+            FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Salir de todos modos')),
+          ],
+        ),
+      );
+      if (salir != true || !mounted) return;
+    }
     setState(() => _saliendo = true);
     _latido.detener();
     await widget.sesion.salir(); // la app regresa sola al login
@@ -97,13 +131,15 @@ class _PantallaInicioState extends State<PantallaInicio> with WidgetsBindingObse
             Text('Hola, ${u?.nombre ?? ''}', style: Theme.of(context).textTheme.headlineSmall),
             Text('${u?.username} · ${u?.rol}'),
             const SizedBox(height: 16),
+            TarjetaPendientes(sync: _sync),
+            const SizedBox(height: 8),
             FilledButton.icon(
               key: const Key('btn-nuevo-reporte'),
               style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(56)),
               onPressed: () => PantallaNuevoReporte.abrir(
                 context,
-                usuarioId: widget.sesion.usuario!.id, // Inicio solo se ve con sesión
-                enviar: (solicitud) => ApiReportes(widget.sesion.api).crear(solicitud),
+                usuarioId: widget.sesion.usuario!.id,
+                enviar: _sync.guardarYEnviar,
               ),
               icon: const Icon(Icons.add_a_photo),
               label: const Text('Nuevo reporte'),

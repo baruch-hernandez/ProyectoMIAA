@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,7 +14,9 @@ import java.util.List;
 @Entity
 @Table(name = "reportes", indexes = {
         @Index(name = "idx_reportes_creado_por", columnList = "creado_por_id"),
-        @Index(name = "idx_reportes_fecha", columnList = "fecha_creacion")
+        @Index(name = "idx_reportes_fecha", columnList = "fecha_creacion"),
+        // UNIQUE: el mismo reporte reenviado (sin conexión, reintentos) nunca crea otra fila
+        @Index(name = "idx_reportes_client_sync_id", columnList = "client_sync_id", unique = true)
 })
 @Getter
 @Setter
@@ -65,9 +68,16 @@ public class Reporte {
     private Double latitud;
     private Double longitud;
 
-    /** Id que generó el celular (UUID): evita duplicados al reenviar un reporte guardado sin conexión. */
-    @Column(name = "cliente_id", length = 36, unique = true)
+    /**
+     * Id que generó el celular (UUID): evita duplicados al reenviar un reporte guardado sin conexión.
+     * Antes se llamaba cliente_id: EsquemaReportes pasa los datos viejos a esta columna.
+     */
+    @Column(name = "client_sync_id", length = 36)
     private String clienteId;
+
+    /** Cuándo lo llenó el notificador (UTC). Puede ser horas antes de llegar si se guardó sin conexión. */
+    @Column(name = "fecha_captura")
+    private Instant fechaCaptura;
 
     // ---------- El reporte ----------
     @Column(nullable = false, columnDefinition = "TEXT")

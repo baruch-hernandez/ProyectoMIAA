@@ -1,9 +1,12 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../core/api.dart';
 
 /// Los reportes en el backend (ReporteController.java). Con fotos el cuerpo puede pesar
-/// varios MB, por eso crear y ver el detalle dan más tiempo que las demás llamadas.
+/// varios MB, por eso sincronizar y ver el detalle dan más tiempo que las demás llamadas.
 class ApiReportes {
   ApiReportes(this._api);
 
@@ -14,9 +17,26 @@ class ApiReportes {
     receiveTimeout: const Duration(seconds: 60),
   );
 
-  /// POST /reportes
-  Future<Map<String, dynamic>> crear(Map<String, dynamic> solicitud) =>
-      _mapa(() => _api.dio.post('/reportes', data: solicitud, options: _conFotos));
+  /// POST /reportes/sync (Sprint 4): un lote de la bandeja de salida. Multipart: la parte "reportes"
+  /// (JSON) y una parte binaria por foto, con el nombre que dice su "parte". Regresa ResultadoSyncDTO.
+  Future<Map<String, dynamic>> sincronizar(List<Map<String, dynamic>> reportes, Map<String, Uint8List> archivos) {
+    final formulario = FormData()
+      ..files.add(MapEntry(
+        'reportes',
+        MultipartFile.fromString(jsonEncode(reportes), contentType: DioMediaType('application', 'json')),
+      ))
+      ..files.addAll([
+        for (final a in archivos.entries)
+          MapEntry(a.key, MultipartFile.fromBytes(a.value, filename: '${a.key}.jpg', contentType: DioMediaType('image', 'jpeg'))),
+      ]);
+    return _mapa(() => _api.dio.post('/reportes/sync', data: formulario, options: _lote));
+  }
+
+  /// Un lote son hasta 5 reportes con 3 fotos: con señal de campo puede tardar.
+  static final _lote = Options(
+    sendTimeout: const Duration(seconds: 120),
+    receiveTimeout: const Duration(seconds: 60),
+  );
 
   /// GET /reportes/mios: los del notificador con sesión, del más nuevo al más viejo (sin fotos).
   Future<List<Map<String, dynamic>>> mios() => _llamar(() async {
