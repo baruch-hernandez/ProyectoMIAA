@@ -33,6 +33,25 @@ export function formatoFecha(iso: string): string {
   return new Date(iso).toLocaleString('es-MX', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
+/** Para buscar sin importar mayúsculas ni acentos: "jose" encuentra a "José". */
+export const normalizar = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+// Las horas del mapa de cuadrillas, siempre en hora de Aguascalientes (aunque el admin tenga otra zona)
+const ZONA_AGS = 'America/Mexico_City';
+const diaAgs = new Intl.DateTimeFormat('en-CA', { timeZone: ZONA_AGS, year: 'numeric', month: '2-digit', day: '2-digit' });
+const horaAgs = new Intl.DateTimeFormat('es-MX', { timeZone: ZONA_AGS, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+const fechaAgs = new Intl.DateTimeFormat('es-MX', { timeZone: ZONA_AGS, day: '2-digit', month: '2-digit', year: 'numeric' });
+
+/** "Hoy 14:32 h", "Ayer 09:05 h" o "16/11/2026 14:32 h" (Sprint 5, tarea 2.4). */
+export function horaDeConexion(iso: string, ahora: Date = new Date()): string {
+  const f = new Date(iso);
+  const dia = diaAgs.format(f);
+  const cuando = dia === diaAgs.format(ahora) ? 'Hoy'
+    : dia === diaAgs.format(new Date(ahora.getTime() - 86_400_000)) ? 'Ayer' // México ya no cambia de horario
+      : fechaAgs.format(f);
+  return `${cuando} ${horaAgs.format(f)} h`;
+}
+
 /** Cada cuánto pregunta el admin por las ubicaciones (solo con el mapa abierto y visible). */
 export const CONSULTA_MS = 1_000;
 

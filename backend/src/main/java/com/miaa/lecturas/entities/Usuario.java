@@ -96,9 +96,5 @@ public class Usuario {
         return Boolean.TRUE.equals(debeCambiarPassword);
     }
 
-    @Column(name = "ultima_conexion")
-    private java.time.LocalDateTime ultimaConexion;
-
-    @Column(name = "conectado")
-    private Boolean conectado;
+    // La presencia (activo/inactivo, último latido y ubicación) vive en UsuarioPresencia.
 }

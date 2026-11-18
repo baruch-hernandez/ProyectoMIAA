@@ -38,14 +38,14 @@ public class GestionEmpleadosService {
 
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
-    private final UbicacionService ubicacionService;
+    private final PresenciaService presenciaService;
 
     public GestionEmpleadosService(UsuarioRepository usuarioRepository,
                                    PasswordEncoder passwordEncoder,
-                                   UbicacionService ubicacionService) {
+                                   PresenciaService presenciaService) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
-        this.ubicacionService = ubicacionService;
+        this.presenciaService = presenciaService;
     }
 
     @Transactional(readOnly = true)
@@ -138,7 +138,7 @@ public class GestionEmpleadosService {
         u.setHabilitado(habilitado);
         if (!habilitado) {
             // Deja de aparecer "en línea" de inmediato (su sesión se corta en su siguiente petición)
-            ubicacionService.marcarDesconectado(id);
+            presenciaService.desconectar(id);
         }
         return aDTO(u);
     }

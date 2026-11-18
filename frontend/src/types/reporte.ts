@@ -156,25 +156,34 @@ export interface EmpleadosRespuesta {
   empleados: Empleado[];
 }
 
-/** POST /ubicacion  ↔  UbicacionRequestDTO.java */
+/** POST /usuarios/heartbeat  ↔  UbicacionRequestDTO.java (fuera de Aguascalientes → 400) */
 export interface UbicacionNueva {
   latitud: number;
   longitud: number;
   precision: number; // metros (±)
-  fecha: string; // cuándo la midió el celular (ISO)
 }
 
-/** GET /usuarios/empleados/{id}/ubicacion  ↔  UbicacionEmpleadoDTO.java */
+/** ↔ EstadoConexion.java */
+export type EstadoConexion = 'ACTIVO' | 'INACTIVO';
+
+/** GET /admin/cuadrillas/ubicaciones y /usuarios/empleados/{id}/ubicacion  ↔  UbicacionEmpleadoDTO.java */
 export interface UbicacionEmpleado {
   empleadoId: number;
   nombre: string;
   username: string;
-  tieneUbicacion: boolean;
+  rol: 'ADMIN' | 'NOTIFICADOR';
+  /** ACTIVO con la sesión iniciada y un latido reciente */
+  estadoConexion: EstadoConexion;
+  /** Lo mismo que estadoConexion === 'ACTIVO' */
   enLinea: boolean;
+  tieneUbicacion: boolean;
   latitud: number | null;
   longitud: number | null;
   precisionMetros: number | null;
-  fechaDispositivo: string | null;
+  /** La resuelve el backend unos segundos después (null si aún no o si ahí no hay calles) */
+  direccionGeocodificada: string | null;
+  /** Último latido (UTC) */
+  ultimaConexion: string | null;
   fechaRecibida: string | null;
   segundosDesdeUltima: number | null;
   segundosParaEnLinea: number;

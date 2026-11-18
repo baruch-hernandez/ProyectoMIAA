@@ -6,7 +6,6 @@ import com.miaa.lecturas.dtos.CambioPasswordDTO;
 import com.miaa.lecturas.dtos.CuentaDTO;
 import com.miaa.lecturas.services.CuentaService;
 import com.miaa.lecturas.services.PresenciaService;
-import com.miaa.lecturas.services.UbicacionService;
 import jakarta.validation.Valid;
 
 import org.springframework.http.HttpStatus;
@@ -27,7 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
  *   GET  /usuarios/yo
  *   PUT  /usuarios/yo/password           { actual, nueva }
  *   POST /usuarios/yo/aviso-privacidad   { version }
- *   POST /usuarios/yo/conexion           latido "sigo aquí" (cada segundo)
+ *   POST /usuarios/yo/conexion           latido sin coordenadas (el de ahora es POST /usuarios/heartbeat)
  *   DELETE /usuarios/yo/conexion         la app se pausó: inactivo al instante
  */
 @RestController
@@ -36,13 +35,10 @@ public class CuentaController {
 
     private final PresenciaService presenciaService;
     private final CuentaService cuentaService;
-    private final UbicacionService ubicacionService;
 
-    public CuentaController(CuentaService cuentaService, PresenciaService presenciaService,
-                            UbicacionService ubicacionService) {
+    public CuentaController(CuentaService cuentaService, PresenciaService presenciaService) {
         this.cuentaService = cuentaService;
         this.presenciaService = presenciaService;
-        this.ubicacionService = ubicacionService;
     }
 
     @GetMapping
@@ -63,10 +59,10 @@ public class CuentaController {
     }
     @SuppressWarnings("null")
     @PostMapping("/conexion")
-@ResponseStatus(HttpStatus.NO_CONTENT)
-public void checarVida(@AuthenticationPrincipal UsuarioPrincipal user) {
-    presenciaService.vidaChecar(user.id());
-}
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void checarVida(@AuthenticationPrincipal UsuarioPrincipal yo) {
+        presenciaService.latido(yo.id(), null);
+    }
 
     /** La app se fue al fondo o se apagó la pantalla: sale inactivo y del mapa al instante. */
     @SuppressWarnings("null")
@@ -74,6 +70,5 @@ public void checarVida(@AuthenticationPrincipal UsuarioPrincipal user) {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void pausar(@AuthenticationPrincipal UsuarioPrincipal yo) {
         presenciaService.desconectar(yo.id());
-        ubicacionService.dejarDeCompartir(yo);
     }
 }

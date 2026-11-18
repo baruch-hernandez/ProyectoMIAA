@@ -4,7 +4,7 @@ import { ChevronRight, MapPin, RefreshCw, Search, UserPlus } from 'lucide-react'
 import { usuariosApi } from '../../services/usuariosApi';
 import { leerError } from '../../services/reportesApi';
 import type { Empleado, EmpleadosRespuesta } from '../../types/reporte';
-import { fechaRelativa, formatoFecha } from '../../utils/catalogos';
+import { fechaRelativa, formatoFecha, normalizar } from '../../utils/catalogos';
 import { nombreRol } from '../../utils/roles';
 import { claseInput } from '../../utils/estilos';
 
@@ -58,9 +58,6 @@ function estadoDe(e: Empleado): Exclude<FiltroEstado, 'todos'> {
   if (!e.habilitado) return 'baja';
   return e.activo ? 'activo' : 'inactivo';
 }
-
-/** Para buscar sin importar mayúsculas ni acentos: "jose" encuentra a "José". */
-const normalizar = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
 export function EmpleadosAdmin() {
   const navigate = useNavigate();

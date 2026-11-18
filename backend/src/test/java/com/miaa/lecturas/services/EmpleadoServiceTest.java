@@ -15,7 +15,7 @@ import com.miaa.lecturas.entities.Usuario;
 class EmpleadoServiceTest {
 
     private static EmpleadoDTO armar(Usuario u, Disponibilidad disponibilidad) {
-        return EmpleadoService.armar(u, 0, null, LocalDateTime.now(), false, disponibilidad);
+        return EmpleadoService.armar(u, 0, null, LocalDateTime.now(), false, disponibilidad, null);
     }
 
     @Test

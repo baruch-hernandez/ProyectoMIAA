@@ -7,7 +7,8 @@ import 'package:movil/ubicacion/ubicacion.dart';
 
 import 'apoyo/falsos.dart';
 
-/// El latido manda la ubicación al mapa del admin SOLO si ya hay permiso y GPS, sin preguntar nada.
+/// El latido manda la ubicación al mapa del admin SOLO si ya hay permiso y GPS, sin preguntar nada,
+/// y solo mientras la sesión está abierta (Historia 5).
 void main() {
   const punto = LecturaGps(lat: 21.88, lng: -102.29, precision: 8);
 
@@ -27,23 +28,60 @@ void main() {
     expect(permisos.solicitudes, 0);
   });
 
-  test('una sola petición por latido: con lectura del GPS, solo POST /ubicacion (también es latido)', () async {
+  /// Api con un servidor falso que responde 204 y anota cada petición: "POST /ruta" + si llevó coordenadas.
+  Future<(Api, List<String>)> apiFalsa() async {
     final rutas = <String>[];
     final api = await Api.crear(token: () => 't', alExpirar: (_) {});
     api.dio.interceptors.add(InterceptorsWrapper(onRequest: (o, h) {
-      rutas.add('${o.method} ${o.path}');
+      rutas.add('${o.method} ${o.path}${o.data == null ? '' : ' +gps'}');
       h.resolve(Response(requestOptions: o, statusCode: 204));
     }));
+    return (api, rutas);
+  }
+
+  test('Sprint 5: un latido por segundo a /usuarios/heartbeat; las coordenadas solo si cambiaron', () async {
+    final (api, rutas) = await apiFalsa();
     final latido = Latido(api, gps: () => Stream.value(punto));
     addTearDown(latido.dispose);
 
     latido.iniciar(); // 1.er latido: el GPS todavía no da lectura
     await pumpEventQueue();
-    await latido.latir();
+    await latido.latir(); // ya hay lectura: va con coordenadas
+    await latido.latir(); // mismo lugar, hace menos de 30 s: sin coordenadas (ahorra datos)
 
-    expect(rutas, ['POST /usuarios/yo/conexion', 'POST /ubicacion']);
+    expect(rutas, ['POST /usuarios/heartbeat', 'POST /usuarios/heartbeat +gps', 'POST /usuarios/heartbeat']);
     expect(Latido.compartiendo.value, isTrue);
     expect(latido.ultimaUbicacion, isNotNull);
+  });
+
+  test('una lectura fuera de Aguascalientes no se manda (el backend la rechazaría)', () async {
+    final (api, rutas) = await apiFalsa();
+    final latido = Latido(api, gps: () => Stream.value(const LecturaGps(lat: 19.43, lng: -99.13, precision: 5))); // CDMX
+    addTearDown(latido.dispose);
+
+    latido.iniciar();
+    await pumpEventQueue();
+    await latido.latir();
+
+    expect(rutas, ['POST /usuarios/heartbeat', 'POST /usuarios/heartbeat']);
+  });
+
+  test('tarea 2.2: al cerrar sesión (detener) ya no sale ningún latido ni ubicación', () async {
+    final (api, rutas) = await apiFalsa();
+    final latido = Latido(api, gps: () => Stream.value(punto));
+    addTearDown(latido.dispose);
+    latido.iniciar();
+    await pumpEventQueue();
+    await latido.latir();
+    expect(Latido.compartiendo.value, isTrue);
+
+    latido.detener(); // PantallaInicio._salir lo llama antes de POST /auth/logout
+    final antes = rutas.length;
+    await Future<void>.delayed(const Duration(milliseconds: 1500)); // más que un latido
+
+    expect(rutas.length, antes);
+    expect(latido.activo, isFalse);
+    expect(Latido.compartiendo.value, isFalse, reason: 'se apaga el indicador GPS');
   });
 
   test('con la ubicación del celular apagada no entrega nada', () async {

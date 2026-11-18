@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ubicacionApi } from '../services/ubicacionApi';
+import { dentroDeAguascalientes } from '../utils/limiteAgs';
 
 export type EstadoUbicacion = 'iniciando' | 'compartiendo' | 'sin-permiso' | 'no-disponible' | 'error';
 
@@ -40,15 +41,16 @@ export function useCompartirUbicacion(): EstadoUbicacion {
       pendiente = undefined;
       // Oculta = pausada (usePresencia ya avisó): un envío suelto la volvería a mostrar en línea
       if (!ultima || enviando || document.hidden) return;
+      const { latitude, longitude, accuracy } = ultima.coords;
+      // El backend rechaza puntos fuera del estado (lectura loca del GPS): el latido lo sigue mandando usePresencia
+      if (!dentroDeAguascalientes({ lat: latitude, lng: longitude })) return;
       enviando = true;
       ultimoEnvio = Date.now();
-      const { latitude, longitude, accuracy } = ultima.coords;
       ubicacionApi
         .enviar({
           latitud: latitude,
           longitud: longitude,
           precision: Math.round(accuracy),
-          fecha: new Date(ultima.timestamp).toISOString(),
         })
         .catch(() => { /* sin red o servidor caído: el admin lo verá "sin conexión" */ })
         .finally(() => { enviando = false; });

@@ -1,25 +1,34 @@
 package com.miaa.lecturas.dtos;
 
+import com.miaa.lecturas.entities.EstadoConexion;
+
 import java.time.Instant;
 
 /**
- * Lo que ve el ADMIN en el mapa en vivo.
+ * Lo que ve el ADMIN de cada empleado en el mapa (GET /admin/cuadrillas/ubicaciones) y en su ficha.
  *
- * @param enLinea           true si el servidor recibió su ubicación hace poco (y no cerró sesión)
- * @param tieneUbicacion    false si el empleado nunca ha compartido su ubicación
- * @param segundosDesdeUltima cuánto hace que llegó la última (null si nunca)
+ * @param estadoConexion       ACTIVO con la sesión iniciada y un latido reciente; si no, INACTIVO
+ * @param enLinea              lo mismo que estadoConexion == ACTIVO (lo usa la ficha del empleado)
+ * @param tieneUbicacion       false si nunca ha compartido su ubicación
+ * @param ultimaConexion       último latido (UTC): el front lo muestra en hora de Aguascalientes
+ * @param fechaRecibida        cuándo llegó la última ubicación (null si nunca)
+ * @param segundosDesdeUltima  cuánto hace que llegó la última ubicación (null si nunca)
+ * @param segundosParaEnLinea  sin latido en este tiempo = INACTIVO
  */
 public record UbicacionEmpleadoDTO(
         Long empleadoId,
         String nombre,
         String username,
-        boolean tieneUbicacion,
+        String rol,
+        EstadoConexion estadoConexion,
         boolean enLinea,
+        boolean tieneUbicacion,
         Double latitud,
         Double longitud,
         Double precisionMetros,
-        Instant fechaDispositivo,
+        String direccionGeocodificada,
+        Instant ultimaConexion,
         Instant fechaRecibida,
         Long segundosDesdeUltima,
-        int segundosParaEnLinea) {
+        long segundosParaEnLinea) {
 }

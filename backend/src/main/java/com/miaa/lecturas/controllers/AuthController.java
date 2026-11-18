@@ -8,7 +8,6 @@ import com.miaa.lecturas.repositories.UsuarioRepository;
 import com.miaa.lecturas.services.BloqueoPorIntentos;
 import com.miaa.lecturas.services.CuentaService;
 import com.miaa.lecturas.services.PresenciaService;
-import com.miaa.lecturas.services.UbicacionService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -31,22 +30,19 @@ public class AuthController {
     private final CuentaService cuentaService;
     private final BloqueoPorIntentos bloqueo;
     private final PresenciaService presenciaService;
-    private final UbicacionService ubicacionService;
 
     public AuthController(UsuarioRepository usuarioRepository,
             PasswordEncoder passwordEncoder,
             JwtUtils jwtUtils,
             CuentaService cuentaService,
             BloqueoPorIntentos bloqueo,
-            PresenciaService presenciaService,
-            UbicacionService ubicacionService) {
+            PresenciaService presenciaService) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtils = jwtUtils;
         this.cuentaService = cuentaService;
         this.bloqueo = bloqueo;
         this.presenciaService = presenciaService;
-        this.ubicacionService = ubicacionService;
     }
 
     // @Transactional: la fila del usuario queda bloqueada (FOR UPDATE) hasta responder, así los
@@ -113,7 +109,7 @@ public class AuthController {
         // Registrar último acceso y presencia
         usuario.setUltimoAcceso(ahora);
         usuarioRepository.save(usuario);
-        presenciaService.vidaChecar(usuario.getId());
+        presenciaService.latido(usuario.getId(), null);
 
         // Generar token JWT
         String token = jwtUtils.generarToken(usuario);
@@ -164,8 +160,7 @@ public class AuthController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void logout(@AuthenticationPrincipal UsuarioPrincipal yo) {
         if (yo != null) {
-            presenciaService.desconectar(yo.id());
-            ubicacionService.dejarDeCompartir(yo); // que salga del mapa del admin al instante
+            presenciaService.desconectar(yo.id()); // INACTIVO y gris en el mapa del admin al instante
         }
     }
 }

@@ -9,8 +9,8 @@ export const usuariosApi = {
   /** Última ubicación y si está en línea */
   ubicacion: async (id: number) => (await api.get<UbicacionEmpleado>(`/usuarios/empleados/${id}/ubicacion`)).data,
 
-  /** Todos los notificadores activos con su última ubicación (mapa general) */
-  ubicaciones: async () => (await api.get<UbicacionEmpleado[]>('/usuarios/ubicaciones')).data,
+  /** Mapa de cuadrillas: los notificadores con su estado, última ubicación, dirección y última conexión */
+  ubicaciones: async () => (await api.get<UbicacionEmpleado[]>('/admin/cuadrillas/ubicaciones')).data,
 
   /** Datos de su cuenta */
   cuenta: async (id: number) => (await api.get<CuentaEmpleado>(`/usuarios/empleados/${id}`)).data,

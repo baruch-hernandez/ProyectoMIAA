@@ -3,12 +3,14 @@ package com.miaa.lecturas;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 
 @SpringBootApplication
+@EnableScheduling // PresenciaService (marcar inactivos) y GeocodificadorInverso
 public class LecturasBackendApplication {
 
 	public static void main(String[] args) {

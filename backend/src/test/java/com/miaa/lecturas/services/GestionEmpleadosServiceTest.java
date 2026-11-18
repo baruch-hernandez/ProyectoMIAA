@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
 class GestionEmpleadosServiceTest {
 
     private UsuarioRepository repo;
-    private UbicacionService ubicacion;
+    private PresenciaService presencia;
     private GestionEmpleadosService servicio;
 
     private static final UsuarioPrincipal YO = new UsuarioPrincipal(1L, "admin", "Administrador", "ADMIN");
@@ -39,8 +39,8 @@ class GestionEmpleadosServiceTest {
     @BeforeEach
     void preparar() {
         repo = mock(UsuarioRepository.class);
-        ubicacion = mock(UbicacionService.class);
-        servicio = new GestionEmpleadosService(repo, mock(PasswordEncoder.class), ubicacion);
+        presencia = mock(PresenciaService.class);
+        servicio = new GestionEmpleadosService(repo, mock(PasswordEncoder.class), presencia);
         when(repo.save(any(Usuario.class))).thenAnswer(inv -> inv.getArgument(0));
     }
 
@@ -136,7 +136,7 @@ class GestionEmpleadosServiceTest {
         when(repo.findByRolOrderByNombreAsc("ADMIN")).thenReturn(List.of(yo, otro));
         servicio.cambiarHabilitado(2L, false, YO);
         assertFalse(otro.estaHabilitado());
-        verify(ubicacion).marcarDesconectado(2L);
+        verify(presencia).desconectar(2L);
     }
 
     @Test

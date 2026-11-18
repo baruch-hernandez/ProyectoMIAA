@@ -89,6 +89,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         if (ruta.startsWith("/api/v1")) {
             ruta = ruta.substring("/api/v1".length());
         }
-        return ruta.equals("/usuarios/yo") || ruta.startsWith("/usuarios/yo/") || ruta.equals("/auth/logout");
+        return ruta.equals("/usuarios/yo") || ruta.startsWith("/usuarios/yo/") || ruta.equals("/usuarios/heartbeat")
+                || ruta.equals("/auth/logout");
     }
 }

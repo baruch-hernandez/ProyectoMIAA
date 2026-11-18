@@ -10,7 +10,7 @@ import com.miaa.lecturas.dtos.PasswordTemporalDTO;
 import com.miaa.lecturas.dtos.UbicacionEmpleadoDTO;
 import com.miaa.lecturas.services.EmpleadoService;
 import com.miaa.lecturas.services.GestionEmpleadosService;
-import com.miaa.lecturas.services.UbicacionService;
+import com.miaa.lecturas.services.PresenciaService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -24,8 +24,6 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-
 /**
  * Empleados (solo ADMIN). Todo el controlador exige el rol con @PreAuthorize a nivel clase.
  *
@@ -37,7 +35,7 @@ import java.util.List;
  *   PUT  /usuarios/empleados/{id}/habilitado    dar de baja / reactivar
  *   POST /usuarios/empleados/{id}/desbloquear   quitar el bloqueo por intentos fallidos
  *   GET  /usuarios/empleados/{id}/ubicacion     ubicación en vivo
- *   GET  /usuarios/ubicaciones                  ubicación en vivo de todos (mapa general)
+ *   (el mapa de todos es GET /admin/cuadrillas/ubicaciones, en CuadrillasController)
  */
 @RestController
 @RequestMapping({ "/usuarios", "/api/v1/usuarios" })
@@ -45,13 +43,13 @@ import java.util.List;
 public class UsuarioController {
 
     private final EmpleadoService empleadoService;
-    private final UbicacionService ubicacionService;
+    private final PresenciaService presenciaService;
     private final GestionEmpleadosService gestionEmpleados;
 
-    public UsuarioController(EmpleadoService empleadoService, UbicacionService ubicacionService,
+    public UsuarioController(EmpleadoService empleadoService, PresenciaService presenciaService,
                              GestionEmpleadosService gestionEmpleados) {
         this.empleadoService = empleadoService;
-        this.ubicacionService = ubicacionService;
+        this.presenciaService = presenciaService;
         this.gestionEmpleados = gestionEmpleados;
     }
 
@@ -70,17 +68,9 @@ public class UsuarioController {
      * Última ubicación del notificador y si está en línea. El mapa del admin lo consulta cada 5 s.
      */
     @GetMapping("/empleados/{id}/ubicacion")
+    @SuppressWarnings("null")
     public UbicacionEmpleadoDTO ubicacion(@PathVariable("id") Long id) {
-        return ubicacionService.deEmpleado(id);
-    }
-
-    /**
-     * GET /usuarios/ubicaciones (solo ADMIN)
-     * Todos los notificadores activos con su última ubicación, para el mapa general (cada 5 s).
-     */
-    @GetMapping("/ubicaciones")
-    public List<UbicacionEmpleadoDTO> ubicaciones() {
-        return ubicacionService.deTodos();
+        return presenciaService.deEmpleado(id);
     }
 
     @PostMapping("/empleados")

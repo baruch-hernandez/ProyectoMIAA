@@ -1,5 +1,6 @@
 package com.miaa.lecturas.dtos;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 import com.miaa.lecturas.entities.Disponibilidad;
@@ -10,10 +11,10 @@ import com.miaa.lecturas.entities.Disponibilidad;
  * @param ultimaActividad lo más reciente entre su último inicio de sesión y su último reporte
  * @param activo          true con la sesión iniciada y latidos llegando (miaa.presencia.segundos-en-linea)
  * @param diasSinActividad días desde la última actividad (null si nunca ha entrado)
- * @param enLinea         true si ahorita está compartiendo su ubicación (app abierta y con red)
+ * @param enLinea         true si además está compartiendo su ubicación (ver PresenciaService)
  * @param habilitado      false si el admin lo dio de baja (ya no puede entrar)
- * @param disponibilidad
- * @param ultimaConexion
+ * @param disponibilidad  EN_LINEA si está activo; si no, DESCONECTADO (lo mismo que activo, como enum)
+ * @param ultimaConexion  último latido o inicio de sesión (UTC)
  */
 public record EmpleadoDTO(
         Long id,
@@ -28,7 +29,7 @@ public record EmpleadoDTO(
         boolean enLinea,
         boolean habilitado,
         Disponibilidad disponibilidad,
-        LocalDateTime ultimaConexion,
+        Instant ultimaConexion,
         /** ADMIN o NOTIFICADOR. */
         String rol) {
 

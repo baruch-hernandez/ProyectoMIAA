@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../core/api.dart';
 import '../core/config.dart';
 import '../permisos/servicio_permisos.dart';
 import '../ubicacion/fuente_gps.dart';
+import '../ubicacion/limite_ags.dart';
 import '../ubicacion/ubicacion.dart';
 
 /// Abre las lecturas del GPS para el mapa del admin (vacías si no se puede).
@@ -26,8 +28,10 @@ Stream<LecturaGps> lecturasSiHayPermiso({
 /// Con la pantalla apagada o la app al fondo se detiene y avisa que se pausó (sale inactivo al
 /// instante); al volver, late de inmediato.
 ///
-/// UNA petición por latido (datos móviles y batería): con lectura del GPS manda POST /ubicacion,
-/// que el backend también cuenta como latido; sin lectura, POST /usuarios/yo/conexion.
+/// Sprint 5 (tarea 2.1): UNA petición por latido, POST /usuarios/heartbeat. Para cuidar los datos
+/// móviles, las coordenadas solo van cuando sirven: al moverse [metrosParaReenviar] o más, o cada
+/// [reenviarCada] si sigue en el mismo lugar; los demás latidos van sin cuerpo. Las lecturas fuera
+/// del estado (saltos del GPS) ni se mandan: el backend las rechaza.
 class Latido extends ChangeNotifier {
   Latido(this._api, {this.gps});
 
@@ -36,9 +40,14 @@ class Latido extends ChangeNotifier {
   /// null = no manda ubicación (solo "sigo aquí").
   final EscucharGps? gps;
 
+  static const metrosParaReenviar = 5.0;
+  static const reenviarCada = Duration(seconds: 30);
+
   Timer? _timer;
   StreamSubscription<LecturaGps>? _lecturas;
   LecturaGps? _ultimaLectura;
+  LecturaGps? _ultimaEnviada;
+  DateTime? _enviadaEn;
   bool _enviando = false;
   bool _cerrado = false;
 
@@ -71,6 +80,7 @@ class Latido extends ChangeNotifier {
     _lecturas?.cancel();
     _lecturas = null;
     _ultimaLectura = null; // al volver, no se manda un punto viejo como si fuera de ahora
+    _ultimaEnviada = null; // y la primera lectura de la siguiente vez sí se manda
   }
 
   /// La app se pausó (pantalla apagada, al fondo): deja de latir y sale inactivo al instante.
@@ -87,7 +97,7 @@ class Latido extends ChangeNotifier {
   void _escucharGps() {
     final abrir = gps;
     if (abrir == null || _lecturas != null || _timer == null) return;
-    _lecturas = abrir().listen(
+    _lecturas = abrir().where((l) => dentroDeAguascalientes(l.lat, l.lng)).listen(
       (l) => _ultimaLectura = l,
       onError: (Object _) {},
       onDone: () => _lecturas = null,
@@ -99,17 +109,13 @@ class Latido extends ChangeNotifier {
     _enviando = true;
     if (enviados % 10 == 0) _escucharGps(); // reintento cada ~10 s, no en cada latido
     final l = _ultimaLectura;
+    final conPunto = l != null && _hayQueMandar(l);
     try {
-      if (l == null) {
-        await _api.dio.post('/usuarios/yo/conexion'); // 204 sin cuerpo
-      } else {
-        await _api.dio.post('/ubicacion', data: {
-          'latitud': l.lat,
-          'longitud': l.lng,
-          'precision': l.precision,
-          'fecha': DateTime.now().toUtc().toIso8601String(),
-        });
-        ultimaUbicacion = DateTime.now();
+      await _api.dio.post('/usuarios/heartbeat',
+          data: conPunto ? {'latitud': l.lat, 'longitud': l.lng, 'precision': l.precision} : null); // 204
+      if (conPunto) {
+        _ultimaEnviada = l;
+        _enviadaEn = ultimaUbicacion = DateTime.now();
       }
       ultimoOk = DateTime.now();
       ultimoError = null;
@@ -123,6 +129,13 @@ class Latido extends ChangeNotifier {
       // La pantalla pudo cerrarse mientras esperábamos la respuesta (p. ej. al cerrar sesión)
       if (!_cerrado) notifyListeners();
     }
+  }
+
+  bool _hayQueMandar(LecturaGps l) {
+    final antes = _ultimaEnviada;
+    return antes == null ||
+        DateTime.now().difference(_enviadaEn!) >= reenviarCada ||
+        Geolocator.distanceBetween(antes.lat, antes.lng, l.lat, l.lng) >= metrosParaReenviar;
   }
 
   @override
