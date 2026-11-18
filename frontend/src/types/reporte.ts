@@ -70,6 +70,13 @@ export interface ReporteResumen {
   editado: boolean;
 }
 
+/** Filtros de GET /reportes (admin). '' = sin filtro; fechas 'AAAA-MM-DD', ambos días incluidos */
+export interface FiltrosReportes {
+  empleadoId: string;
+  desde: string;
+  hasta: string;
+}
+
 /** GET /reportes (admin)  ↔  PaginaReportesDTO.java */
 export interface PaginaReportes {
   reportes: ReporteResumen[];

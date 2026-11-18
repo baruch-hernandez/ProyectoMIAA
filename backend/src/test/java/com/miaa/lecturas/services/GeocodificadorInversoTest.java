@@ -42,6 +42,7 @@ class GeocodificadorInversoTest {
     }
 
     @Test
+    @SuppressWarnings("null") // los Matcher de Hamcrest no traen anotaciones de null
     void unaSolaConsultaPorVueltaYNoRepiteSiNoSeMovio() {
         RestClient.Builder builder = RestClient.builder();
         MockRestServiceServer nominatim = MockRestServiceServer.bindTo(builder).build();

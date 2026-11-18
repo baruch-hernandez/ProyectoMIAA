@@ -34,7 +34,7 @@ public class EsquemaFotos implements CommandLineRunner {
                     "SELECT COUNT(*) FROM pg_constraint WHERE conname = ? "
                             + "AND pg_get_constraintdef(oid) LIKE '%OBTURADOR%'",
                     Integer.class, RESTRICCION);
-            if (lista != null && lista > 0) {
+            if (lista > 0) { // COUNT(*) nunca es null
                 return;
             }
             jdbc.execute("ALTER TABLE fotos_reporte DROP CONSTRAINT IF EXISTS " + RESTRICCION);

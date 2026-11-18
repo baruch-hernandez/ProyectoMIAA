@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
@@ -167,15 +168,24 @@ public class ReporteService {
     /** Tamaño máximo de página que puede pedir el admin. */
     public static final int MAX_TAMANO_PAGINA = 100;
 
-    /** ADMIN: los reportes de todos los empleados, por páginas (del más nuevo al más viejo). */
+    /**
+     * ADMIN: los reportes de todos los empleados, por páginas (del más nuevo al más viejo).
+     * Filtros opcionales: un empleado y un rango de días (ambos incluidos, en hora del servidor,
+     * la misma con que se guarda fechaCreacion).
+     */
     @Transactional(readOnly = true)
-    public PaginaReportesDTO todos(int pagina, int tamano) {
-        Page<Reporte> p = reporteRepository.buscarTodos(
+    public PaginaReportesDTO todos(int pagina, int tamano, Long empleadoId, LocalDate desde, LocalDate hasta) {
+        if (desde != null && hasta != null && desde.isAfter(hasta)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La fecha «desde» no puede ser después de «hasta».");
+        }
+        LocalDateTime inicio = desde != null ? desde.atStartOfDay() : LocalDateTime.of(1970, 1, 1, 0, 0);
+        LocalDateTime fin = hasta != null ? hasta.plusDays(1).atStartOfDay() : LocalDateTime.of(9999, 1, 1, 0, 0);
+        Page<Reporte> p = reporteRepository.buscarTodos(empleadoId, inicio, fin,
                 PageRequest.of(Math.max(0, pagina), Math.min(Math.max(1, tamano), MAX_TAMANO_PAGINA)));
-        List<Long> ids = p.getContent().stream().map(Reporte::getId).toList();
+        List<Long> ids = p.getContent().stream().map(r -> r.getId()).toList();
         List<ReporteResumenDTO> resumenes = ids.isEmpty() ? List.of()
                 : aResumenes(p.getContent(), reporteRepository.contarFotosDe(ids), reporteRepository.contarNotasDe(ids));
-        return new PaginaReportesDTO(resumenes, p.getTotalElements(), reporteRepository.contarAutores(),
+        return new PaginaReportesDTO(resumenes, p.getTotalElements(), reporteRepository.contarAutores(empleadoId, inicio, fin),
                 p.getNumber(), p.hasNext());
     }
 

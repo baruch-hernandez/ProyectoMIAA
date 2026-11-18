@@ -14,6 +14,8 @@ import com.miaa.lecturas.dtos.ResultadoSyncDTO;
 import com.miaa.lecturas.services.ReporteService;
 import com.miaa.lecturas.services.SincronizacionService;
 import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.format.annotation.DateTimeFormat.ISO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -31,6 +33,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
@@ -46,6 +49,7 @@ import java.util.Map;
  *   DELETE /reportes/{id}/fotos/{fotoId}     quitar una foto (primeras 24 h)
  *  ADMIN
  *   GET    /reportes?pagina=0&tamano=50      los reportes de todos los empleados, por páginas
+ *          &empleadoId=7&desde=2026-11-01&hasta=2026-11-18   filtros opcionales (días incluidos)
  *  AMBOS
  *   GET    /reportes/{id}                    detalle (el notificador solo los suyos)
  *   POST   /reportes/{id}/notas              agregar una nota (el notificador al suyo; el admin a cualquiera)
@@ -96,8 +100,11 @@ public class ReporteController {
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
     public PaginaReportesDTO todos(@RequestParam(name = "pagina", defaultValue = "0") int pagina,
-                                   @RequestParam(name = "tamano", defaultValue = "50") int tamano) {
-        return reporteService.todos(pagina, tamano);
+                                   @RequestParam(name = "tamano", defaultValue = "50") int tamano,
+                                   @RequestParam(name = "empleadoId", required = false) Long empleadoId,
+                                   @RequestParam(name = "desde", required = false) @DateTimeFormat(iso = ISO.DATE) LocalDate desde,
+                                   @RequestParam(name = "hasta", required = false) @DateTimeFormat(iso = ISO.DATE) LocalDate hasta) {
+        return reporteService.todos(pagina, tamano, empleadoId, desde, hasta);
     }
 
     @GetMapping("/{id}")

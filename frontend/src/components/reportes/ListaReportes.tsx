@@ -11,7 +11,7 @@ interface Props {
   mostrarAutor?: boolean;
 }
 
-/** Lista de reportes, del más nuevo al más viejo. Sin filtros: así lo pidió MIAA. */
+/** Lista de reportes, del más nuevo al más viejo (los filtros del admin viven en ReportesAdmin). */
 export function ListaReportes({ reportes, enlace, mostrarAutor = false }: Props) {
   return (
     <ul className="space-y-3">

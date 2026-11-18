@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.lang.NonNull;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -57,19 +58,19 @@ public class GeocodificadorInverso {
     @Autowired
     public GeocodificadorInverso(UsuarioPresenciaRepository presencias, RestClient.Builder builder,
                                  @Value("${miaa.geocodificacion.habilitada:true}") boolean habilitada,
-                                 @Value("${miaa.geocodificacion.url:https://nominatim.openstreetmap.org/reverse}") String url) {
+                                 @Value("${miaa.geocodificacion.url:https://nominatim.openstreetmap.org/reverse}") @NonNull String url) {
         this(presencias, habilitada ? builder.requestFactory(conTiempos()) : null, url);
     }
 
     /** [builder] null = apagado. Las pruebas pasan uno ligado a un servidor falso. */
-    GeocodificadorInverso(UsuarioPresenciaRepository presencias, RestClient.Builder builder, String url) {
+    GeocodificadorInverso(UsuarioPresenciaRepository presencias, RestClient.Builder builder, @NonNull String url) {
         this.presencias = presencias;
         // Nominatim pide identificar la aplicación en el User-Agent (sin datos personales)
         this.http = builder == null ? null : builder.baseUrl(url).defaultHeader("User-Agent", "MIAA-Lecturas/1.0").build();
     }
 
     /** Que un Nominatim lento no deje colgado el hilo de tareas programadas. */
-    private static SimpleClientHttpRequestFactory conTiempos() {
+    private static @NonNull SimpleClientHttpRequestFactory conTiempos() {
         SimpleClientHttpRequestFactory f = new SimpleClientHttpRequestFactory();
         f.setConnectTimeout(3_000);
         f.setReadTimeout(5_000);

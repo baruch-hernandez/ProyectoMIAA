@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,16 +27,23 @@ public interface ReporteRepository extends JpaRepository<Reporte, Long> {
             """)
     List<Reporte> buscarDeUsuario(@Param("usuarioId") Long usuarioId);
 
-    /** Una página, del más nuevo al más viejo (el admin no carga la historia completa de golpe). */
-    @Query(value = """
-            SELECT r FROM Reporte r
-              JOIN FETCH r.creadoPor
-            ORDER BY r.fechaCreacion DESC, r.id DESC
-            """, countQuery = "SELECT COUNT(r) FROM Reporte r")
-    Page<Reporte> buscarTodos(Pageable pagina);
+    // Filtros del admin: autorId null = todos los empleados; [desde, hasta) siempre llega (el servicio
+    // pone fechas extremas si no se filtra), así PostgreSQL no recibe fechas null sin tipo.
+    String FILTROS = """
+             WHERE (:autorId IS NULL OR r.creadoPor.id = :autorId)
+               AND r.fechaCreacion >= :desde AND r.fechaCreacion < :hasta
+            """;
 
-    @Query("SELECT COUNT(DISTINCT r.creadoPor.id) FROM Reporte r")
-    long contarAutores();
+    /** Una página, del más nuevo al más viejo (el admin no carga la historia completa de golpe). */
+    @Query(value = "SELECT r FROM Reporte r JOIN FETCH r.creadoPor" + FILTROS
+            + " ORDER BY r.fechaCreacion DESC, r.id DESC",
+            countQuery = "SELECT COUNT(r) FROM Reporte r" + FILTROS)
+    Page<Reporte> buscarTodos(@Param("autorId") Long autorId, @Param("desde") LocalDateTime desde,
+                              @Param("hasta") LocalDateTime hasta, Pageable pagina);
+
+    @Query("SELECT COUNT(DISTINCT r.creadoPor.id) FROM Reporte r" + FILTROS)
+    long contarAutores(@Param("autorId") Long autorId, @Param("desde") LocalDateTime desde,
+                       @Param("hasta") LocalDateTime hasta);
 
     @Query("""
             SELECT r FROM Reporte r

@@ -25,6 +25,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /** La regla de presencia (Sprints 3 y 5) sin base de datos ni Spring. */
+@SuppressWarnings("null") // capture() y any() de Mockito devuelven null a propósito
 class PresenciaServiceTest {
 
     private static final Instant AHORA = Instant.parse("2026-11-18T20:00:00Z");

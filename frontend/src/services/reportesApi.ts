@@ -1,14 +1,23 @@
 // Una función por endpoint de reportes. Los componentes nunca escriben URLs a mano.
 import axios from 'axios';
 import api from './api';
-import type { Foto, FotoNueva, Nota, PaginaReportes, ReporteDetalle, ReporteEdicion, ReporteRequest, ReporteResumen } from '../types/reporte';
+import type { FiltrosReportes, Foto, FotoNueva, Nota, PaginaReportes, ReporteDetalle, ReporteEdicion, ReporteRequest, ReporteResumen } from '../types/reporte';
 
 export const reportesApi = {
   /** NOTIFICADOR: sus reportes */
   mios: async () => (await api.get<ReporteResumen[]>('/reportes/mios')).data,
 
-  /** ADMIN: los de todos los empleados, por páginas (del más nuevo al más viejo) */
-  todos: async (pagina = 0) => (await api.get<PaginaReportes>('/reportes', { params: { pagina, tamano: 50 } })).data,
+  /** ADMIN: los de todos los empleados, por páginas (del más nuevo al más viejo). Filtros vacíos = sin filtro */
+  todos: async (pagina = 0, filtros: FiltrosReportes = { empleadoId: '', desde: '', hasta: '' }) =>
+    (await api.get<PaginaReportes>('/reportes', {
+      params: {
+        pagina,
+        tamano: 50,
+        empleadoId: filtros.empleadoId || undefined, // axios omite los undefined
+        desde: filtros.desde || undefined,
+        hasta: filtros.hasta || undefined,
+      },
+    })).data,
 
   detalle: async (id: number) => (await api.get<ReporteDetalle>(`/reportes/${id}`)).data,
 

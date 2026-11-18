@@ -65,7 +65,7 @@ public class CatalogoRoles implements CommandLineRunner {
                     "SELECT COUNT(*) FROM information_schema.table_constraints "
                             + "WHERE LOWER(table_name) = 'usuarios' AND LOWER(constraint_name) = ?",
                     Integer.class, NOMBRE_LLAVE);
-            if (existe != null && existe > 0) {
+            if (existe > 0) { // COUNT(*) nunca es null
                 return;
             }
             // Si algún usuario tiene un rol que no está en el catálogo, la llave no se puede crear

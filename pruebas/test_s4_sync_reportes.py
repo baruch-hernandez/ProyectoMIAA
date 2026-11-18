@@ -185,6 +185,29 @@ def test_lista_del_admin_por_paginas(notificador, admin):
     assert p0["reportes"][0]["totalFotos"] == 1
 
 
+def test_lista_del_admin_filtra_por_empleado_y_fecha(crear_notificador, admin, config):
+    datos = crear_notificador("filtro", requisitos=False)
+    api = Api(config.api)
+    api.entrar(datos["username"], datos["password"])
+    assert not sincronizar(api, [reporte(semilla=50), reporte(semilla=51)]).json()["rechazados"]
+    hoy = datetime.now().date()  # el backend corre en esta misma PC: misma hora local
+    ayer, manana = (hoy - timedelta(days=1)).isoformat(), (hoy + timedelta(days=1)).isoformat()
+
+    def pagina(**filtros) -> dict:
+        r = admin.get("/reportes", params=filtros)
+        assert r.status_code == 200, r.text
+        return r.json()
+
+    suyos = pagina(empleadoId=datos["id"])
+    assert suyos["total"] == 2 and suyos["empleados"] == 1
+    assert {r["autorId"] for r in suyos["reportes"]} == {datos["id"]}
+    assert pagina(empleadoId=datos["id"], desde=hoy.isoformat(), hasta=hoy.isoformat())["total"] == 2, "ambos días incluidos"
+    assert pagina(empleadoId=datos["id"], hasta=ayer)["total"] == 0
+    assert pagina(empleadoId=datos["id"], desde=manana)["total"] == 0
+    assert pagina(desde=hoy.isoformat())["total"] >= 2  # sin empleado: todos los de hoy
+    assert admin.get("/reportes", params={"desde": manana, "hasta": ayer}).status_code == 400
+
+
 def test_mandar_la_ubicacion_cuenta_como_latido(crear_notificador, admin, config):
     datos = crear_notificador("latidoubic", requisitos=False)
     api = Api(config.api)

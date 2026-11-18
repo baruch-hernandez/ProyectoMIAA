@@ -291,7 +291,7 @@ Todas las rutas existen con y sin el prefijo `/api/v1`. Todas, menos el login, p
 | POST | `/reportes` | NOTIFICADOR | Crear reporte con fotos |
 | POST | `/reportes/sync` | NOTIFICADOR | Subir de golpe los guardados sin conexión: multipart, con la parte `reportes` (JSON) y una parte binaria por foto. Responde `{ sincronizados: [{clientSyncId, id, folio}], rechazados: [{clientSyncId, motivo, errores}] }`. Exige coordenadas, al menos 1 foto y `fechaCaptura` en UTC (termina en `Z`). Un `clientSyncId` repetido regresa el reporte de antes |
 | GET | `/reportes/mios` | NOTIFICADOR | Mis reportes |
-| GET | `/reportes?pagina=0&tamano=50` | ADMIN | Todos los reportes, por páginas: `{ reportes, total, empleados, pagina, hayMas }` (máx. 100 por página) |
+| GET | `/reportes?pagina=0&tamano=50` | ADMIN | Todos los reportes, por páginas: `{ reportes, total, empleados, pagina, hayMas }` (máx. 100 por página). Filtros opcionales: `empleadoId`, `desde` y `hasta` (`AAAA-MM-DD`, días incluidos; `desde` después de `hasta` → 400) |
 | GET | `/reportes/{id}` | los dos* | Detalle (*el notificador solo ve los suyos) |
 | PUT / DELETE | `/reportes/{id}` | NOTIFICADOR | Editar o borrar (24 h) |
 | POST | `/reportes/{id}/notas` | NOTIFICADOR | Agregar nota |

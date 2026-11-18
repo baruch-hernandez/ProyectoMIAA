@@ -10,7 +10,6 @@ import com.miaa.lecturas.repositories.UsuarioPresenciaRepository;
 import com.miaa.lecturas.repositories.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
-import org.springframework.lang.NonNull;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,7 +56,7 @@ public class PresenciaService {
 
     /** Tarea 1.2: "sigo aquí", con o sin coordenadas. Fuera de Aguascalientes → 400 y no cambia nada. */
     @Transactional
-    public void latido(@NonNull Long usuarioId, UbicacionRequestDTO ubicacion) {
+    public void latido(long usuarioId, UbicacionRequestDTO ubicacion) {
         if (ubicacion != null && !limiteAgs.contiene(ubicacion.latitud(), ubicacion.longitud())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La ubicación está fuera del estado de Aguascalientes");
         }
@@ -83,7 +82,7 @@ public class PresenciaService {
 
     /** Cerró sesión, la app se pausó o el admin lo dio de baja: INACTIVO al instante. */
     @Transactional
-    public void desconectar(@NonNull Long usuarioId) {
+    public void desconectar(long usuarioId) {
         // Sin save(): la entidad está administrada y JPA guarda el cambio solo (dirty checking).
         presencias.findById(usuarioId).ifPresent(p -> p.setEstadoConexion(EstadoConexion.INACTIVO));
     }
@@ -103,14 +102,14 @@ public class PresenciaService {
         Instant ahora = Instant.now();
         Map<Long, UsuarioPresencia> porUsuario = porUsuario();
         return usuarios.findByRolOrderByNombreAsc(Rol.NOTIFICADOR).stream()
-                .filter(Usuario::estaHabilitado)
+                .filter(u -> u.estaHabilitado())
                 .map(e -> armar(e, porUsuario.get(e.getId()), ahora, segundosEnLinea))
                 .toList();
     }
 
     /** La ficha de un empleado. */
     @Transactional(readOnly = true)
-    public UbicacionEmpleadoDTO deEmpleado(@NonNull Long empleadoId) {
+    public UbicacionEmpleadoDTO deEmpleado(long empleadoId) {
         Usuario empleado = usuarios.findById(empleadoId)
                 .filter(u -> u.getRol() != null) // notificadores y administradores (estos casi nunca comparten)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Ese empleado no existe"));
@@ -120,7 +119,7 @@ public class PresenciaService {
     /** Para la tabla de empleados: la presencia de todos en una sola consulta. */
     @Transactional(readOnly = true)
     public Map<Long, UsuarioPresencia> porUsuario() {
-        return presencias.findAll().stream().collect(Collectors.toMap(UsuarioPresencia::getUsuarioId, Function.identity()));
+        return presencias.findAll().stream().collect(Collectors.toMap(p -> p.getUsuarioId(), Function.identity()));
     }
 
     public boolean activo(UsuarioPresencia p) {
@@ -143,14 +142,15 @@ public class PresenciaService {
 
     static UbicacionEmpleadoDTO armar(Usuario e, UsuarioPresencia p, Instant ahora, long segundosEnLinea) {
         boolean activo = activo(p, ahora, segundosEnLinea);
-        boolean conPunto = p != null && p.getUltimaLatitud() != null && p.getUltimaLongitud() != null;
-        Long segundos = conPunto && p.getFechaUbicacionUtc() != null
-                ? Math.max(0, Duration.between(p.getFechaUbicacionUtc(), ahora).getSeconds()) : null;
+        // punto = la presencia, solo si tiene coordenadas (null = nunca ha compartido ubicación)
+        UsuarioPresencia punto = p != null && p.getUltimaLatitud() != null && p.getUltimaLongitud() != null ? p : null;
+        Instant fechaPunto = punto == null ? null : punto.getFechaUbicacionUtc();
+        Long segundos = fechaPunto == null ? null : Math.max(0, Duration.between(fechaPunto, ahora).getSeconds());
         return new UbicacionEmpleadoDTO(e.getId(), e.getNombre(), e.getUsername(), e.getRol(),
-                activo ? EstadoConexion.ACTIVO : EstadoConexion.INACTIVO, activo, conPunto,
-                conPunto ? p.getUltimaLatitud() : null, conPunto ? p.getUltimaLongitud() : null,
-                conPunto ? p.getPrecisionMetros() : null, conPunto ? p.getDireccionGeocodificada() : null,
-                p == null ? null : p.getUltimaConexionUtc(), conPunto ? p.getFechaUbicacionUtc() : null,
+                activo ? EstadoConexion.ACTIVO : EstadoConexion.INACTIVO, activo, punto != null,
+                punto == null ? null : punto.getUltimaLatitud(), punto == null ? null : punto.getUltimaLongitud(),
+                punto == null ? null : punto.getPrecisionMetros(), punto == null ? null : punto.getDireccionGeocodificada(),
+                p == null ? null : p.getUltimaConexionUtc(), fechaPunto,
                 segundos, segundosEnLinea);
     }
 }
