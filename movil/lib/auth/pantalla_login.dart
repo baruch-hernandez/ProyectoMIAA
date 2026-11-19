@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../core/api.dart';
 import '../core/config.dart';
+import '../core/logo_miaa.dart';
 import '../diagnostico/pantalla_diagnostico.dart';
 import 'sesion.dart';
 
@@ -80,7 +81,6 @@ class _PantallaLoginState extends State<PantallaLogin> {
 
   @override
   Widget build(BuildContext context) {
-    final colores = Theme.of(context).colorScheme;
     final bloqueado = _cargando || _espera > 0;
 
     return Scaffold(
@@ -93,10 +93,8 @@ class _PantallaLoginState extends State<PantallaLogin> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('MIAA', style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                        color: colores.primary,
-                        fontWeight: FontWeight.w800,
-                      )),
+                  const Align(alignment: Alignment.centerLeft, child: LogoMiaa(alto: 88)),
+                  const SizedBox(height: 8),
                   const Text('App de campo para notificadores'),
                   const SizedBox(height: 32),
                   if (_error != null) ...[

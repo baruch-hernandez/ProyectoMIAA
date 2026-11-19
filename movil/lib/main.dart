@@ -4,6 +4,7 @@ import 'auth/api_cuenta.dart';
 import 'auth/pantalla_login.dart';
 import 'auth/pantalla_requisitos.dart';
 import 'auth/sesion.dart';
+import 'core/capa_carga.dart';
 import 'inicio/pantalla_inicio.dart';
 import 'presencia/barra_ubicacion.dart';
 
@@ -31,8 +32,9 @@ class AppMiaa extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: _marino, primary: _marino),
         useMaterial3: true,
       ),
-      // Indicador "GPS" encima de todas las pantallas mientras se comparte la ubicación
-      builder: (context, navegador) => BarraUbicacion(child: navegador!),
+      // Indicador "GPS" encima de todas las pantallas mientras se comparte la ubicación, y encima
+      // de todo, la gota de carga mientras se espera al servidor
+      builder: (context, navegador) => CapaCarga(child: BarraUbicacion(child: navegador!)),
       // La "puerta": sin sesión → Login; con contraseña temporal o aviso pendiente → Requisitos;
       // si no → Inicio. Cambia sola cuando Sesion avisa.
       home: ListenableBuilder(

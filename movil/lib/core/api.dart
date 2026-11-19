@@ -7,6 +7,7 @@ import 'package:dio/io.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 
+import 'carga.dart';
 import 'config.dart';
 import 'reloj.dart';
 
@@ -87,6 +88,7 @@ class Api {
       await _confiarEnCertificadoDev(dio);
     }
 
+    dio.interceptors.add(InterceptorCarga()); // la gota de carga (CapaCarga)
     dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) {
         final t = token();

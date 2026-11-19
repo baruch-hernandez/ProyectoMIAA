@@ -7,12 +7,12 @@ import api from './api';
 export const presenciaApi = {
   /** "Sigo aquí": se manda cada segundo mientras la app esté a la vista (usePresencia). */
   latido: async () => {
-    await api.post('/usuarios/yo/conexion');
+    await api.post('/usuarios/yo/conexion', undefined, { segundoPlano: true });
   },
 
   /** La pestaña se ocultó o se apagó la pantalla: sale inactivo al instante. */
   pausar: async () => {
-    await api.delete('/usuarios/yo/conexion');
+    await api.delete('/usuarios/yo/conexion', { segundoPlano: true });
   },
 
   /** Avisa al backend que cerró sesión: sale DESCONECTADO al instante (tarea 2.2). */

@@ -63,3 +63,16 @@
     }
   }
 }
+
+/* Gota de carga (GotaCarga.tsx): el nivel sube suave y la ola se mueve de lado */
+.gota-nivel {
+  transition: transform 300ms ease-out;
+}
+.gota-ola {
+  animation: gota-ola 1.4s linear infinite;
+}
+@keyframes gota-ola {
+  to {
+    transform: translateX(-80px);
+  }
+}

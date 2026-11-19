@@ -25,7 +25,8 @@ export const reportesApi = {
    * timeout de 60 s: con señal mala, mejor rendirse y guardarlo para después
    * (si sí llegó, el clienteId evita que se duplique al reenviarlo).
    */
-  crear: async (datos: ReporteRequest) => (await api.post<ReporteDetalle>('/reportes', datos, { timeout: 60_000 })).data,
+  crear: async (datos: ReporteRequest, segundoPlano = false) =>
+    (await api.post<ReporteDetalle>('/reportes', datos, { timeout: 60_000, segundoPlano })).data,
 
   /** Corregir domicilio, ubicación o descripción (solo el autor, primeras 24 h) */
   editar: async (id: number, datos: ReporteEdicion) => (await api.put<ReporteDetalle>(`/reportes/${id}`, datos)).data,

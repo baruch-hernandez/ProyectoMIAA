@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../core/api.dart';
+import '../core/carga.dart';
 
 /// Lo que regresa POST /api/v1/auth/login en "user".
 class Usuario {
@@ -133,7 +134,8 @@ class Sesion extends ChangeNotifier {
   /// Si no hay red, no se espera más de 2 s: se sale de todos modos.
   Future<void> salir() async {
     try {
-      await api.dio.post('/auth/logout').timeout(const Duration(seconds: 2));
+      // Sin red el POST sigue vivo hasta su timeout (10 s): la gota se cuenta por los 2 s, no por él
+      await Carga.durante(() => api.dio.post('/auth/logout', options: Carga.oculta).timeout(const Duration(seconds: 2)));
     } catch (_) {
       // sin red: el backend lo dará por desconectado al dejar de recibir latidos
     }
@@ -143,7 +145,8 @@ class Sesion extends ChangeNotifier {
 
   Future<void> _logoutSilencioso(String token) async {
     try {
-      await api.dio.post('/auth/logout', options: Options(headers: {'Authorization': 'Bearer $token'}));
+      await api.dio.post('/auth/logout',
+          options: Options(headers: {'Authorization': 'Bearer $token'}, extra: {Carga.segundoPlano: true}));
     } catch (_) {
       // no importa: el backend lo marcará desconectado solo
     }

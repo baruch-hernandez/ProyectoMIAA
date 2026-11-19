@@ -3,14 +3,14 @@ import type { CuentaEmpleado, EdicionEmpleado, EmpleadosRespuesta, NuevoEmpleado
 
 /** Empleados (solo ADMIN). */
 export const usuariosApi = {
-  /** Lista con actividad, "en línea" y si está dado de baja */
-  empleados: async () => (await api.get<EmpleadosRespuesta>('/usuarios/empleados')).data,
+  /** Lista con actividad, "en línea" y si está dado de baja. segundoPlano = refresco automático (sin gota de carga) */
+  empleados: async (segundoPlano = false) => (await api.get<EmpleadosRespuesta>('/usuarios/empleados', { segundoPlano })).data,
 
   /** Última ubicación y si está en línea */
-  ubicacion: async (id: number) => (await api.get<UbicacionEmpleado>(`/usuarios/empleados/${id}/ubicacion`)).data,
+  ubicacion: async (id: number) => (await api.get<UbicacionEmpleado>(`/usuarios/empleados/${id}/ubicacion`, { segundoPlano: true })).data, // se consulta cada segundo
 
   /** Mapa de cuadrillas: los notificadores con su estado, última ubicación, dirección y última conexión */
-  ubicaciones: async () => (await api.get<UbicacionEmpleado[]>('/admin/cuadrillas/ubicaciones')).data,
+  ubicaciones: async () => (await api.get<UbicacionEmpleado[]>('/admin/cuadrillas/ubicaciones', { segundoPlano: true })).data, // cada segundo
 
   /** Datos de su cuenta */
   cuenta: async (id: number) => (await api.get<CuentaEmpleado>(`/usuarios/empleados/${id}`)).data,

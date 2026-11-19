@@ -14,10 +14,13 @@ import { EditarReporte } from './components/notificador/EditarReporte';
 import { NuevoEmpleado } from './components/admin/NuevoEmpleado';
 import { RequisitosCuenta } from './components/cuenta/RequisitosCuenta';
 import { CambiarPassword } from './components/cuenta/CambiarPassword';
+import { GotaCarga } from './components/GotaCarga';
 
 function App() {
   return (
     <BrowserRouter>
+      {/* Pantalla de carga (gota de agua) encima de todo mientras se espera al servidor */}
+      <GotaCarga />
       <Routes>
         {/* Ruta pública */}
         <Route path="/" element={<Login />} />

@@ -100,7 +100,7 @@ export function enviarPendientes(usuarioId: number, incluirRechazados = false): 
     for (const p of await listarPendientes(usuarioId)) {
       if (p.error && !incluirRechazados) continue;
       try {
-        await reportesApi.crear({ ...p.datos, clienteId: p.clienteId });
+        await reportesApi.crear({ ...p.datos, clienteId: p.clienteId }, true); // de fondo: la tarjeta de pendientes ya dice "Enviando…"
         await operar('readwrite', (a) => a.delete(p.clienteId));
         enviados++;
       } catch (err) {

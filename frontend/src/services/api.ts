@@ -1,5 +1,15 @@
 import axios from 'axios';
 import { cerrarSesion, guardarAvisoLogin, obtenerToken, RUTA_REQUISITOS } from '../utils/sesion';
+import { cambiarCarga } from './carga';
+
+declare module 'axios' {
+  interface AxiosRequestConfig {
+    /** true = petición de fondo (latido, ubicación, refresco automático): no muestra la gota de carga */
+    segundoPlano?: boolean;
+    /** uso interno: ya se contó en la gota de carga */
+    cargaContada?: boolean;
+  }
+}
 
 // Cambiar https://localhost:8500 por http://localhost:8090
 const URL_API: string = import.meta.env.VITE_API_URL || 'http://localhost:8500';
@@ -21,13 +31,29 @@ api.interceptors.request.use((config) => {
     delete config.headers.Authorization;
   }
 
+  if (!config.segundoPlano) {
+    config.cargaContada = true;
+    cambiarCarga(1);
+  }
   return config;
 });
 
+/** La petición terminó (bien o mal): la gota deja de contarla. */
+function terminarCarga(config?: { cargaContada?: boolean }) {
+  if (config?.cargaContada) {
+    config.cargaContada = false;
+    cambiarCarga(-1);
+  }
+}
+
 // ---------- Después de cada respuesta: si el token ya no sirve, al login ----------
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    terminarCarga(response.config);
+    return response;
+  },
   (error) => {
+    terminarCarga(error?.config);
     const esLogin = String(error?.config?.url ?? '').includes('/auth/login');
     const status = error?.response?.status;
     const codigo = error?.response?.data?.codigo;

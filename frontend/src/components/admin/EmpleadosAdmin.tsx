@@ -81,7 +81,7 @@ export function EmpleadosAdmin() {
       programar();
     } else {
       usuariosApi
-        .empleados()
+        .empleados(recarga > 0) // los refrescos de cada segundo no muestran la gota
         .then((d) => { if (!ignorar) setDatos(d); })
         .catch((err) => { if (!ignorar) setError(leerError(err).mensaje); })
         .finally(() => {

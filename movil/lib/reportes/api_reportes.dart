@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 
 import '../core/api.dart';
+import '../core/carga.dart';
 
 /// Los reportes en el backend (ReporteController.java). Con fotos el cuerpo puede pesar
 /// varios MB, por eso sincronizar y ver el detalle dan más tiempo que las demás llamadas.
@@ -33,7 +34,10 @@ class ApiReportes {
   }
 
   /// Un lote son hasta 5 reportes con 3 fotos: con señal de campo puede tardar.
+  /// De fondo (sin gota): casi siempre lo manda la sincronización automática; cuando el
+  /// notificador lo espera, SyncManager lo envuelve en Carga.durante.
   static final _lote = Options(
+    extra: {Carga.segundoPlano: true},
     sendTimeout: const Duration(seconds: 120),
     receiveTimeout: const Duration(seconds: 60),
   );

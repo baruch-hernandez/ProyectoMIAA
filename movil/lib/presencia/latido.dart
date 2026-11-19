@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../core/api.dart';
+import '../core/carga.dart';
 import '../core/config.dart';
 import '../permisos/servicio_permisos.dart';
 import '../ubicacion/fuente_gps.dart';
@@ -88,7 +89,7 @@ class Latido extends ChangeNotifier {
   Future<void> pausar() async {
     detener();
     try {
-      await _api.dio.delete('/usuarios/yo/conexion').timeout(const Duration(seconds: 2));
+      await _api.dio.delete('/usuarios/yo/conexion', options: Carga.oculta).timeout(const Duration(seconds: 2));
     } catch (_) {}
   }
 
@@ -112,7 +113,8 @@ class Latido extends ChangeNotifier {
     final conPunto = l != null && _hayQueMandar(l);
     try {
       await _api.dio.post('/usuarios/heartbeat',
-          data: conPunto ? {'latitud': l.lat, 'longitud': l.lng, 'precision': l.precision} : null); // 204
+          data: conPunto ? {'latitud': l.lat, 'longitud': l.lng, 'precision': l.precision} : null,
+          options: Carga.oculta); // 204; de fondo: sin gota de carga
       if (conPunto) {
         _ultimaEnviada = l;
         _enviadaEn = ultimaUbicacion = DateTime.now();

@@ -40,7 +40,7 @@ export function AdminLayout() {
       <aside className="hidden lg:flex w-64 shrink-0 flex-col justify-between bg-miaa-marino text-white sticky top-0 h-dvh">
         <div>
           <div className="px-6 py-6 border-b border-white/10">
-            <Marca tono="oscuro" />
+            <Marca tono="oscuro" className="h-14" />
           </div>
           <nav className="p-4 space-y-1" aria-label="Principal">
             {DESTINOS.map(({ to, texto, icono: Icono, end }) => (

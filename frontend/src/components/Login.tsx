@@ -118,7 +118,7 @@ export const Login: React.FC = () => {
   return (
     <div className="min-h-dvh grid lg:grid-cols-[1.1fr_1fr] bg-white">
       <section className="relative overflow-hidden bg-miaa-marino text-white px-6 pt-8 pb-28 lg:px-14 lg:py-14 flex flex-col">
-        <Marca tono="oscuro" />
+        <Marca tono="oscuro" className="h-16 lg:h-20 self-start" />
         <div className="relative z-10 mt-10 lg:mt-auto lg:mb-24 max-w-md">
           <h1 className="text-3xl lg:text-5xl font-extrabold leading-tight text-balance">
             Reportes de domicilios en campo

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../core/api.dart';
+import '../core/carga.dart';
 import '../core/reloj.dart';
 import '../reportes/borrador_reporte.dart';
 import 'almacen_fotos_offline.dart';
@@ -76,7 +77,9 @@ class SyncManager extends ChangeNotifier {
 
   /// Guarda el reporte en el celular y, si hay red, intenta mandarlo de una vez.
   /// Si guardar falla (disco lleno), lanza la excepción y el borrador NO se debe limpiar.
-  Future<ResultadoEnvio> guardarYEnviar(BorradorReporte b) async {
+  Future<ResultadoEnvio> guardarYEnviar(BorradorReporte b) => Carga.durante(() => _guardarYEnviar(b));
+
+  Future<ResultadoEnvio> _guardarYEnviar(BorradorReporte b) async {
     final uuid = await guardar(b);
     if (await red.hayRed()) {
       // Con señal mala no se hace esperar de más: si tarda, sigue en segundo plano
@@ -113,11 +116,11 @@ class SyncManager extends ChangeNotifier {
       .whenComplete(() => _enCurso = null);
 
   /// Un rechazado vuelve a la cola (p. ej. lo rechazó por la hora del celular y ya se corrigió).
-  Future<void> reintentar(ReporteOffline r) async {
-    await dao.reintentar(r.uuidCliente);
-    await _refrescar();
-    await sincronizar();
-  }
+  Future<void> reintentar(ReporteOffline r) => Carga.durante(() async {
+        await dao.reintentar(r.uuidCliente);
+        await _refrescar();
+        await sincronizar();
+      });
 
   /// Un rechazado que ya no se quiere (lo vio el notificador): se borra con sus fotos.
   Future<void> descartar(ReporteOffline r) async {

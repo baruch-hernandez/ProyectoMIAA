@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../auth/sesion.dart';
 import '../core/api.dart';
 import '../core/config.dart';
+import '../core/logo_miaa.dart';
 import '../diagnostico/pantalla_diagnostico.dart';
 import '../presencia/latido.dart';
 import '../reportes/api_reportes.dart';
@@ -104,7 +105,7 @@ class _PantallaInicioState extends State<PantallaInicio> with WidgetsBindingObse
     final u = widget.sesion.usuario;
     return Scaffold(
       appBar: AppBar(
-        title: const Text('MIAA Notificador'),
+        title: const LogoMiaa(alto: 40),
         actions: [
           if (Config.herramientasDev)
             IconButton(

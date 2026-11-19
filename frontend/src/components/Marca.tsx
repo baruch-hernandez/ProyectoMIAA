@@ -1,43 +1,20 @@
-import { useState } from 'react';
-
 interface MarcaProps {
-  /** "claro" para fondos blancos, "oscuro" para fondos marino. */
+  /** "claro" para fondos blancos (logo azul), "oscuro" para fondos marino (logo blanco). */
   tono?: 'claro' | 'oscuro';
+  /** Alto del logo (clases de Tailwind). */
   className?: string;
 }
 
 /**
- * Logotipo de MIAA.
- *
- * Coloca el archivo OFICIAL del logo (pídelo a Comunicación de MIAA) en:
- *   frontend/public/logo-miaa.png          (versión para fondo claro)
- *   frontend/public/logo-miaa-blanco.png   (versión para fondo marino)
- *
- * Mientras no exista el archivo, se muestra el nombre en texto.
+ * Logotipo oficial de MIAA (frontend/public/logo-miaa.svg, de un solo color: azul #4476AB).
+ * Sobre marino se pinta blanco con un filtro, así no hace falta una segunda versión del archivo.
  */
-export function Marca({ tono = 'claro', className = '' }: MarcaProps) {
-  const [sinImagen, setSinImagen] = useState(false);
-  // Lo que está en frontend/public se sirve desde la RAÍZ: public/miaaLogo.png → /miaaLogo.png
-  const src = '/miaaLogo.png';
-
-  if (!sinImagen) {
-    return (
-      <img
-        src={src}
-        alt="MIAA, Modelo Integral de Aguas de Aguascalientes"
-        className={`h-10 w-auto ${className}`}
-        onError={() => setSinImagen(true)}
-      />
-    );
-  }
-
-  const colorNombre = tono === 'oscuro' ? 'text-white' : 'text-miaa-azul';
-  const colorSub = tono === 'oscuro' ? 'text-miaa-bruma' : 'text-miaa-marino';
-
+export function Marca({ tono = 'claro', className = 'h-12' }: MarcaProps) {
   return (
-    <span className={`inline-flex flex-col leading-none ${className}`} aria-label="MIAA, Modelo Integral de Aguas de Aguascalientes">
-      <span className={`text-2xl font-extrabold tracking-tight ${colorNombre}`}>MIAA</span>
-      <span className={`mt-1 text-[0.65rem] font-semibold ${colorSub}`}>Modelo Integral de Aguas de Aguascalientes</span>
-    </span>
+    <img
+      src="/logo-miaa.svg"
+      alt="MIAA, Modelo Integral de Aguas de Aguascalientes"
+      className={`w-auto shrink-0 ${tono === 'oscuro' ? 'brightness-0 invert' : ''} ${className}`}
+    />
   );
 }
