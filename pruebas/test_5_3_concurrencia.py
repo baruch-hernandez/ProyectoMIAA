@@ -84,7 +84,7 @@ def test_100_usuarios_inician_sesion_al_mismo_tiempo(usuarios_carga, admin, conf
                 r = api.get("/usuarios/yo")
                 fila["yo_ms"], fila["yo_status"] = (time.perf_counter() - t1) * 1000, r.status_code
                 t2 = time.perf_counter()
-                r = api.post("/usuarios/yo/conexion")
+                r = api.post("/usuarios/heartbeat")
                 fila["latido_ms"], fila["latido_status"] = (time.perf_counter() - t2) * 1000, r.status_code
         except Exception as e:  # noqa: BLE001
             fila["error"] = repr(e)

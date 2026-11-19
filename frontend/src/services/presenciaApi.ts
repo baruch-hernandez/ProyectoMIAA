@@ -1,13 +1,14 @@
 import api from './api';
+import type { UbicacionNueva } from '../types/reporte';
 
 /**
  * Disponibilidad tipo WhatsApp (tarea 2.4). El backend saca QUIÉN es del token:
  * nadie puede marcar "en línea" a otro.
  */
 export const presenciaApi = {
-  /** "Sigo aquí": se manda cada segundo mientras la app esté a la vista (usePresencia). */
-  latido: async () => {
-    await api.post('/usuarios/yo/conexion', undefined, { segundoPlano: true });
+  /** "Sigo aquí", con la ubicación si la hay: cada segundo con la app a la vista (useCompartirUbicacion). */
+  latido: async (punto?: UbicacionNueva) => {
+    await api.post('/usuarios/heartbeat', punto, { segundoPlano: true });
   },
 
   /** La pestaña se ocultó o se apagó la pantalla: sale inactivo al instante. */
@@ -26,9 +27,9 @@ export const presenciaApi = {
  * no contesta en 1.5 s, se sigue de todos modos (el token se borra igual en el navegador y
  * el backend lo marcará DESCONECTADO solo, cuando deje de recibir latidos).
  */
-export async function avisarLogout(extra: Promise<unknown>[] = []): Promise<void> {
+export async function avisarLogout(): Promise<void> {
   await Promise.race([
-    Promise.allSettled([presenciaApi.logout(), ...extra]),
+    presenciaApi.logout().catch(() => undefined),
     new Promise((listo) => setTimeout(listo, 1500)),
   ]);
 }

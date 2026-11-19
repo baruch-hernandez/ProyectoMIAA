@@ -62,10 +62,11 @@ class ReporteServiceTest {
         when(notas.buscarPorReporte(any())).thenReturn(List.of());
         limiteAgs = mock(LimiteAguascalientes.class);
         ValidadorFotos validador = mock(ValidadorFotos.class);
-        when(validador.validar(any())).thenReturn(new ValidadorFotos.Medidas(1920, 1080));
+        when(validador.validar(any())).thenReturn(
+                new ValidadorFotos.Imagen(new byte[0], "jpeg", new ValidadorFotos.Medidas(1920, 1080)));
         when(fotos.save(any())).thenAnswer(i -> i.getArgument(0));
         servicio = new ReporteService(reportes, fotos, notas, usuarios,
-                limiteAgs, validador, 24);
+                limiteAgs, validador, mock(AlmacenFotos.class), 24);
     }
 
     /** Una foto con el GPS que se indique (null = sin GPS, como la web o la galería). */

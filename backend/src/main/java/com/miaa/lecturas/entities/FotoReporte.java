@@ -38,8 +38,15 @@ public class FotoReporte {
     @JoinColumn(name = "reporte_id", nullable = false)
     private Reporte reporte;
 
-    /** La imagen como data URL base64 ("data:image/jpeg;base64,..."). A futuro: archivo + URL. */
-    @Column(nullable = false, columnDefinition = "TEXT")
+    /** Nombre del archivo de la imagen en la carpeta de fotos (ver AlmacenFotos). */
+    @Column(length = 60, updatable = false)
+    private String archivo;
+
+    /**
+     * Solo fotos de antes de AlmacenFotos: la imagen como data URL base64 dentro de la BD.
+     * Las nuevas la dejan en null (EsquemaFotos le quita el NOT NULL a la columna).
+     */
+    @Column(columnDefinition = "TEXT")
     private String datos;
 
     /** Resolución real, medida por el servidor (no la que diga el cliente). */

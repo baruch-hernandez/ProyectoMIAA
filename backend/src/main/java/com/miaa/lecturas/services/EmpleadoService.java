@@ -38,13 +38,32 @@ public class EmpleadoService {
         this.presenciaService = presenciaService;
     }
 
+    /**
+     * La tabla del admin se pide CADA SEGUNDO (por el estado ACTIVO/INACTIVO), pero los conteos de
+     * reportes recorren toda la tabla de reportes y cambian poco: se reusan hasta este tiempo.
+     */
+    static final long MS_ESTADISTICAS = 30_000;
+
+    private volatile Map<Long, Object[]> estadisticas;
+    private volatile long estadisticasEnMs;
+
+    /** [usuarioId → (usuarioId, totalReportes, fechaUltimoReporte)]; un reporte nuevo tarda hasta 30 s en contarse. */
+    private Map<Long, Object[]> estadisticas() {
+        long ahora = System.currentTimeMillis();
+        if (estadisticas == null || ahora - estadisticasEnMs >= MS_ESTADISTICAS) {
+            Map<Long, Object[]> nuevas = new HashMap<>();
+            for (Object[] fila : reporteRepository.estadisticasPorUsuario()) {
+                nuevas.put((Long) fila[0], fila);
+            }
+            estadisticas = nuevas; // si dos peticiones la recalculan a la vez, gana cualquiera: dan lo mismo
+            estadisticasEnMs = ahora;
+        }
+        return estadisticas;
+    }
+
     @Transactional(readOnly = true)
     public EmpleadosDTO listar() {
-        // Una sola consulta para TODOS: [usuarioId, totalReportes, fechaUltimoReporte]
-        Map<Long, Object[]> stats = new HashMap<>();
-        for (Object[] fila : reporteRepository.estadisticasPorUsuario()) {
-            stats.put((Long) fila[0], fila);
-        }
+        Map<Long, Object[]> stats = estadisticas();
 
         Map<Long, UsuarioPresencia> presencias = presenciaService.porUsuario();
         LocalDateTime ahora = LocalDateTime.now();

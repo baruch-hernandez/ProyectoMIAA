@@ -5,6 +5,7 @@ import { usuariosApi } from '../../services/usuariosApi';
 import type { Empleado, FiltrosReportes, PaginaReportes, ReporteResumen } from '../../types/reporte';
 import { claseInput } from '../../utils/estilos';
 import { ListaReportes } from '../reportes/ListaReportes';
+import { destelloCarga } from '../../services/carga';
 
 const SIN_FILTROS: FiltrosReportes = { empleadoId: '', desde: '', hasta: '' };
 const claseEtiqueta = 'block mb-1 text-xs font-semibold text-slate-600';
@@ -39,7 +40,9 @@ export function ReportesAdmin() {
       .then((data) => {
         if (ignorar) return;
         setUltima(data);
-        setReportes((antes) => (pagina === 0 ? data.reportes : [...antes, ...data.reportes]));
+        // Si llegó un reporte nuevo entre página y página, todo se recorre uno: sin repetir el que ya está
+        setReportes((antes) => (pagina === 0 ? data.reportes
+          : [...antes, ...data.reportes.filter((r) => !antes.some((a) => a.id === r.id))]));
       })
       .catch((err) => { if (!ignorar) setError(leerError(err).mensaje); })
       .finally(() => { if (!ignorar) setCargando(false); });
@@ -47,6 +50,7 @@ export function ReportesAdmin() {
   }, [pagina, filtros, recarga]);
 
   const recargar = () => {
+    destelloCarga();
     setCargando(true);
     setError(null);
     setPagina(0);

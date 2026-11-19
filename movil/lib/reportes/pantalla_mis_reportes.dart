@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../core/api.dart';
+import '../core/carga.dart';
 import '../ubicacion/mapa_ags.dart';
 import '../ubicacion/ubicacion.dart';
 import 'api_reportes.dart';
@@ -74,7 +75,10 @@ class _PantallaMisReportesState extends State<PantallaMisReportes> {
     return Scaffold(
       appBar: AppBar(title: const Text('Mis reportes')),
       body: RefreshIndicator(
-        onRefresh: _cargar,
+        onRefresh: () {
+          Carga.destello();
+          return _cargar();
+        },
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -233,7 +237,13 @@ class _PantallaDetalleReporteState extends State<PantallaDetalleReporte> {
           ? Center(child: Padding(padding: const EdgeInsets.all(24), child: Text(error, textAlign: TextAlign.center)))
           : r == null
               ? const Center(child: CircularProgressIndicator())
-              : RefreshIndicator(onRefresh: _cargar, child: _contenido(context, r)),
+              : RefreshIndicator(
+                  onRefresh: () {
+                    Carga.destello();
+                    return _cargar();
+                  },
+                  child: _contenido(context, r),
+                ),
     );
   }
 

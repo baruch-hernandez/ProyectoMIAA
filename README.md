@@ -227,7 +227,7 @@ Un reporte tiene:
 | Después de 24 h ya no se edita, pero se pueden agregar **notas** | `POST /reportes/{id}/notas` |
 | Un reporte reenviado (se cortó la señal) **no se duplica** | Cada reporte lleva un UUID generado en el dispositivo (`clienteId` en `POST /reportes`, `clientSyncId` en `/reportes/sync`), guardado en la columna UNIQUE `client_sync_id` |
 
-Las fotos se guardan en la base como texto base64 (columna `datos` de `fotos_reporte`).
+Las fotos se guardan como **archivos** en la carpeta `miaa.fotos.carpeta` (por defecto `backend/fotos/`, o la variable `MIAA_FOTOS`); la base solo guarda el nombre (columna `archivo` de `fotos_reporte`). La API las sigue entregando como data URL base64 en `datos`. **Respalden esa carpeta junto con la base de datos.** Las fotos de antes de este cambio siguen dentro de la base (columna `datos`) y se leen igual.
 
 ### 6.3 Fotos de evidencia: hora y GPS
 
@@ -271,7 +271,7 @@ Todo vive en [PresenciaService.java](backend/src/main/java/com/miaa/lecturas/ser
 - Al cerrar sesión, apagar la pantalla o mandar la app al fondo, avisa (`POST /auth/logout` o `DELETE /usuarios/yo/conexion`) y pasa a **INACTIVO** de inmediato. Si no llega latido en 2 s (sin señal, celular apagado de golpe), una tarea programada (`@Scheduled`, cada segundo) lo marca INACTIVO.
 - **Dirección:** [GeocodificadorInverso.java](backend/src/main/java/com/miaa/lecturas/services/GeocodificadorInverso.java) la pide a Nominatim (OpenStreetMap) solo si el empleado se movió más de 50 m, sin hacer esperar al latido, con caché y **máximo 1 consulta por segundo** (la regla de Nominatim). Se apaga con `miaa.geocodificacion.habilitada=false` (así está en el perfil de pruebas). Para producción conviene un Nominatim propio (`miaa.geocodificacion.url`).
 - **Mapa de cuadrillas** ([MapaNotificadores.tsx](frontend/src/components/admin/MapaNotificadores.tsx)): verde = ACTIVO, gris = INACTIVO (en su último lugar). Al tocar un marcador o un nombre de la lista sale su rol, estado, dirección, coordenadas y "Última conexión: Hoy 14:32 h" en hora de Aguascalientes. La lista se puede buscar por nombre y filtrar por estado. Consulta cada segundo con la pestaña visible ("casi tiempo real" sin WebSockets).
-- La web del notificador sigue usando `POST /usuarios/yo/conexion` y `POST /ubicacion`: hacen lo mismo y se quedan para apps ya instaladas.
+- La web del notificador hace lo mismo con `POST /usuarios/heartbeat` (un latido por segundo, con la ubicación del navegador si la hay).
 
 ---
 
@@ -287,7 +287,7 @@ Todas las rutas existen con y sin el prefijo `/api/v1`. Todas, menos el login, p
 | PUT | `/usuarios/yo/password` | cualquiera | Cambiar mi contraseña |
 | POST | `/usuarios/yo/aviso-privacidad` | cualquiera | Aceptar el aviso (con su versión) |
 | POST | `/usuarios/heartbeat` | cualquiera | Latido; cuerpo opcional `{ latitud, longitud, precision }` (fuera de Aguascalientes → 400) |
-| POST / DELETE | `/usuarios/yo/conexion` | cualquiera | Latido sin coordenadas / INACTIVO al instante |
+| DELETE | `/usuarios/yo/conexion` | cualquiera | INACTIVO al instante (la app se pausó) |
 | POST | `/reportes` | NOTIFICADOR | Crear reporte con fotos |
 | POST | `/reportes/sync` | NOTIFICADOR | Subir de golpe los guardados sin conexión: multipart, con la parte `reportes` (JSON) y una parte binaria por foto. Responde `{ sincronizados: [{clientSyncId, id, folio}], rechazados: [{clientSyncId, motivo, errores}] }`. Exige coordenadas, al menos 1 foto y `fechaCaptura` en UTC (termina en `Z`). Un `clientSyncId` repetido regresa el reporte de antes |
 | GET | `/reportes/mios` | NOTIFICADOR | Mis reportes |
@@ -296,7 +296,6 @@ Todas las rutas existen con y sin el prefijo `/api/v1`. Todas, menos el login, p
 | PUT / DELETE | `/reportes/{id}` | NOTIFICADOR | Editar o borrar (24 h) |
 | POST | `/reportes/{id}/notas` | NOTIFICADOR | Agregar nota |
 | POST / DELETE | `/reportes/{id}/fotos[/{fotoId}]` | NOTIFICADOR | Agregar o quitar foto (24 h) |
-| POST / DELETE | `/ubicacion` | NOTIFICADOR | Igual que el latido con coordenadas / INACTIVO (para apps viejas) |
 | GET | `/admin/cuadrillas/ubicaciones` | ADMIN | Mapa de cuadrillas: cada notificador con `estadoConexion`, rol, coordenadas, `direccionGeocodificada` y `ultimaConexion` (UTC) |
 | GET / POST | `/usuarios/empleados` | ADMIN | Listar empleados o dar de alta uno |
 | GET / PUT | `/usuarios/empleados/{id}` | ADMIN | Ver o editar empleado |
@@ -321,7 +320,7 @@ roles ──< usuarios ──< reportes ──< fotos_reporte
 | --- | --- |
 | `usuarios` | username, hash BCrypt, rol, habilitado, `debe_cambiar_password`, versión y fecha del aviso aceptado, intentos fallidos, `bloqueado_hasta` |
 | `reportes` | domicilio, municipio, latitud/longitud, descripción, `client_sync_id` (UUID anti-duplicados, índice UNIQUE), `fecha_captura` (cuándo se llenó, aunque llegue horas después), autor, fechas de creación y edición |
-| `fotos_reporte` | imagen (base64), ancho/alto, `fecha_captura` (timestamptz) y su origen, lat/lng/precisión del GPS, desfase del reloj |
+| `fotos_reporte` | nombre del archivo de la imagen, ancho/alto, `fecha_captura` (timestamptz) y su origen, lat/lng/precisión del GPS, desfase del reloj |
 | `notas_reporte` | texto, autor, fecha |
 | `usuario_presencia` | `estado_conexion` (ACTIVO/INACTIVO), `ultima_conexion_utc`, `ultima_latitud`/`ultima_longitud`, precisión, `direccion_geocodificada`. Reemplaza a `ubicaciones_empleado` y a `usuarios.conectado`/`ultima_conexion` ([EsquemaPresencia](backend/src/main/java/com/miaa/lecturas/config/EsquemaPresencia.java) pasa los datos al arrancar) |
 

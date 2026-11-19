@@ -7,7 +7,8 @@ import 'carga.dart';
 
 /// Pantalla de carga de MIAA: una gota que se llena de agua mientras el notificador espera al
 /// servidor (Carga.pendientes > 0). Es la misma que la web (GotaCarga.tsx).
-///  - No aparece si la respuesta llega antes de [retraso] (no parpadea con lo rápido).
+///  - No aparece si la respuesta llega antes de [retraso] (no parpadea con lo rápido), salvo en
+///    un destello (Carga.destello: al abrir la app o cambiar de pantalla), que sale de inmediato.
 ///  - Mientras espera, el agua sube poco a poco sin llegar arriba (no sabemos cuánto falta);
 ///    al terminar se llena y se desvanece.
 ///  - Tapa la pantalla para que no se mande dos veces lo mismo.
@@ -50,7 +51,12 @@ class _CapaCargaState extends State<CapaCarga> with SingleTickerProviderStateMix
   void _cambio() {
     final esperando = Carga.pendientes.value > 0;
     if (esperando && _fase == _Fase.oculta) {
-      _espera ??= Timer(CapaCarga.retraso, _mostrar);
+      if (Carga.inmediata) {
+        _espera?.cancel();
+        _espera = Timer(Duration.zero, _mostrar); // no en medio de un build
+      } else {
+        _espera ??= Timer(CapaCarga.retraso, _mostrar);
+      }
     } else if (!esperando) {
       _espera?.cancel();
       _espera = null;

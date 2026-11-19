@@ -21,8 +21,8 @@ import java.io.IOException;
  * No es @Component a propósito: Spring Boot registraría cualquier Filter como filtro global
  * y correría dos veces. Se crea en SecurityConfig.
  *
- * La IP es request.getRemoteAddr(). Detrás de un proxy (Nginx) activen
- * server.forward-headers-strategy=native para que sea la IP real del cliente y no la del proxy.
+ * La IP es request.getRemoteAddr(): con server.forward-headers-strategy=native (application.properties)
+ * es la IP real del cliente aunque llegue por el proxy de Vite o Nginx, y no la del proxy.
  */
 public class LimiteLoginFilter extends OncePerRequestFilter {
 

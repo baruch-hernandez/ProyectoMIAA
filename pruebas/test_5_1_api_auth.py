@@ -131,7 +131,7 @@ def test_login_latido_y_logout_cambian_la_disponibilidad(admin, crear_notificado
     api.entrar(n["username"], n["password"])
     assert _disponibilidad(admin, n["id"]) == "EN_LINEA", "al iniciar sesión debe quedar en línea"
 
-    assert api.post("/usuarios/yo/conexion").status_code == 204, "el latido debe responder 204"
+    assert api.post("/usuarios/heartbeat").status_code == 204, "el latido debe responder 204"
     assert _disponibilidad(admin, n["id"]) == "EN_LINEA"
 
     assert api.post("/auth/logout").status_code == 204

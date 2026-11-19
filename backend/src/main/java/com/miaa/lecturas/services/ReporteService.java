@@ -71,6 +71,7 @@ public class ReporteService {
     private final UsuarioRepository usuarioRepository;
     private final LimiteAguascalientes limiteAgs;
     private final ValidadorFotos validadorFotos;
+    private final AlmacenFotos almacenFotos;
     private final int horasParaModificar;
 
     public ReporteService(ReporteRepository reporteRepository,
@@ -79,6 +80,7 @@ public class ReporteService {
                           UsuarioRepository usuarioRepository,
                           LimiteAguascalientes limiteAgs,
                           ValidadorFotos validadorFotos,
+                          AlmacenFotos almacenFotos,
                           @Value("${miaa.reportes.horas-para-modificar:24}") int horasParaModificar) {
         this.reporteRepository = reporteRepository;
         this.fotoRepository = fotoRepository;
@@ -86,6 +88,7 @@ public class ReporteService {
         this.usuarioRepository = usuarioRepository;
         this.limiteAgs = limiteAgs;
         this.validadorFotos = validadorFotos;
+        this.almacenFotos = almacenFotos;
         this.horasParaModificar = horasParaModificar;
     }
 
@@ -149,7 +152,8 @@ public class ReporteService {
     @Transactional
     public void borrar(UsuarioPrincipal yo, Long id) {
         Reporte r = obtenerParaModificar(yo, id);
-        // CascadeType.ALL en fotos y notas: se borran junto con el reporte
+        // CascadeType.ALL en fotos y notas: se borran junto con el reporte (y los archivos al confirmar)
+        r.getFotos().forEach(this::borrarArchivo);
         reporteRepository.delete(r);
     }
 
@@ -222,7 +226,7 @@ public class ReporteService {
         foto.setReporte(r);
         FotoReporte guardada = fotoRepository.save(foto);
         marcarEditado(r);
-        return FotoDTO.desde(guardada);
+        return aDTO(guardada);
     }
 
     @SuppressWarnings("null")
@@ -234,7 +238,16 @@ public class ReporteService {
                 .filter(f -> Objects.equals(f.getReporte().getId(), reporteId))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Esa foto ya no existe"));
         fotoRepository.delete(foto);
+        borrarArchivo(foto);
         marcarEditado(r);
+    }
+
+    private void borrarArchivo(FotoReporte f) {
+        if (f.getArchivo() != null) almacenFotos.borrar(f.getArchivo()); // las viejas no tienen: van en la BD
+    }
+
+    private FotoDTO aDTO(FotoReporte f) {
+        return FotoDTO.desde(f, f.getArchivo() != null ? almacenFotos.dataUrl(f.getArchivo()) : f.getDatos());
     }
 
     private static void marcarEditado(Reporte r) {
@@ -317,14 +330,14 @@ public class ReporteService {
     }
 
     private FotoReporte crearFoto(FotoRequestDTO req) {
-        ValidadorFotos.Medidas medidas = validadorFotos.validar(req.datos()); // HD o error 400
+        ValidadorFotos.Imagen imagen = validadorFotos.validar(req.datos()); // HD o error 400
         validadorFotos.validarFechaCaptura(req.fechaCaptura());
         validarGpsFoto(req);
 
         FotoReporte f = new FotoReporte();
-        f.setDatos(req.datos());
-        f.setAncho(medidas.ancho());
-        f.setAlto(medidas.alto());
+        f.setArchivo(almacenFotos.guardar(imagen.bytes(), imagen.tipo())); // ya validada: no deja archivos de fotos rechazadas
+        f.setAncho(imagen.medidas().ancho());
+        f.setAlto(imagen.medidas().alto());
         f.setFechaCaptura(req.fechaCaptura()); // la hora en que se TOMÓ (la que pidió MIAA)
         f.setOrigenFecha(req.origenFecha());
         f.setOrigenFoto(req.origenFoto());
@@ -415,7 +428,7 @@ public class ReporteService {
                 r.getFechaActualizacion(),
                 r.getFechaEdicion(),
                 r.getFechaCaptura(),
-                r.getFotos().stream().map(FotoDTO::desde).toList(),
+                r.getFotos().stream().map(this::aDTO).toList(),
                 notas.stream().map(NotaDTO::desde).toList(),
                 esAutor(yo, r),
                 esAutor(yo, r) && dentroDeVentana(r.getFechaCreacion(), LocalDateTime.now(), horasParaModificar),

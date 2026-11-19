@@ -7,6 +7,7 @@ import type { Empleado, EmpleadosRespuesta } from '../../types/reporte';
 import { fechaRelativa, formatoFecha, normalizar } from '../../utils/catalogos';
 import { nombreRol } from '../../utils/roles';
 import { claseInput } from '../../utils/estilos';
+import { destelloCarga } from '../../services/carga';
 
 function EstadoEmpleado({ activo, habilitado = true }: { activo: boolean; habilitado?: boolean }) {
   if (!habilitado) {
@@ -93,6 +94,7 @@ export function EmpleadosAdmin() {
   }, [recarga]);
 
   const recargar = () => {
+    destelloCarga();
     setCargando(true);
     setError(null);
     setRecarga((n) => n + 1);

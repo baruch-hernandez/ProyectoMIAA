@@ -43,8 +43,14 @@ export default defineConfig(({ mode }) => {
           // El navegador manda "Origin: https://<ip>:5173" incluso a su mismo sitio (en los POST).
           // Spring lo compararía contra miaa.cors.origenes y podría rechazarlo con 403
           // "Invalid CORS request". Para el backend esta petición viene de Vite, no de otro sitio.
+          // X-Forwarded-For: la IP real del navegador (se SOBRESCRIBE, el cliente no la puede inventar).
+          // Sin esto el backend ve 127.0.0.1 en todos y el límite de 10 logins/min sería para todos juntos.
           configure: (proxy) => {
-            proxy.on('proxyReq', (peticion) => peticion.removeHeader('origin'))
+            proxy.on('proxyReq', (peticion, original) => {
+              peticion.removeHeader('origin')
+              const ip = original.socket.remoteAddress
+              if (ip) peticion.setHeader('x-forwarded-for', ip)
+            })
           },
         },
       },

@@ -1,7 +1,9 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
-import { leerCarga, suscribirCarga } from '../services/carga';
+import { useLocation } from 'react-router-dom';
+import { destelloCarga, hayDestello, leerCarga, suscribirCarga } from '../services/carga';
 
-/** Antes de esto no se muestra: una respuesta rápida no hace parpadear la pantalla. */
+/** Antes de esto no se muestra una petición: una respuesta rápida no hace parpadear la pantalla
+ *  (salvo un destello: al abrir o recargar la página, cambiar de pantalla o dar "Actualizar"). */
 const RETRASO_MS = 300;
 /** Mientras espera, el agua sube sola hacia este nivel sin llegar nunca (no sabemos cuánto falta). */
 const TOPE_ESPERANDO = 0.9;
@@ -17,14 +19,20 @@ type Fase = 'oculta' | 'llenando' | 'llena';
 
 /**
  * Pantalla de carga de MIAA: una gota que se llena de agua mientras el usuario espera una
- * respuesta del servidor (cualquier petición de api.ts que no sea de segundo plano).
+ * respuesta del servidor (cualquier petición de api.ts que no sea de segundo plano), y un momento
+ * cada vez que se abre, recarga o cambia la pantalla.
  * Va una sola vez en App, encima de todas las pantallas (admin, notificador y login), y tapa
  * la pantalla para que no se mande dos veces lo mismo mientras tanto.
  */
 export function GotaCarga() {
   const pendientes = useSyncExternalStore(suscribirCarga, leerCarga);
+  const inmediata = useSyncExternalStore(suscribirCarga, hayDestello);
+  const { pathname } = useLocation();
   const [fase, setFase] = useState<Fase>('oculta');
   const [nivel, setNivel] = useState(0);
+
+  // Al abrir o recargar la página y en cada cambio de pantalla
+  useEffect(() => destelloCarga(), [pathname]);
 
   // oculta --(espera más de RETRASO_MS)--> llenando --(ya no espera nada)--> llena --> oculta.
   // Si llega otra petición mientras se desvanece, termina de irse y vuelve a aparecer después.
@@ -33,14 +41,14 @@ export function GotaCarga() {
   useEffect(() => {
     let t: number | undefined;
     if (fase === 'oculta' && esperando) {
-      t = window.setTimeout(() => { setNivel(0.08); setFase('llenando'); }, RETRASO_MS);
+      t = window.setTimeout(() => { setNivel(0.08); setFase('llenando'); }, inmediata ? 0 : RETRASO_MS);
     } else if (fase === 'llenando' && !esperando) {
       t = window.setTimeout(() => { setNivel(1); setFase('llena'); }, 0);
     } else if (fase === 'llena') {
       t = window.setTimeout(() => setFase('oculta'), LLENA_MS);
     }
     return () => window.clearTimeout(t);
-  }, [esperando, fase]);
+  }, [esperando, fase, inmediata]);
 
   // El agua sube poco a poco: cada paso recorre una parte de lo que falta para el tope
   useEffect(() => {
@@ -54,6 +62,7 @@ export function GotaCarga() {
   const arriba = ALTO * (1 - nivel);
   return (
     <div
+      data-gota-carga
       role="status"
       aria-live="polite"
       className={`fixed inset-0 z-[2000] flex flex-col items-center justify-center gap-3 bg-white/70 backdrop-blur-[2px] transition-opacity duration-300 ${fase === 'llena' ? 'opacity-0' : 'opacity-100'}`}

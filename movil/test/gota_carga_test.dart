@@ -104,5 +104,45 @@ void main() {
       await t.pump(const Duration(milliseconds: 400)); // …y se desvanece
       expect(find.byKey(CapaCarga.llave), findsNothing);
     });
+
+    testWidgets('un destello sale de inmediato y dura al menos el mínimo', (t) async {
+      await abrir(t);
+      Carga.destello();
+      await t.pump(Duration.zero); // sin esperar el retraso (pump() a secas no corre los Timer de 0 ms)
+      await t.pump();
+      expect(find.byKey(CapaCarga.llave), findsOneWidget);
+
+      await t.pump(Carga.minimoDestello - const Duration(milliseconds: 100));
+      expect(find.byKey(CapaCarga.llave), findsOneWidget, reason: 'todavía no cumple el mínimo');
+
+      await t.pump(const Duration(milliseconds: 100)); // se llena…
+      await t.pump(const Duration(milliseconds: 400)); // …y se desvanece
+      expect(find.byKey(CapaCarga.llave), findsNothing);
+      expect(Carga.pendientes.value, 0);
+    });
+
+    testWidgets('sale al cambiar de pantalla, no al abrir un diálogo', (t) async {
+      final llaveNav = GlobalKey<NavigatorState>();
+      await t.pumpWidget(MaterialApp(
+        navigatorKey: llaveNav,
+        navigatorObservers: [Carga.observador],
+        home: const Scaffold(body: Text('Inicio')),
+        builder: (context, navegador) => CapaCarga(child: navegador!),
+      ));
+      await t.pump(const Duration(seconds: 2)); // pasa el destello de la pantalla inicial
+
+      showDialog<void>(context: llaveNav.currentContext!, builder: (_) => const Text('Diálogo'));
+      await t.pump(CapaCarga.retraso);
+      expect(find.byKey(CapaCarga.llave), findsNothing);
+      llaveNav.currentState!.pop();
+      await t.pump(const Duration(seconds: 1));
+
+      llaveNav.currentState!.push(MaterialPageRoute<void>(builder: (_) => const Text('Otra')));
+      await t.pump(Duration.zero);
+      await t.pump();
+      expect(find.byKey(CapaCarga.llave), findsOneWidget);
+      await t.pump(const Duration(seconds: 2));
+      expect(find.byKey(CapaCarga.llave), findsNothing);
+    });
   });
 }

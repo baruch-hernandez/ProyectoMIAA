@@ -5,6 +5,7 @@ import 'auth/pantalla_login.dart';
 import 'auth/pantalla_requisitos.dart';
 import 'auth/sesion.dart';
 import 'core/capa_carga.dart';
+import 'core/carga.dart';
 import 'inicio/pantalla_inicio.dart';
 import 'presencia/barra_ubicacion.dart';
 
@@ -28,6 +29,7 @@ class AppMiaa extends StatelessWidget {
     return MaterialApp(
       title: 'MIAA Notificador',
       debugShowCheckedModeBanner: false,
+      navigatorObservers: [Carga.observador], // la gota al abrir la app y en cada cambio de pantalla
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: _marino, primary: _marino),
         useMaterial3: true,

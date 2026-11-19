@@ -17,8 +17,16 @@ def esperar(driver, condicion, segundos: float = 15):
     return WebDriverWait(driver, segundos, ignored_exceptions=(StaleElementReferenceException,)).until(condicion)
 
 
+def sin_carga(driver, segundos: float = 30):
+    """Espera a que se vaya la gota de carga: mientras se ve, tapa la pantalla y no deja dar clic
+    (sale un momento en cada cambio de pantalla y mientras se espera al servidor)."""
+    esperar(driver, lambda d: not d.find_elements(By.CSS_SELECTOR, "[data-gota-carga]"), segundos)
+
+
 def visible(driver, localizador, segundos: float = 15):
-    return esperar(driver, EC.visibility_of_element_located(localizador), segundos)
+    elemento = esperar(driver, EC.visibility_of_element_located(localizador), segundos)
+    sin_carga(driver)
+    return elemento
 
 
 def esperar_texto(driver, texto: str, segundos: float = 15):
@@ -46,6 +54,7 @@ def login(driver, usuario: str, password: str):
     escribir(driver.find_element(*PASSWORD), password)
     boton = driver.find_element(*ENTRAR)
     esperar(driver, lambda d: boton.is_enabled())
+    sin_carga(driver)
     boton.click()
     # Mientras el servidor contesta, el botón dice "Entrando…". Si entró, el formulario desaparece.
     def termino(d):
@@ -69,7 +78,9 @@ def boton_con_texto(driver, texto: str):
     def buscar(d):
         botones = d.find_elements(By.XPATH, f"//button[contains(normalize-space(.), '{texto}')]")
         return next((b for b in botones if b.is_displayed()), False)
-    return esperar(driver, buscar)
+    boton = esperar(driver, buscar)
+    sin_carga(driver)
+    return boton
 
 
 def session_storage(driver, llave: str):

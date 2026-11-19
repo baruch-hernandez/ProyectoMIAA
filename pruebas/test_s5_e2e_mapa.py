@@ -19,7 +19,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import Select, WebDriverWait
 
 from apoyo.api import Api
-from apoyo.ui import abrir_login, login
+from apoyo.ui import abrir_login, login, sin_carga
 from conftest import captura
 
 PUNTO_AGS = {"latitud": 21.8818, "longitud": -102.2916, "precision": 5}
@@ -71,6 +71,7 @@ def test_3_3_e2e_mapa_marcador_popup_y_transicion_logout(navegador, config, crea
             (By.XPATH, f"//section[@aria-label='Notificadores']//button[contains(., '{datos['nombre']}')]")
         )
     )
+    sin_carga(navegador)
     boton_empleado.click()
 
     popup = WebDriverWait(navegador, 10).until(

@@ -86,7 +86,7 @@ class _PantallaDiagnosticoState extends State<PantallaDiagnostico> {
         return 'Hola, ${r.data['nombre']} · rol ${r.data['rol']}';
       });
       await _paso('Latido de disponibilidad (2.4)', () async {
-        final r = await dio.post('/usuarios/yo/conexion');
+        final r = await dio.post('/usuarios/heartbeat');
         return 'Respondió ${r.statusCode}: el admin te ve "En línea"';
       });
     } else {

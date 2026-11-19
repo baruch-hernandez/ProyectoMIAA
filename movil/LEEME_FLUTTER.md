@@ -25,7 +25,7 @@ notificador_miaa/
 │  │  ├─ sesion.dart                login, logout, token cifrado (flutter_secure_storage)
 │  │  └─ pantalla_login.dart        formulario + errores (bloqueo 423, rate limit 429)
 │  ├─ presencia/
-│  │  └─ latido.dart                POST /usuarios/yo/conexion cada 30 s (tarea 2.4)
+│  │  └─ latido.dart                POST /usuarios/heartbeat cada segundo (tarea 2.4)
 │  ├─ inicio/
 │  │  └─ pantalla_inicio.dart       "Hola, …", estado Activo y GET /usuarios/yo
 │  └─ diagnostico/

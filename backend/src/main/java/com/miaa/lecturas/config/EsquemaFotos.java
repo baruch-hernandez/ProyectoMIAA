@@ -30,6 +30,9 @@ public class EsquemaFotos implements CommandLineRunner {
     @Override
     public void run(String... args) {
         try {
+            // Las fotos nuevas van a archivos (AlmacenFotos) y dejan "datos" en null; ddl-auto=update
+            // nunca quita un NOT NULL. Si ya no lo tiene, PostgreSQL no hace nada.
+            jdbc.execute("ALTER TABLE fotos_reporte ALTER COLUMN datos DROP NOT NULL");
             Integer lista = jdbc.queryForObject(
                     "SELECT COUNT(*) FROM pg_constraint WHERE conname = ? "
                             + "AND pg_get_constraintdef(oid) LIKE '%OBTURADOR%'",

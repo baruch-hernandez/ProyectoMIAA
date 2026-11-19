@@ -31,3 +31,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Fotos de evidencia (AlmacenFotos): datos, no código ###
+fotos/
+fotos-pruebas/

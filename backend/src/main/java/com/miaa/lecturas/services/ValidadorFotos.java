@@ -40,7 +40,11 @@ public class ValidadorFotos {
     public record Medidas(int ancho, int alto) {
     }
 
-    public Medidas validar(String dataUrl) {
+    /** La imagen ya revisada: sus bytes, "png" o "jpeg", y sus medidas reales. */
+    public record Imagen(byte[] bytes, String tipo, Medidas medidas) {
+    }
+
+    public Imagen validar(String dataUrl) {
         if (dataUrl == null || dataUrl.length() > MAX_CARACTERES) {
             throw error("Una foto pesa demasiado (máximo ~1.8 MB). Vuelve a tomarla.");
         }
@@ -63,7 +67,7 @@ public class ValidadorFotos {
             throw error("La foto tiene baja resolución (%d×%d). Se necesita mínimo %d×%d: tómala con la cámara del celular."
                     .formatted(medidas.ancho(), medidas.alto(), LADO_LARGO_MIN, LADO_CORTO_MIN));
         }
-        return medidas;
+        return new Imagen(bytes, "png".equals(m.group(1)) ? "png" : "jpeg", medidas);
     }
 
     /**

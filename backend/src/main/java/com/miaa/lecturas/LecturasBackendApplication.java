@@ -8,12 +8,19 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.util.TimeZone;
 
 @SpringBootApplication
 @EnableScheduling // PresenciaService (marcar inactivos) y GeocodificadorInverso
 public class LecturasBackendApplication {
 
+	/** La hora de Aguascalientes. */
+	static final String ZONA = "America/Mexico_City";
+
 	public static void main(String[] args) {
+		// Las fechas de reportes y notas (LocalDateTime.now()) y el filtro por días del admin usan la zona
+		// de la JVM: sin esto, en un servidor en UTC un reporte de las 19:00 quedaría como del día siguiente.
+		TimeZone.setDefault(TimeZone.getTimeZone(ZONA));
 		avisarSiLaZonaHorariaEsVieja();
 		SpringApplication.run(LecturasBackendApplication.class, args);
 	}
@@ -23,7 +30,7 @@ public class LecturasBackendApplication {
 	 * a octubre, pone las fechas de reportes y notas (LocalDateTime) una hora adelantadas.
 	 */
 	static boolean zonaHorariaVieja() {
-		return !ZoneId.of("America/Mexico_City").getRules()
+		return !ZoneId.of(ZONA).getRules()
 				.getOffset(Instant.parse("2026-07-01T18:00:00Z")).equals(ZoneOffset.ofHours(-6));
 	}
 

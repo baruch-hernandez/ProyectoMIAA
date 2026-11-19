@@ -26,8 +26,8 @@ import org.springframework.web.bind.annotation.RestController;
  *   GET  /usuarios/yo
  *   PUT  /usuarios/yo/password           { actual, nueva }
  *   POST /usuarios/yo/aviso-privacidad   { version }
- *   POST /usuarios/yo/conexion           latido sin coordenadas (el de ahora es POST /usuarios/heartbeat)
  *   DELETE /usuarios/yo/conexion         la app se pausó: inactivo al instante
+ *                                        (el latido es POST /usuarios/heartbeat, en PresenciaController)
  */
 @RestController
 @RequestMapping({ "/usuarios/yo", "/api/v1/usuarios/yo" })
@@ -57,13 +57,6 @@ public class CuentaController {
                                   @Valid @RequestBody AceptarAvisoDTO request) {
         return cuentaService.aceptarAviso(yo, request.version());
     }
-    @SuppressWarnings("null")
-    @PostMapping("/conexion")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void checarVida(@AuthenticationPrincipal UsuarioPrincipal yo) {
-        presenciaService.latido(yo.id(), null);
-    }
-
     /** La app se fue al fondo o se apagó la pantalla: sale inactivo y del mapa al instante. */
     @SuppressWarnings("null")
     @DeleteMapping("/conexion")

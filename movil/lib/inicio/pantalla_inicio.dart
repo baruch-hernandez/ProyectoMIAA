@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../auth/sesion.dart';
 import '../core/api.dart';
+import '../core/carga.dart';
 import '../core/config.dart';
 import '../core/logo_miaa.dart';
 import '../diagnostico/pantalla_diagnostico.dart';
@@ -125,7 +126,10 @@ class _PantallaInicioState extends State<PantallaInicio> with WidgetsBindingObse
         ],
       ),
       body: RefreshIndicator(
-        onRefresh: _cargarCuenta,
+        onRefresh: () {
+          Carga.destello();
+          return _cargarCuenta();
+        },
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [

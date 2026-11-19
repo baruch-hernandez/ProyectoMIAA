@@ -214,11 +214,11 @@ def test_mandar_la_ubicacion_cuenta_como_latido(crear_notificador, admin, config
     api.entrar(datos["username"], datos["password"])
     assert api.delete("/usuarios/yo/conexion").status_code == 204  # inactivo
 
-    r = api.post("/ubicacion", json={"latitud": CENTRO_AGS[0], "longitud": CENTRO_AGS[1], "precision": 5})
+    r = api.post("/usuarios/heartbeat", json={"latitud": CENTRO_AGS[0], "longitud": CENTRO_AGS[1], "precision": 5})
 
     assert r.status_code == 204, r.text
     [yo] = [e for e in admin.get("/usuarios/empleados").json()["empleados"] if e["id"] == datos["id"]]
-    assert yo["activo"] is True, "sin POST /usuarios/yo/conexion, solo con la ubicación"
+    assert yo["activo"] is True, "el latido con la ubicación lo vuelve a poner activo"
 
 
 def test_sin_token_no_entra(config):

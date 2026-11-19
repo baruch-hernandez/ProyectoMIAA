@@ -1,5 +1,7 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 
 /// Cuántas cosas está esperando el notificador ahorita; mientras sea > 0, CapaCarga muestra la
 /// gota llenándose (igual que GotaCarga.tsx en la web).
@@ -10,6 +12,28 @@ class Carga {
   Carga._();
 
   static final pendientes = ValueNotifier<int>(0);
+
+  /// Cuánto se ve la gota, como mínimo, en un [destello].
+  static const minimoDestello = Duration(milliseconds: 700);
+
+  static int _destellos = 0;
+
+  /// Hay un destello: la gota sale ya, sin esperar el retraso de CapaCarga.
+  static bool get inmediata => _destellos > 0;
+
+  /// Muestra la gota de inmediato y al menos [minimoDestello], aunque lo que se cargue llegue
+  /// rápido: al abrir la app, cambiar de pantalla, jalar para actualizar o entrar.
+  static void destello() {
+    _destellos++; // antes que pendientes: CapaCarga lo lee al enterarse del cambio
+    pendientes.value++;
+    Timer(minimoDestello, () {
+      _destellos--;
+      pendientes.value--;
+    });
+  }
+
+  /// Va en MaterialApp.navigatorObservers: destello en cada cambio de pantalla (no en diálogos).
+  static final observador = _ObservadorCarga();
 
   static const segundoPlano = 'segundoPlano';
 
@@ -55,5 +79,17 @@ class InterceptorCarga extends Interceptor {
 
   static void _terminar(RequestOptions options) {
     if (options.extra.remove(_contada) == true) Carga.pendientes.value--;
+  }
+}
+
+class _ObservadorCarga extends NavigatorObserver {
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    if (route is PageRoute) Carga.destello();
+  }
+
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    if (route is PageRoute) Carga.destello();
   }
 }

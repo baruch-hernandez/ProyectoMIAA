@@ -1,0 +1,3 @@
+# Volcados de la JVM cuando la PC se queda sin memoria (Gradle, el IDE, el backend)
+hs_err_pid*.log
+replay_pid*.log

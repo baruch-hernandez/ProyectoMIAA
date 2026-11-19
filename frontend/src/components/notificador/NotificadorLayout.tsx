@@ -3,11 +3,9 @@ import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { ClipboardList, KeyRound, LogOut, MapPin, MapPinOff, Plus } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cerrarSesion, obtenerUsuario } from '../../utils/sesion';
-import { ubicacionApi } from '../../services/ubicacionApi';
 import type { EstadoUbicacion } from '../../hooks/useCompartirUbicacion';
 import { useCompartirUbicacion } from '../../hooks/useCompartirUbicacion';
 import { useColaReportes } from '../../hooks/useColaReportes';
-import { usePresencia } from '../../hooks/usePresencia';
 import { avisarLogout } from '../../services/presenciaApi';
 import { Marca } from '../Marca';
 
@@ -98,16 +96,14 @@ function IndicadorUbicacion({ estado }: { estado: EstadoUbicacion }) {
 export function NotificadorLayout() {
   const navigate = useNavigate();
   const usuario = obtenerUsuario();
+  // "En línea" y su ubicación para el admin, un latido por segundo mientras la app esté a la vista
   const estadoUbicacion = useCompartirUbicacion();
   // Envía solos los reportes guardados sin conexión (al abrir, al volver la red, cada minuto)
   useColaReportes({ automatico: true });
-  // "En línea" para el admin mientras la app esté abierta (latido cada 30 s)
-  usePresencia();
 
   const salir = async () => {
-    // Avisar al backend que sale (DESCONECTADO) y que deja de compartir su ubicación.
-    // Máximo 1.5 s: si no hay red, salimos de todos modos.
-    await avisarLogout([ubicacionApi.dejarDeCompartir()]);
+    // Avisar al backend que sale (INACTIVO al instante). Máximo 1.5 s: si no hay red, salimos de todos modos.
+    await avisarLogout();
     cerrarSesion();
     navigate('/', { replace: true });
   };

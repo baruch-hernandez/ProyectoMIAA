@@ -8,6 +8,7 @@ import { fechaRelativa } from '../../utils/catalogos';
 import { useColaReportes } from '../../hooks/useColaReportes';
 import type { ReportePendiente } from '../../utils/colaReportes';
 import { ListaReportes } from '../reportes/ListaReportes';
+import { destelloCarga } from '../../services/carga';
 
 /** Un reporte guardado en el celular, esperando señal. */
 function Pendiente({ p, onDescartar }: { p: ReportePendiente; onDescartar: () => void }) {
@@ -73,6 +74,7 @@ export function MisReportes() {
   }, [recarga, numPendientes]);
 
   const recargar = () => {
+    destelloCarga();
     setCargando(true);
     setError(null);
     setRecarga((n) => n + 1);

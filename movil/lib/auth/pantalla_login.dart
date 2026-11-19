@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../core/api.dart';
+import '../core/carga.dart';
 import '../core/config.dart';
 import '../core/logo_miaa.dart';
 import '../diagnostico/pantalla_diagnostico.dart';
@@ -52,6 +53,7 @@ class _PantallaLoginState extends State<PantallaLogin> {
       _cargando = true;
       _error = null;
     });
+    Carga.destello(); // al entrar cambia toda la pantalla
     try {
       await widget.sesion.entrar(_usuario.text, _password.text);
       // Si entró, la app cambia sola a Inicio (Sesion avisa con notifyListeners)
