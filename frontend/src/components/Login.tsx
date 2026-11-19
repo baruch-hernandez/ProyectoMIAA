@@ -121,10 +121,10 @@ export const Login: React.FC = () => {
         <Marca tono="oscuro" className="h-16 lg:h-20 self-start" />
         <div className="relative z-10 mt-10 lg:mt-auto lg:mb-24 max-w-md">
           <h1 className="text-3xl lg:text-5xl font-extrabold leading-tight text-balance">
-            Reportes de domicilios en campo
+            Administracion de reportes
           </h1>
           <p className="mt-4 text-miaa-bruma text-base lg:text-lg leading-relaxed">
-            Registra lo que ves en cada domicilio y da seguimiento desde tu celular.
+            Revisa los reportes de campo de los notificadores y dales seguimiento.
           </p>
         </div>
         <Olas />
