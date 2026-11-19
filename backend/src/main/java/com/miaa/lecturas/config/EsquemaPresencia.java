@@ -9,7 +9,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 /**
- * Sprint 5 (tarea 1.1): la presencia y la última ubicación ahora viven juntas en usuario_presencia
+ * La presencia y la última ubicación ahora viven juntas en usuario_presencia
  * (la crea ddl-auto=update). Este paso pasa ahí las ubicaciones de ubicaciones_empleado y quita lo
  * viejo (esa tabla y usuarios.conectado/ultima_conexion). En una base nueva no hace nada.
  */

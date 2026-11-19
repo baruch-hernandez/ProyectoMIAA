@@ -27,7 +27,7 @@ export function AdminLayout() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const usuario = obtenerUsuario();
-  // Historia 6: avisos en tiempo real de reportes nuevos, en cualquier pantalla del panel
+  // Avisos en tiempo real de reportes nuevos, en cualquier pantalla del panel
   const avisos = useAvisosReportes();
   const { marcarLeidos } = avisos;
   const enBandeja = pathname === '/admin';
@@ -45,7 +45,6 @@ export function AdminLayout() {
 
   return (
     <div className="min-h-dvh bg-miaa-fondo lg:flex">
-      {/* ---------- Menú lateral (escritorio) ---------- */}
       <aside className="hidden lg:flex w-64 shrink-0 flex-col justify-between bg-miaa-marino text-white sticky top-0 h-dvh">
         <div>
           <div className="px-6 py-6 border-b border-white/10">
@@ -89,7 +88,6 @@ export function AdminLayout() {
         </div>
       </aside>
 
-      {/* ---------- Barra superior (celular y tableta) ---------- */}
       <header className="lg:hidden sticky top-0 z-30 bg-miaa-marino text-white">
         <div className="px-4 h-16 flex items-center justify-between">
           <Marca tono="oscuro" />

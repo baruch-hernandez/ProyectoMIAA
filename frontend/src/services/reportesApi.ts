@@ -4,7 +4,6 @@ import api from './api';
 import type { FiltrosReportes, Foto, FotoNueva, Nota, PaginaReportes, ReporteDetalle, ReporteEdicion, ReporteRequest, ReporteResumen } from '../types/reporte';
 
 export const reportesApi = {
-  /** NOTIFICADOR: sus reportes */
   mios: async () => (await api.get<ReporteResumen[]>('/reportes/mios')).data,
 
   /** ADMIN: los de todos los empleados, por páginas (del más nuevo al más viejo). Filtros vacíos = sin filtro */

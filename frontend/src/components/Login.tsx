@@ -7,7 +7,6 @@ import { guardarSesion, rutaInicio, leerAvisoLogin } from '../utils/sesion';
 import type { RolUsuario } from '../utils/sesion';
 import { Marca } from './Marca';
 
-// Tarea 2.1: Interfaz adaptada a la nueva respuesta JSON estructurada
 interface LoginResponse {
   token: string;
   user: {
@@ -78,7 +77,7 @@ export const Login: React.FC = () => {
     setLoading(true);
 
     try {
-      // Tarea 2.1: POST /api/auth/login. El "/api" ya lo pone VITE_API_URL (baseURL de api.ts):
+      // POST /api/auth/login. El "/api" ya lo pone VITE_API_URL (baseURL de api.ts):
       // si se vuelve a escribir aquí, la URL queda /api/api/auth/login y el backend no la conoce.
       const response = await api.post<LoginResponse>('/auth/login', { username, password });
       
@@ -93,10 +92,8 @@ export const Login: React.FC = () => {
         avisoPrivacidadPendiente: !!user.avisoPendiente
       };
 
-      // Tarea 3.1 Paso 5: Almacena el JWT y la sesión del usuario
       guardarSesion(token, usuarioParaGuardar);
 
-      // Tarea 3.3: Redirección según rol y permisos
       navigate(rutaInicio(rol, usuarioParaGuardar), { replace: true });
     } catch (err) {
       const { mensaje, codigo, segundos } = leerError(err);

@@ -11,14 +11,14 @@ import '../ubicacion/reglas_gps.dart';
 import '../ubicacion/ubicacion.dart';
 import 'foto_evidencia.dart';
 
-/// Tarea 3.1: cámara integrada en la app (no la app de cámara del sistema).
+/// Cámara integrada en la app (no la app de cámara del sistema).
 ///
 /// - Cámara trasera a 1080p (ResolutionPreset.veryHigh): sobra para el mínimo HD del backend y
 ///   para leer un medidor; la compresión final la hace ProcesadorFotos.
 /// - Tocar la imagen enfoca en ese punto (los medidores suelen estar cerca y en sombra).
 /// - Flash: apagado → automático → linterna (útil dentro de un nicho oscuro).
 /// - El archivo temporal que crea la cámara se borra en cuanto se leen sus bytes.
-/// - Historia 3: semáforo del GPS y obturador bloqueado hasta tener el punto exacto
+/// - Semáforo del GPS y obturador bloqueado hasta tener el punto exacto
 ///   (ReglasGps); cada foto sale con su lectura GPS y la hora del servidor. Bajo techo, pasada
 ///   la espera máxima se suman wifi/antenas y la foto se puede tomar aunque sea sin coordenadas.
 class PantallaCamara extends StatefulWidget {
@@ -102,7 +102,7 @@ class _PantallaCamaraState extends State<PantallaCamara> with WidgetsBindingObse
     }
   }
 
-  /// Tareas 1.3 y 1.4: revisa el GPS del celular al abrir, al volver de Ajustes y cada segundo
+  /// Revisa el GPS del celular al abrir, al volver de Ajustes y cada segundo
   /// (la ubicación y el ahorro de batería se cambian desde la barra, sin salir de la app).
   /// Con todo en orden escucha el chip satelital; si algo falla, deja de escuchar y bloquea.
   Future<void> _revisarGps() async {
@@ -252,7 +252,7 @@ class _PantallaCamaraState extends State<PantallaCamara> with WidgetsBindingObse
     final control = _control;
     if (control == null || !control.value.isInitialized || _tomando || control.value.isTakingPicture) return;
     if (_motivoGps() != null) return; // 3.2: sin el punto exacto no hay foto
-    // 2.1: el punto y la hora se fijan al tocar el botón, no cuando la cámara termina de guardar
+    // El punto y la hora se fijan al tocar el botón, no cuando la cámara termina de guardar
     final lectura = _gpsParaFoto();
     setState(() => _tomando = true);
     try {
@@ -390,7 +390,7 @@ class _PantallaCamaraState extends State<PantallaCamara> with WidgetsBindingObse
   }
 }
 
-/// Tarea 3.1: semáforo de precisión (verde ≤ 1 m, amarillo 1–5 m, rojo > 5 m) + qué falta.
+/// Semáforo de precisión (verde ≤ 1 m, amarillo 1–5 m, rojo > 5 m) + qué falta.
 /// El color nunca va solo: el texto dice lo mismo para quien no distingue colores.
 class _IndicadorGps extends StatelessWidget {
   const _IndicadorGps({required this.lectura, required this.paraFoto, required this.motivo, this.alAjustar});

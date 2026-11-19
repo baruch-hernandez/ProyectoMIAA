@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Tarea 1.6: bloqueo temporal de la cuenta tras N contraseñas incorrectas seguidas. */
+/** Bloqueo temporal de la cuenta tras N contraseñas incorrectas seguidas. */
 class BloqueoPorIntentosTest {
 
     private static final LocalDateTime AHORA = LocalDateTime.of(2026, 10, 20, 9, 0);

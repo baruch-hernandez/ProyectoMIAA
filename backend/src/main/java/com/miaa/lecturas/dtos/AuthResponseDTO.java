@@ -11,11 +11,9 @@ public class AuthResponseDTO {
     /** No ha aceptado la versión vigente del aviso de privacidad. */
     private boolean avisoPrivacidadPendiente;
 
-    // Constructor vacío (necesario para instanciar new AuthResponseDTO())
     public AuthResponseDTO() {
     }
 
-    // Constructor completo
     public AuthResponseDTO(String token, Long id, String nombre, String rol,
                            boolean debeCambiarPassword, boolean avisoPrivacidadPendiente) {
         this.token = token;
@@ -26,7 +24,6 @@ public class AuthResponseDTO {
         this.avisoPrivacidadPendiente = avisoPrivacidadPendiente;
     }
 
-    // Getters y Setters
     public String getToken() {
         return token;
     }

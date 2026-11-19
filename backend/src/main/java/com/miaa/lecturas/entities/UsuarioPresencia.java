@@ -9,9 +9,7 @@ import org.hibernate.annotations.DynamicUpdate;
 import java.time.Instant;
 
 /**
- * Sprint 5 (tarea 1.1): presencia y ÚLTIMA ubicación de cada empleado (una fila por empleado, se
- * sobrescribe). Antes estaba repartido entre usuarios.conectado/ultima_conexion y la tabla
- * ubicaciones_empleado: EsquemaPresencia pasa los datos viejos aquí.
+ * Presencia y ÚLTIMA ubicación de cada empleado (una fila por empleado, se sobrescribe).
  *
  * A propósito NO se guarda historial de recorridos: la ubicación es un dato personal (LFPDPPP)
  * y para "ver dónde está ahorita" basta con la última.
@@ -27,7 +25,6 @@ import java.time.Instant;
 @NoArgsConstructor
 public class UsuarioPresencia {
 
-    /** La misma llave que el usuario. */
     @Id
     @Column(name = "usuario_id")
     private Long usuarioId;

@@ -34,8 +34,6 @@ export class FotoRechazada extends Error {
   }
 }
 
-// ---------------------------------------------------------------- resolución
-
 export function cumpleHD(ancho: number, alto: number): boolean {
   return Math.max(ancho, alto) >= LADO_LARGO_MIN && Math.min(ancho, alto) >= LADO_CORTO_MIN;
 }
@@ -50,8 +48,6 @@ export function calcularEscala(ancho: number, alto: number): number {
   const corto = Math.min(ancho, alto);
   return Math.min(1, Math.max(LADO_LARGO_MAX / largo, LADO_CORTO_MIN / corto));
 }
-
-// ---------------------------------------------------------------- hora de captura
 
 /**
  * Lee la fecha de captura del EXIF de un JPEG (sin librerías).
@@ -168,8 +164,6 @@ export function elegirFechaCaptura(
   }
   return { fecha: ahora, origen: 'SUBIDA' };
 }
-
-// ---------------------------------------------------------------- todo junto
 
 function cargarImagen(archivo: File): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {

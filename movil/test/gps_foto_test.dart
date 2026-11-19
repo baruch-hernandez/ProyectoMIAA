@@ -1,4 +1,4 @@
-// Historia 3 (Sprint 3): punto GPS y hora fidedigna de cada foto de la cámara.
+// Punto GPS y hora fidedigna de cada foto de la cámara.
 //   flutter test test/gps_foto_test.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

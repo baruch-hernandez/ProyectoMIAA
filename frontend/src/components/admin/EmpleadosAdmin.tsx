@@ -197,7 +197,6 @@ export function EmpleadosAdmin() {
             </div>
           ) : (
           <>
-          {/* Tabla (pantallas medianas en adelante) */}
           <div className="hidden md:block rounded-2xl bg-white border border-slate-200 overflow-hidden">
             <table className="w-full text-left text-sm">
               <thead className="bg-slate-50 text-xs text-slate-500">
@@ -236,7 +235,6 @@ export function EmpleadosAdmin() {
             </table>
           </div>
 
-          {/* Tarjetas (celular) */}
           <ul className="md:hidden space-y-3">
             {visibles.map((e) => (
               <li key={e.id}>

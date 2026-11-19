@@ -10,16 +10,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 /**
- * Crea los usuarios de prueba la primera vez.
- *
- * Cambios respecto a la versión anterior:
- *  - Las contraseñas se guardan con BCrypt (antes iban en texto plano).
- *  - YA NO resetea la contraseña en cada arranque: si el usuario existe y ya tiene
- *    hash BCrypt, no se toca.
- *  - Si encuentra una contraseña vieja en texto plano, la convierte a BCrypt
- *    conservando el mismo valor (migración automática).
- *
- * ⚠️ Solo para desarrollo. En producción los usuarios se dan de alta desde un panel.
+ * Crea los usuarios de prueba la primera vez; si ya existen, no les cambia la contraseña.
+ * Solo para desarrollo: en producción los usuarios se dan de alta desde el panel.
  */
 @Component
 @Profile("!prod") // en el servidor real (perfil "prod") NO se crean admin/admin123 ni notificador1

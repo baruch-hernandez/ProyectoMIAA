@@ -1,4 +1,4 @@
-// Historia 6: avisos en tiempo real de reportes nuevos (Server-Sent Events, GET /reportes/eventos).
+// Avisos en tiempo real de reportes nuevos (Server-Sent Events, GET /reportes/eventos).
 //
 // ¿Por qué fetch y no EventSource? EventSource no deja mandar la cabecera Authorization: habría que
 // poner el JWT en la URL, y las URLs quedan en historiales y bitácoras. Con fetch va como en cualquier
@@ -26,7 +26,6 @@ export function coincideConFiltros(r: ReporteResumen, f: FiltrosReportes): boole
     && (f.hasta === '' || dia <= f.hasta);
 }
 
-// ---------- formato SSE ----------
 export interface EventoSse {
   nombre: string;
   datos: string;
@@ -52,7 +51,6 @@ export function leerEventos(texto: string): { eventos: EventoSse[]; resto: strin
   return { eventos, resto };
 }
 
-// ---------- conexión ----------
 const ESPERA_MIN_MS = 2_000;
 const ESPERA_MAX_MS = 30_000;
 

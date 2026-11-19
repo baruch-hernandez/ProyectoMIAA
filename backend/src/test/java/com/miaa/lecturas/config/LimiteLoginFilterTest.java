@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Tarea 1.5: el rate limit se aplica SOLO al POST del login (la API vive en /api: el context-path). */
+/** El rate limit se aplica SOLO al POST del login (la API vive en /api: el context-path). */
 class LimiteLoginFilterTest {
 
     @Test

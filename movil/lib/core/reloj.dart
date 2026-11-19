@@ -2,7 +2,7 @@ import 'dart:io' show HttpDate;
 
 import 'plataforma.dart';
 
-/// Tarea 2.2: la hora del SERVIDOR, para que mover el reloj del celular a mano no cambie la
+/// La hora del SERVIDOR, para que mover el reloj del celular a mano no cambie la
 /// hora de las fotos. Cada respuesta de la API trae el encabezado HTTP "Date"; con él se mide
 /// cuánto está adelantado o atrasado el celular y se corrige.
 ///

@@ -13,7 +13,7 @@ interface Props {
 }
 
 /**
- * Historia 6 (tarea 2.1): la bandeja del admin. Miniatura, incidencia, quién la levantó, coordenadas
+ * La bandeja del admin. Miniatura, incidencia, quién la levantó, coordenadas
  * (con enlace al mapa) y hora de captura en hora de Aguascalientes. En pantallas chicas se desplaza
  * de lado.
  */

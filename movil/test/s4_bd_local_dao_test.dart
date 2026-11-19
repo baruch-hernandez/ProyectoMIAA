@@ -1,4 +1,4 @@
-// Sprint 4 — tarea 3.1: el DAO de reportes_offline contra SQLite de verdad (sqflite_common_ffi):
+// Tarea 3.1: el DAO de reportes_offline contra SQLite de verdad (sqflite_common_ffi):
 // inserción, consulta por estado y cómo queda cada reporte después de una sincronización simulada.
 //   flutter test test/s4_bd_local_dao_test.dart
 import 'dart:io';

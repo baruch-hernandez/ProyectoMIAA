@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 /**
- * Sprint 5 (tarea 1.5): el mapa de cuadrillas del admin.
+ * El mapa de cuadrillas del admin.
  *
  *   GET /cuadrillas   todos los notificadores habilitados con su estado
  *                                       (ACTIVO/INACTIVO), última ubicación, dirección y última conexión

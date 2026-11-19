@@ -18,7 +18,7 @@ class ApiReportes {
     receiveTimeout: const Duration(seconds: 60),
   );
 
-  /// POST /reportes/sync (Sprint 4): un lote de la bandeja de salida. Multipart: la parte "reportes"
+  /// POST /reportes/sync: un lote de la bandeja de salida. Multipart: la parte "reportes"
   /// (JSON) y una parte binaria por foto, con el nombre que dice su "parte". Regresa ResultadoSyncDTO.
   Future<Map<String, dynamic>> sincronizar(List<Map<String, dynamic>> reportes, Map<String, Uint8List> archivos) {
     final formulario = FormData()

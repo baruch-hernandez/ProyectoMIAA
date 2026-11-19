@@ -68,7 +68,6 @@ public record ReporteRequestDTO(
         @Size(min = 10, max = 2000, message = "Entre 10 y 2000 caracteres")
         String descripcion,
 
-        // @Valid: también valida cada foto de la lista con las reglas de FotoRequestDTO
         @Size(max = 3, message = "Máximo 3 fotos")
         List<@Valid FotoRequestDTO> fotos,
 

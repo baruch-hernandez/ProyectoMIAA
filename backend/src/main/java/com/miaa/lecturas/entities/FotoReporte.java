@@ -8,19 +8,14 @@ import lombok.Setter;
 import java.time.Instant;
 
 /**
- * Una foto de evidencia de un reporte.
- *
- * Antes las fotos eran una simple lista de textos (@ElementCollection), sin id:
- * no había forma de decir "borra ESTA foto". Ahora cada foto es una fila con su id.
- *
- * Guarda DOS horas, porque MIAA pidió priorizar la de captura:
+ * Una foto de evidencia de un reporte. Guarda DOS horas, porque MIAA pidió priorizar la de captura:
  *  - fechaCaptura: cuándo se TOMÓ la foto (EXIF de la cámara o fecha del archivo).
  *  - fechaSubida:  cuándo llegó al servidor (solo como referencia).
  *
  * Se usa Instant (un instante exacto, sin zona) para que no haya confusiones de
  * horario: el front lo muestra en la hora local del celular o la PC.
  *
- * Historia 3: con la cámara de la app también guarda el punto GPS, su precisión y cuánto
+ * Con la cámara de la app también guarda el punto GPS, su precisión y cuánto
  * se corrigió el reloj del celular. Nada de eso se puede cambiar después (updatable = false).
  */
 @Entity
@@ -75,7 +70,7 @@ public class FotoReporte {
     @Column(name = "fecha_subida", nullable = false, updatable = false)
     private Instant fechaSubida;
 
-    // ---------- Historia 3: dónde se tomó (null = galería, archivos o la web) ----------
+    // Dónde se tomó (null = galería, archivos o la web)
     @Column(columnDefinition = "NUMERIC(10,8)", updatable = false)
     private Double latitud;
 

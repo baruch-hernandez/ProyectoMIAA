@@ -14,12 +14,8 @@ import java.security.Key;
 import java.util.Date;
 
 /**
- * Crea y valida los tokens JWT (API de jjwt 0.11.5, la versión del pom.xml).
- *
- * Un JWT tiene 3 partes: header.payload.firma
- * - El payload (id, nombre, rol) NO va cifrado, solo firmado: cualquiera puede
- *   leerlo, pero nadie puede cambiarlo sin la llave secreta.
- * - Por eso NUNCA metas contraseñas ni datos sensibles en el token.
+ * Crea y valida los JWT (API de jjwt 0.11.5). El payload va firmado, no cifrado: cualquiera
+ * puede leerlo, así que NUNCA lleva contraseñas ni datos sensibles.
  */
 @Component
 public class JwtUtils {
@@ -34,7 +30,6 @@ public class JwtUtils {
         this.expiracionMs = expiracionMs;
     }
 
-    /** Genera el token que se le entrega al front después del login. */
     public String generarToken(Usuario usuario) {
         Date ahora = new Date();
         return Jwts.builder()

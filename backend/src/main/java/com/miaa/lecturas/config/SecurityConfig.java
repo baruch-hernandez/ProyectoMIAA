@@ -55,7 +55,6 @@ public class SecurityConfig {
 
         http
                 .csrf(csrf -> csrf.disable())
-                // Tarea 2.3: Integración explícita del filtro de CORS en primer orden
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
@@ -68,7 +67,6 @@ public class SecurityConfig {
                 }))
 
                 .authorizeHttpRequests(auth -> auth
-                        // Garantiza el paso de CORS preflight (OPTIONS)
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/auth/**").permitAll() // relativo al "/api" (server.servlet.context-path)
                         .requestMatchers("/error").permitAll()

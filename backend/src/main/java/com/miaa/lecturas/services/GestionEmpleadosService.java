@@ -116,7 +116,6 @@ public class GestionEmpleadosService {
         return aDTO(u);
     }
 
-    /** Quita el bloqueo por intentos fallidos sin esperar a que venza. */
     @Transactional
     public CuentaEmpleadoDTO desbloquear(Long id) {
         Usuario u = cargarEmpleado(id);
@@ -142,8 +141,6 @@ public class GestionEmpleadosService {
         }
         return aDTO(u);
     }
-
-    // ---------------------------------------------------------------- reglas
 
     /** El rol que pidieron, o el de por defecto si no mandaron ninguno. Rechaza roles que no existen. */
     static String rolValido(String pedido, String porDefecto) {

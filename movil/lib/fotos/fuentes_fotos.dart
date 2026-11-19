@@ -4,7 +4,7 @@ import 'foto_evidencia.dart';
 
 /// Galería. Interfaz para poder simularla en las pruebas.
 abstract class FuenteFotos {
-  /// Tarea 3.2: selector de galería. null si el notificador canceló.
+  /// Selector de galería. null si el notificador canceló.
   Future<FotoCruda?> desdeGaleria();
 }
 

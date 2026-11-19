@@ -238,13 +238,11 @@ export function DetalleReporte({ volverA }: Props) {
 
       <div className="grid gap-5 lg:grid-cols-[1.15fr_1fr] items-start">
         <div className="space-y-5">
-          {/* ---------- Descripción ---------- */}
           <section className="rounded-2xl bg-white border border-slate-200 p-5 sm:p-6">
             <h2 className="text-lg font-extrabold text-miaa-marino">Descripción</h2>
             <p className="mt-3 text-base text-slate-800 whitespace-pre-wrap leading-relaxed max-w-prose">{r.descripcion}</p>
           </section>
 
-          {/* ---------- Fotos (con su hora de captura) ---------- */}
           <section className="rounded-2xl bg-white border border-slate-200 p-5 sm:p-6" aria-labelledby="titulo-fotos">
             <div className="flex items-baseline justify-between gap-3">
               <h2 id="titulo-fotos" className="text-lg font-extrabold text-miaa-marino">
@@ -282,7 +280,6 @@ export function DetalleReporte({ volverA }: Props) {
             {errorFoto && <p className="mt-3 text-sm text-red-700" role="alert">{errorFoto}</p>}
           </section>
 
-          {/* ---------- Domicilio ---------- */}
           <section className="rounded-2xl bg-white border border-slate-200 p-5 sm:p-6">
             <h2 className="flex items-center gap-2 text-lg font-extrabold text-miaa-marino">
               <MapPin size={20} className="text-miaa-azul" aria-hidden="true" /> Domicilio
@@ -312,7 +309,6 @@ export function DetalleReporte({ volverA }: Props) {
           </section>
         </div>
 
-        {/* ---------- Notas ---------- */}
         <section className="rounded-2xl bg-white border border-slate-200 p-5 sm:p-6 lg:sticky lg:top-20">
           <h2 className="text-lg font-extrabold text-miaa-marino">
             Notas <span className="tabular-nums text-slate-400 font-bold">{r.notas.length}</span>

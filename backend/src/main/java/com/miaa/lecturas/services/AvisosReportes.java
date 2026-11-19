@@ -12,7 +12,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 
 /**
- * Historia 6 (tareas 1.3 y 1.4): avisos en tiempo real a los admins con Server-Sent Events.
+ * Avisos en tiempo real a los admins con Server-Sent Events.
  *
  * Cada pestaña del panel abre GET /api/reportes/eventos (solo ADMIN, con su JWT como cualquier
  * petición) y se queda escuchando. Al guardarse un reporte nuevo, ya confirmado en PostgreSQL,

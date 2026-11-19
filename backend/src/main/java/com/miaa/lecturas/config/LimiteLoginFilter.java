@@ -10,7 +10,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 /**
- * Rate limit del login (RNF / tarea 1.5): limita los POST a /auth/login por IP.
+ * Rate limit del login: limita los POST a /auth/login por IP.
  * Al pasarse responde 429 con { status, message, codigo: "DEMASIADOS_INTENTOS", segundos }
  * y la cabecera Retry-After.
  *

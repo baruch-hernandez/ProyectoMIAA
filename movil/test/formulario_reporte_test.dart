@@ -1,4 +1,4 @@
-// Tareas 2.2–2.5, 3.4 y 4.1: bloqueo del envío sin foto, vista previa, repetir/confirmar
+// 2.5, 3.4 y 4.1: bloqueo del envío sin foto, vista previa, repetir/confirmar
 // y metadatos persistidos en el borrador.
 //   flutter test test/formulario_reporte_test.dart
 import 'dart:io';
@@ -134,7 +134,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(b.fotos, hasLength(1));
-      // Sprint 4: también hace falta la ubicación
+      // También hace falta la ubicación
       expect(botonEnviarHabilitado(tester), isFalse);
       expect(find.byKey(PantallaNuevoReporte.llaveAvisoUbicacion), findsOneWidget);
       b.ponerUbicacion(_centro);

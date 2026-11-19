@@ -53,20 +53,11 @@ public class UsuarioController {
         this.gestionEmpleados = gestionEmpleados;
     }
 
-    /**
-     * GET /empleados (solo ADMIN)
-     * → { empleados: [{ id, nombre, username, ultimoAcceso, ultimoReporte,
-     *      totalReportes, ultimaActividad, activo, diasSinActividad, enLinea }] }
-     */
     @GetMapping
     public EmpleadosDTO empleados() {
         return empleadoService.listar();
     }
 
-    /**
-     * GET /empleados/{id}/ubicacion (solo ADMIN)
-     * Última ubicación del notificador y si está en línea. El mapa del admin lo consulta cada 5 s.
-     */
     @GetMapping("/{id}/ubicacion")
     @SuppressWarnings("null")
     public UbicacionEmpleadoDTO ubicacion(@PathVariable("id") Long id) {

@@ -24,7 +24,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-/** La regla de presencia (Sprints 3 y 5) sin base de datos ni Spring. */
+/** La regla de presencia sin base de datos ni Spring. */
 @SuppressWarnings("null") // capture() y any() de Mockito devuelven null a propósito
 class PresenciaServiceTest {
 
@@ -63,8 +63,6 @@ class PresenciaServiceTest {
         return u;
     }
 
-    // ---------------------------------------------------------------- ACTIVO / INACTIVO
-
     @Test
     void latidoRecienteEstaActivoJustoHastaElLimite() {
         assertTrue(PresenciaService.activo(presencia(EstadoConexion.ACTIVO, AHORA.minusSeconds(20)), AHORA, MARGEN));
@@ -90,8 +88,6 @@ class PresenciaServiceTest {
         assertFalse(limiteUsado.getValue().isAfter(antes.minusSeconds(MARGEN - 1)));
         assertFalse(limiteUsado.getValue().isBefore(antes.minusSeconds(MARGEN + 1)));
     }
-
-    // ---------------------------------------------------------------- latido (tarea 1.2)
 
     @Test
     void elLatidoConCoordenadasGuardaElPuntoYPideLaDireccion() {
@@ -131,8 +127,6 @@ class PresenciaServiceTest {
                 () -> servicio.latido(1L, new UbicacionRequestDTO(19.43, -99.13, 5.0)));
         verify(presencias, never()).save(any());
     }
-
-    // ---------------------------------------------------------------- mapa del admin (tarea 1.5)
 
     @Test
     void elMapaTraeATodosLosNotificadoresHabilitadosConSuEstado() {

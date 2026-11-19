@@ -17,7 +17,7 @@ import '../sincronizacion/servicio_conectividad.dart';
 import '../sincronizacion/sync_manager.dart';
 import '../sincronizacion/tarjeta_pendientes.dart';
 
-/// Inicio después del login: nuevo reporte (Sprint 2), quién soy (GET /yo) y el latido de la 2.4.
+/// Inicio después del login: nuevo reporte, quién soy (GET /yo) y el latido.
 class PantallaInicio extends StatefulWidget {
   const PantallaInicio({super.key, required this.sesion});
 
@@ -29,7 +29,7 @@ class PantallaInicio extends StatefulWidget {
 
 class _PantallaInicioState extends State<PantallaInicio> with WidgetsBindingObserver {
   late final Latido _latido = Latido(widget.sesion.api, gps: lecturasSiHayPermiso);
-  // Sprint 4: los reportes guardados sin conexión se mandan solos mientras la app está abierta
+  // Los reportes guardados sin conexión se mandan solos mientras la app está abierta
   late final SyncManager _sync = SyncManager(
     usuarioId: widget.sesion.usuario!.id, // Inicio solo se ve con sesión
     dao: ReportesOfflineDao(bdLocal()),

@@ -1,5 +1,4 @@
-// Todo lo de la sesión en UN solo lugar. Antes cada componente leía localStorage
-// a su manera (unos 'usuario', otros 'user'), y por eso el id se perdía.
+// Todo lo de la sesión en UN solo lugar.
 
 export type RolUsuario = 'ADMIN' | 'NOTIFICADOR';
 
@@ -17,7 +16,7 @@ const LLAVE_TOKEN = 'token';
 const LLAVE_USUARIO = 'usuario';
 
 /**
- * La sesión vive en sessionStorage (requerimiento 3.2), no en localStorage:
+ * La sesión vive en sessionStorage, no en localStorage:
  *  - se borra sola al cerrar la pestaña o el navegador, así el token no se queda guardado
  *    en una computadora compartida;
  *  - cada pestaña tiene su propia sesión (abrir otra pestaña pide iniciar sesión de nuevo).
@@ -56,7 +55,6 @@ export function obtenerUsuario(): UsuarioSesion | null {
   }
 }
 
-/** Actualiza parte de los datos guardados (p. ej. al resolver un requisito). */
 export function actualizarUsuario(cambios: Partial<UsuarioSesion>): void {
   const actual = obtenerUsuario();
   if (actual) almacen.setItem(LLAVE_USUARIO, JSON.stringify({ ...actual, ...cambios }));
@@ -67,7 +65,6 @@ export function tieneRequisitosPendientes(u: UsuarioSesion | null): boolean {
   return Boolean(u?.debeCambiarPassword || u?.avisoPrivacidadPendiente);
 }
 
-/** Pantalla donde se resuelven los requisitos pendientes. */
 export const RUTA_REQUISITOS = '/cuenta/requisitos';
 
 /** Mensaje para mostrar en el login la próxima vez (p. ej. "tu cuenta fue dada de baja"). */

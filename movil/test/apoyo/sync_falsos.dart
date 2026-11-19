@@ -1,4 +1,4 @@
-// Sprint 4: red, servidor y base SQLite de prueba para la bandeja de salida.
+// Red, servidor y base SQLite de prueba para la bandeja de salida.
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';

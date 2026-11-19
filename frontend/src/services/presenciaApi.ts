@@ -2,7 +2,7 @@ import api from './api';
 import type { UbicacionNueva } from '../types/reporte';
 
 /**
- * Disponibilidad tipo WhatsApp (tarea 2.4). El backend saca QUIÉN es del token:
+ * Disponibilidad tipo WhatsApp. El backend saca QUIÉN es del token:
  * nadie puede marcar "en línea" a otro.
  */
 export const presenciaApi = {
@@ -16,7 +16,7 @@ export const presenciaApi = {
     await api.delete('/yo/conexion', { segundoPlano: true });
   },
 
-  /** Avisa al backend que cerró sesión: sale DESCONECTADO al instante (tarea 2.2). */
+  /** Avisa al backend que cerró sesión: sale DESCONECTADO al instante. */
   logout: async () => {
     await api.post('/auth/logout');
   },

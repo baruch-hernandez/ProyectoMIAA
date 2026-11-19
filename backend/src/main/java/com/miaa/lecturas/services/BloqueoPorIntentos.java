@@ -8,7 +8,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 
 /**
- * Bloqueo temporal de la cuenta tras N contraseñas incorrectas SEGUIDAS (RNF-04).
+ * Bloqueo temporal de la cuenta tras N contraseñas incorrectas SEGUIDAS.
  *
  * - Cada contraseña incorrecta suma 1 a usuarios.intentos_fallidos.
  * - Al llegar al máximo, la cuenta queda bloqueada X minutos (usuarios.bloqueado_hasta)

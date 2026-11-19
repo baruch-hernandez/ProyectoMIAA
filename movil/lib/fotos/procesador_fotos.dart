@@ -120,7 +120,7 @@ FormatoFoto? detectarFormato(Uint8List b) {
   return null;
 }
 
-/// Tareas 3.1 y 3.4: endereza, valida resolución, reduce, comprime y resuelve la hora de captura.
+/// Endereza, valida resolución, reduce, comprime y resuelve la hora de captura.
 /// Es síncrona y pura (sin plugins) para correr en un isolate y en las pruebas.
 FotoProcesada procesarFoto(EntradaFoto e) {
   final formato = detectarFormato(e.bytes);
@@ -170,7 +170,7 @@ FotoProcesada procesarFoto(EntradaFoto e) {
     momentoSeleccion: e.momentoSeleccion,
     ahora: e.ahora,
   );
-  // Tarea 2.4: lo de la cámara de la app se graba en los bytes ANTES de guardarla en el celular.
+  // Lo de la cámara de la app se graba en los bytes ANTES de guardarla en el celular.
   if (e.momentoObturador != null) grabarExif(imagen.exif, fecha.fecha, e.gps);
 
   Uint8List? salida;
@@ -193,7 +193,7 @@ FotoProcesada procesarFoto(EntradaFoto e) {
   );
 }
 
-/// Tarea 2.4: la hora del disparo (UTC) y el punto GPS en el EXIF, con las etiquetas estándar
+/// La hora del disparo (UTC) y el punto GPS en el EXIF, con las etiquetas estándar
 /// (grados/minutos/segundos como fracciones) para que cualquier visor de fotos las lea.
 void grabarExif(img.ExifData exif, DateTime fecha, LecturaGps? gps) {
   final f = fecha.toUtc();
@@ -259,7 +259,7 @@ DateTime? parsearFechaExif(String? texto, String? zona) {
   return DateTime(p[0], p[1], p[2], p[3], p[4], p[5]).toUtc();
 }
 
-/// Tarea 3.4: qué hora de captura se registra y de dónde salió (disparo → EXIF → ARCHIVO → SUBIDA).
+/// Qué hora de captura se registra y de dónde salió (disparo → EXIF → ARCHIVO → SUBIDA).
 ({DateTime fecha, OrigenFechaFoto origen}) resolverFechaCaptura({
   DateTime? fechaExif,
   DateTime? momentoObturador,
@@ -270,7 +270,7 @@ DateTime? parsearFechaExif(String? texto, String? zona) {
   bool creible(DateTime f) =>
       f.isAfter(DateTime.utc(2000)) && !f.isAfter(ahora.add(ReglasFoto.toleranciaFuturo));
 
-  // Historia 3 (tarea 2.1): con la cámara de la app manda el instante del disparo, ya corregido
+  // Con la cámara de la app manda el instante del disparo, ya corregido
   // con la hora del servidor. El EXIF de CameraX sale del reloj del celular, que se puede mover.
   // Sin revisar si es "creíble" contra [ahora]: [ahora] es el reloj del celular, el que se corrigió.
   if (momentoObturador != null) {

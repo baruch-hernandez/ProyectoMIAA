@@ -74,8 +74,6 @@ public class AlmacenFotos {
         }
     }
 
-    // ---------------------------------------------------------------- miniaturas (Historia 6, tarea 1.2)
-
     /** Lado largo de la miniatura del listado: ~10-20 KB en vez de ~1 MB por foto. */
     static final int LADO_MINIATURA = 320;
 

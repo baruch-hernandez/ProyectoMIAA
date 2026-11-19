@@ -1,4 +1,3 @@
-// Catálogos y formatos de fecha que comparten las pantallas.
 
 /** Los 11 municipios de Aguascalientes (mismo orden que ReporteService.MUNICIPIOS). */
 export const MUNICIPIOS = [
@@ -42,7 +41,7 @@ const diaAgs = new Intl.DateTimeFormat('en-CA', { timeZone: ZONA_AGS, year: 'num
 const horaAgs = new Intl.DateTimeFormat('es-MX', { timeZone: ZONA_AGS, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
 const fechaAgs = new Intl.DateTimeFormat('es-MX', { timeZone: ZONA_AGS, day: '2-digit', month: '2-digit', year: 'numeric' });
 
-/** "Hoy 14:32 h", "Ayer 09:05 h" o "16/11/2026 14:32 h" (Sprint 5, tarea 2.4). */
+/** "Hoy 14:32 h", "Ayer 09:05 h" o "16/11/2026 14:32 h". */
 export function horaDeConexion(iso: string, ahora: Date = new Date()): string {
   const f = new Date(iso);
   const dia = diaAgs.format(f);
@@ -52,7 +51,7 @@ export function horaDeConexion(iso: string, ahora: Date = new Date()): string {
   return `${cuando} ${horaAgs.format(f)} h`;
 }
 
-/** "19/11/2026 14:32 h", siempre en hora de Aguascalientes (Historia 6: hora de captura). */
+/** "19/11/2026 14:32 h", siempre en hora de Aguascalientes. */
 export function fechaHoraAgs(iso: string): string {
   const f = new Date(iso);
   return `${fechaAgs.format(f)} ${horaAgs.format(f)} h`;

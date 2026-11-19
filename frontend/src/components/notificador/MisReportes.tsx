@@ -84,7 +84,6 @@ export function MisReportes() {
 
   return (
     <div className="space-y-6">
-      {/* Bloque principal: retoma el bloque ámbar de "Pagar en línea" del sitio de MIAA */}
       <section className="rounded-3xl bg-miaa-ambar text-miaa-marino p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center gap-5 justify-between">
         <div className="max-w-md">
           <h1 className="text-2xl sm:text-3xl font-extrabold leading-tight">

@@ -2,7 +2,6 @@ import 'dart:typed_data';
 
 import '../ubicacion/ubicacion.dart';
 
-/// De dónde salió la foto (tarea 3.4: trazabilidad de auditoría).
 enum OrigenFoto {
   camara('Cámara'),
   galeria('Galería');
@@ -71,7 +70,7 @@ class FotoCruda {
   final int? desfaseRelojMs;
 }
 
-/// Una foto ya fijada al borrador del reporte (tarea 2.5), con sus metadatos de auditoría.
+/// Una foto ya fijada al borrador del reporte, con sus metadatos de auditoría.
 class FotoEvidencia {
   const FotoEvidencia({
     required this.id,
@@ -115,7 +114,7 @@ class FotoEvidencia {
   int get pesoBytes => bytes.length;
 
   /// Lo que se persiste en el borrador: archivo, punto, precisión, hora y origen de la hora,
-  /// todo en un solo bloque (tarea 2.3). "origen_fecha_foto" agrupa la trazabilidad de auditoría.
+  /// todo en un solo bloque. "origen_fecha_foto" agrupa la trazabilidad de auditoría.
   Map<String, dynamic> aJson() => {
         'id': id,
         'ruta': ruta,

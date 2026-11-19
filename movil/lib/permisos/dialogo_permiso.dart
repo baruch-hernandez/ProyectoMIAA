@@ -5,7 +5,7 @@ import 'servicio_permisos.dart';
 /// Lo que eligió el notificador en el modal.
 enum DecisionPermiso { cancelar, reintentar, abrirAjustes }
 
-/// Tarea 2.1: explica por qué se necesita el permiso, cómo activarlo y lleva directo a Ajustes.
+/// Explica por qué se necesita el permiso, cómo activarlo y lleva directo a Ajustes.
 class DialogoPermiso extends StatelessWidget {
   const DialogoPermiso({super.key, required this.tipo, required this.estado});
 
@@ -139,7 +139,7 @@ Future<DecisionPermiso> mostrarDialogoPermiso(
   return decision ?? DecisionPermiso.cancelar;
 }
 
-/// El flujo completo de un permiso antes de abrir la cámara o la galería (tareas 1.4 y 2.1).
+/// El flujo completo de un permiso antes de abrir la cámara o la galería.
 ///
 /// Sigue la regla de permission_handler 13 para Android:
 ///  - `consultar` solo sirve para saltarse la pregunta si ya está concedido;

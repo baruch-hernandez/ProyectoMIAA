@@ -24,7 +24,7 @@ const puntoDe = (e: UbicacionEmpleado): [number, number] | null =>
   e.tieneUbicacion && e.latitud != null && e.longitud != null ? [e.latitud, e.longitud] : null;
 
 /**
- * Sprint 5 (Historia 5): mapa de Aguascalientes con TODOS los notificadores (solo ADMIN).
+ * Mapa de Aguascalientes con TODOS los notificadores (solo ADMIN).
  * Verde = ACTIVO (sesión iniciada y latido reciente); gris = INACTIVO (se muestra el último lugar
  * conocido). Pregunta cada CONSULTA_MS mientras la pestaña está visible (sin encimar consultas).
  */

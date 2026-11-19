@@ -16,10 +16,9 @@ abstract class FuenteGps {
   /// false si el usuario dio solo "Ubicación aproximada" (Android 12+): ±1–3 km, no sirve.
   Future<bool> esPrecisa();
 
-  /// ¿Está prendido el "Ahorro de batería"? Android puede espaciar o apagar el GPS (tarea 1.4).
+  /// ¿Está prendido el "Ahorro de batería"? Android puede espaciar o apagar el GPS.
   Future<bool> ahorroEnergia();
 
-  /// Abre los ajustes del "Ahorro de batería".
   Future<bool> abrirAjustesAhorro();
 
   /// Lecturas del GPS mientras se escuchen. Con [satelital] solo el chip GPS (sin wifi ni
@@ -53,7 +52,7 @@ class FuenteGpsDispositivo implements FuenteGps {
   @override
   Future<bool> abrirAjustesAhorro() => Plataforma.abrirAhorroEnergia();
 
-  /// Tarea 1.2: con [satelital], GPS_PROVIDER por el canal nativo. El forceLocationManager de
+  /// Con [satelital], GPS_PROVIDER por el canal nativo. El forceLocationManager de
   /// geolocator no sirve para esto: en Android 12+ elige FUSED_PROVIDER, que mezcla wifi y antenas.
   @override
   Stream<LecturaGps> lecturas({bool satelital = false}) {

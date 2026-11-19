@@ -1,4 +1,4 @@
-// Tareas 3.1 y 3.4: compresión/resolución de las fotos y hora de captura (OBTURADOR → EXIF → ARCHIVO → SUBIDA).
+// Compresión/resolución de las fotos y hora de captura (OBTURADOR → EXIF → ARCHIVO → SUBIDA).
 //   flutter test test/procesador_fotos_test.dart
 import 'dart:typed_data';
 

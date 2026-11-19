@@ -13,7 +13,7 @@ class Config {
   /// En debug, confiar en el certificado autofirmado de desarrollo (assets/dev/miaa-dev.pem).
   static const certDev = bool.fromEnvironment('CERT_DEV', defaultValue: true);
 
-  /// Cada cuánto se avisa "sigo aquí" al backend (tarea 2.4). El backend da 2 s de margen
+  /// Cada cuánto se avisa "sigo aquí" al backend. El backend da 2 s de margen
   /// (miaa.presencia.segundos-en-linea): si lo subes aquí, súbelo allá o saldrá desconectado.
   static const latidoSegundos = int.fromEnvironment('LATIDO_SEGUNDOS', defaultValue: 1);
 

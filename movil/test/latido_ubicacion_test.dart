@@ -8,7 +8,7 @@ import 'package:movil/ubicacion/ubicacion.dart';
 import 'apoyo/falsos.dart';
 
 /// El latido manda la ubicación al mapa del admin SOLO si ya hay permiso y GPS, sin preguntar nada,
-/// y solo mientras la sesión está abierta (Historia 5).
+/// y solo mientras la sesión está abierta.
 void main() {
   const punto = LecturaGps(lat: 21.88, lng: -102.29, precision: 8);
 

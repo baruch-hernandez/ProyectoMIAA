@@ -14,7 +14,7 @@ function leerSilencio(): boolean {
 }
 
 /**
- * Historia 6 (tareas 2.3 y 2.4), para la barra del admin: conexión en vivo, reportes no leídos,
+ * Para la barra del admin: conexión en vivo, reportes no leídos,
  * el último (para el aviso) y el sonido con su botón de silencio (se recuerda en este navegador).
  */
 export function useAvisosReportes() {

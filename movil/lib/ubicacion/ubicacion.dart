@@ -36,7 +36,6 @@ class Ubicacion {
   String toString() => '${lat.toStringAsFixed(6)}, ${lng.toStringAsFixed(6)}';
 }
 
-/// Una lectura del GPS.
 class LecturaGps {
   const LecturaGps({required this.lat, required this.lng, required this.precision});
 

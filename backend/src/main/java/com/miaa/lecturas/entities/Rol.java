@@ -24,7 +24,6 @@ public class Rol {
     @Column(length = 30)
     private String clave;
 
-    /** Nombre para mostrar en pantalla. */
     @Column(nullable = false, length = 60)
     private String nombre;
 

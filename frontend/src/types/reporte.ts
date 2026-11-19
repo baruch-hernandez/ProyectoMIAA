@@ -159,7 +159,7 @@ export interface Empleado {
   enLinea: boolean;
   /** false = el admin lo dio de baja */
   habilitado: boolean;
-  /** EN_LINEA si llegó un latido en los últimos 60 s y no cerró sesión. Tarea 2.4 */
+  /** EN_LINEA si llegó un latido reciente y no cerró sesión */
   disponibilidad: Disponibilidad;
   /** Último latido o inicio de sesión, para el "últ. vez hace 5 min" */
   ultimaConexion: string | null;
@@ -206,8 +206,6 @@ export interface UbicacionEmpleado {
   segundosDesdeUltima: number | null;
   segundosParaEnLinea: number;
 }
-
-// ---------------------------------------------------------------- cuentas
 
 /** GET /yo  ↔  CuentaDTO.java */
 export interface Cuenta {

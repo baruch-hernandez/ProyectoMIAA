@@ -28,7 +28,6 @@ export function CuentaEmpleadoPanel({ id, onRol }: { id: number; onRol?: (rol: R
   const [errores, setErrores] = useState<Record<string, string>>({});
   const [guardando, setGuardando] = useState(false);
   const [aviso, setAviso] = useState<string | null>(null);
-  // Formularios
   const [form, setForm] = useState<{ nombre: string; username: string; email: string; rol: RolUsuario }>(
     { nombre: '', username: '', email: '', rol: 'NOTIFICADOR' });
   const esYo = obtenerUsuario()?.id === id;

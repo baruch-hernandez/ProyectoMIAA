@@ -12,7 +12,7 @@ interface Props {
 }
 
 /**
- * Historia 6 (tarea 2.2): la evidencia de un reporte en grande, con sus datos técnicos: precisión del
+ * La evidencia de un reporte en grande, con sus datos técnicos: precisión del
  * GPS, hora de captura original (UTC) y en hora de Aguascalientes, y la dirección del reporte.
  * Se cierra con la X, tocando fuera o con Escape.
  */

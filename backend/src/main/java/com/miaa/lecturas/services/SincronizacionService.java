@@ -32,7 +32,7 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 
 /**
- * Sprint 4 (tareas 1.1, 1.3 y 1.4): recibe de golpe los reportes que el celular guardó sin conexión.
+ * Recibe de golpe los reportes que el celular guardó sin conexión.
  *
  * Cada reporte del lote se guarda en SU PROPIA transacción (ReporteService.crear): si uno no pasa,
  * los demás sí se guardan, y la respuesta dice cuál falló y por qué.

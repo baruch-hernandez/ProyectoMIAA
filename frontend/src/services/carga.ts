@@ -37,7 +37,6 @@ export function destelloCarga(): () => void {
   return quitar;
 }
 
-/** Para useSyncExternalStore */
 export function suscribirCarga(oyente: () => void): () => void {
   oyentes.add(oyente);
   return () => { oyentes.delete(oyente); };

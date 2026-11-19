@@ -67,7 +67,6 @@ public class EmpleadoService {
 
         Map<Long, UsuarioPresencia> presencias = presenciaService.porUsuario();
         LocalDateTime ahora = LocalDateTime.now();
-        // Notificadores y administradores (el admin ahora da de alta a ambos)
         List<EmpleadoDTO> empleados = java.util.stream.Stream.concat(
                         usuarioRepository.findByRolOrderByNombreAsc(Rol.NOTIFICADOR).stream(),
                         usuarioRepository.findByRolOrderByNombreAsc(Rol.ADMIN).stream())
@@ -88,9 +87,6 @@ public class EmpleadoService {
         return new EmpleadosDTO(empleados);
     }
 
-    /**
-     * Lógica pura (sin BD): fácil de probar con cualquier fecha.
-     */
     static EmpleadoDTO armar(Usuario u, long totalReportes, LocalDateTime ultimoReporte,
             LocalDateTime ahora, boolean enLinea,
             Disponibilidad disponibilidad, Instant ultimaConexion) {

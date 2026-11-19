@@ -13,7 +13,7 @@ const SIN_FILTROS: FiltrosReportes = { empleadoId: '', desde: '', hasta: '' };
 const claseEtiqueta = 'block mb-1 text-xs font-semibold text-slate-600';
 
 /**
- * Bandeja del administrador (Historia 6): los reportes de TODOS los empleados, por hora de captura
+ * Bandeja del administrador: los reportes de TODOS los empleados, por hora de captura
  * de la más nueva a la más vieja. Se filtran por empleado y por rango de días en el backend (así el
  * total y "Ver más" cuadran). Los datos se corrigen desde el detalle.
  * Llegan de 50 en 50 ("Ver más"): con meses de reportes, traerlos todos de golpe sería muy lento.

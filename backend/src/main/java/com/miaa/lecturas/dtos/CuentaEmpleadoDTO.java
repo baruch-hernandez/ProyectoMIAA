@@ -15,6 +15,5 @@ public record CuentaEmpleadoDTO(
         LocalDateTime avisoPrivacidadFecha,
         /** Bloqueada por intentos fallidos hasta esta hora (null = no está bloqueada). */
         LocalDateTime bloqueadoHasta,
-        /** ADMIN o NOTIFICADOR. */
         String rol) {
 }

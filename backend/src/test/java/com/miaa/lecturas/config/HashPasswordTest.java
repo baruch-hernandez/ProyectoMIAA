@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Tarea 1.3: las contraseñas se guardan con BCrypt (hash con sal), nunca en texto plano. */
+/** Las contraseñas se guardan con BCrypt (hash con sal), nunca en texto plano. */
 class HashPasswordTest {
 
     private final PasswordEncoder encoder = new SecurityConfig().passwordEncoder();

@@ -1,18 +1,15 @@
 import api from './api';
 import type { CuentaEmpleado, EdicionEmpleado, EmpleadosRespuesta, NuevoEmpleado, UbicacionEmpleado } from '../types/reporte';
 
-/** Empleados (solo ADMIN). */
 export const usuariosApi = {
   /** Lista con actividad, "en línea" y si está dado de baja. segundoPlano = refresco automático (sin gota de carga) */
   empleados: async (segundoPlano = false) => (await api.get<EmpleadosRespuesta>('/empleados', { segundoPlano })).data,
 
-  /** Última ubicación y si está en línea */
   ubicacion: async (id: number) => (await api.get<UbicacionEmpleado>(`/empleados/${id}/ubicacion`, { segundoPlano: true })).data, // se consulta cada segundo
 
   /** Mapa de cuadrillas: los notificadores con su estado, última ubicación, dirección y última conexión */
   ubicaciones: async () => (await api.get<UbicacionEmpleado[]>('/cuadrillas', { segundoPlano: true })).data, // cada segundo
 
-  /** Datos de su cuenta */
   cuenta: async (id: number) => (await api.get<CuentaEmpleado>(`/empleados/${id}`)).data,
 
   crear: async (datos: NuevoEmpleado) => (await api.post<CuentaEmpleado>('/empleados', datos)).data,
@@ -27,7 +24,6 @@ export const usuariosApi = {
   cambiarHabilitado: async (id: number, habilitado: boolean) =>
     (await api.put<CuentaEmpleado>(`/empleados/${id}/habilitado`, { habilitado })).data,
 
-  /** Quitar el bloqueo por intentos fallidos */
   desbloquear: async (id: number) =>
     (await api.post<CuentaEmpleado>(`/empleados/${id}/desbloquear`)).data,
 };

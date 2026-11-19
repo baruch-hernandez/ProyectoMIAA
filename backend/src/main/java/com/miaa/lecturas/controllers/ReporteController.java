@@ -47,7 +47,7 @@ import java.util.Map;
  *
  *  NOTIFICADOR
  *   POST   /reportes                         subir un reporte (con clienteId no se duplica al reenviar)
- *   POST   /reportes/sync                    subir de golpe los guardados sin conexión (multipart, Sprint 4)
+ *   POST   /reportes/sync                    subir de golpe los guardados sin conexión
  *   DELETE /reportes/{id}                    borrarlo (primeras 24 h)
  *   GET    /reportes/mios                    mis reportes
  *   POST   /reportes/{id}/fotos              poner una foto (máx. 3, primeras 24 h)
@@ -55,10 +55,10 @@ import java.util.Map;
  *  ADMIN
  *   GET    /reportes?pagina=0&tamano=50      los reportes de todos los empleados, por páginas
  *          &empleadoId=7&desde=2026-11-01&hasta=2026-11-18   filtros opcionales (días incluidos)
- *   GET    /reportes/eventos                 avisos de reportes nuevos en tiempo real (SSE, Historia 6)
+ *   GET    /reportes/eventos                 avisos de reportes nuevos en tiempo real
  *  AMBOS
  *   GET    /reportes/{id}                    detalle (el notificador solo los suyos)
- *   GET    /reportes/{id}/miniatura          JPEG chico de la primera foto (Historia 6)
+ *   GET    /reportes/{id}/miniatura          JPEG chico de la primera foto
  *   POST   /reportes/{id}/notas              agregar una nota (el notificador al suyo; el admin a cualquiera)
  *   PUT    /reportes/{id}                    corregir datos (el notificador, el suyo y a tiempo; el admin, cualquiera)
  *
@@ -117,14 +117,13 @@ public class ReporteController {
         return reporteService.todos(pagina, tamano, empleadoId, desde, hasta);
     }
 
-    /** Historia 6: avisos de reportes nuevos en tiempo real (Server-Sent Events). Ver AvisosReportes. */
+    /** Avisos de reportes nuevos en tiempo real (Server-Sent Events). Ver AvisosReportes. */
     @GetMapping(path = "/eventos", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @PreAuthorize("hasRole('ADMIN')")
     public SseEmitter eventos() {
         return avisos.suscribir();
     }
 
-    /** Historia 6: miniatura JPEG (~320 px) de la primera foto, para el listado. */
     @GetMapping(path = "/{id}/miniatura", produces = MediaType.IMAGE_JPEG_VALUE)
     public ResponseEntity<byte[]> miniatura(@AuthenticationPrincipal UsuarioPrincipal yo, @PathVariable("id") Long id) {
         return ResponseEntity.ok()

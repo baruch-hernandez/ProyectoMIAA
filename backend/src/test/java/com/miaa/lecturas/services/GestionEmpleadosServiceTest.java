@@ -64,7 +64,6 @@ class GestionEmpleadosServiceTest {
         return e.getStatusCode().value();
     }
 
-    // ----------------------------- alta -----------------------------
     @Test
     void daDeAltaUnAdministrador() {
         CuentaEmpleadoDTO c = servicio.crear(new NuevoEmpleadoDTO("Ana López", "ana", null, "Temporal2026", "ADMIN"));
@@ -85,7 +84,6 @@ class GestionEmpleadosServiceTest {
         assertEquals(400, status(e));
     }
 
-    // ----------------------------- cambio de rol -----------------------------
     @Test
     void elAdminCambiaElRolDeOtro() {
         Usuario juan = registrar(2L, "NOTIFICADOR");
@@ -120,7 +118,6 @@ class GestionEmpleadosServiceTest {
         assertEquals("ADMIN", unico.getRol());
     }
 
-    // ----------------------------- baja -----------------------------
     @Test
     void nadiePuedeDarseDeBajaASiMismo() {
         registrar(1L, "ADMIN");

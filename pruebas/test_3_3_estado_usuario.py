@@ -2,10 +2,8 @@ import os
 import requests
 import urllib3
 
-# Suprime advertencias de certificados autofirmados si verify=False
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# Lee la URL de la API del entorno o usa el valor por defecto
 BASE_URL = os.getenv("MIAA_API", "https://localhost:8500/api").rstrip("/")
 
 def api_url(ruta: str) -> str:

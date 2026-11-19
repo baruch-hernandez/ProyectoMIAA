@@ -1,6 +1,6 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 
-/// Sprint 4 (tarea 2.3): ¿hay red? y aviso cuando cambia (sin red ⇄ con red).
+/// ¿hay red? y aviso cuando cambia (sin red ⇄ con red).
 ///
 /// Ojo: dice si el celular tiene wifi o datos, no si el servidor contesta (un wifi sin internet
 /// cuenta como "con red"). Por eso SyncManager también reintenta cada minuto mientras haya pendientes.

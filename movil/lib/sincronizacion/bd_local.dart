@@ -1,7 +1,7 @@
 import 'package:path/path.dart' as p;
 import 'package:sqflite/sqflite.dart';
 
-/// Sprint 4 (tarea 2.1): la base SQLite del celular, con migraciones.
+/// La base SQLite del celular, con migraciones.
 ///
 /// Cada elemento de la lista es una versión (la 1.ª es la versión 1). Para cambiar el esquema se
 /// AGREGA una versión al final; nunca se edita una que ya se instaló en algún celular.

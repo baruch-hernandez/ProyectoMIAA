@@ -276,7 +276,6 @@ export function NuevoReporte() {
     return () => alSalir(); // si salen del formulario, no dejar peticiones colgando
   }, []);
 
-  /** Botón "Usar mi ubicación". */
   const usarMiUbicacion = () => {
     if (!hayGeolocalizacion) {
       setGps({ fase: 'error', mensaje: 'Este dispositivo no permite obtener la ubicación. Toca el mapa para marcar el punto.' });
@@ -554,7 +553,6 @@ export function NuevoReporte() {
           </Campo>
         </Paso>
 
-        {/* ---------- 4. Fotos ---------- */}
         <Paso
           numero={4}
           titulo="Fotos de evidencia"

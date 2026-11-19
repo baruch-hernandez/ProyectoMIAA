@@ -14,7 +14,6 @@ import java.util.TimeZone;
 @EnableScheduling // PresenciaService (marcar inactivos) y GeocodificadorInverso
 public class LecturasBackendApplication {
 
-	/** La hora de Aguascalientes. */
 	static final String ZONA = "America/Mexico_City";
 
 	public static void main(String[] args) {

@@ -1,4 +1,4 @@
-// Sprint 4 — tarea 3.2: flujo completo en modo avión. Se llena el formulario, "Enviar" lo guarda en
+// Tarea 3.2: flujo completo en modo avión. Se llena el formulario, "Enviar" lo guarda en
 // la base del celular (SQLite) con el aviso "Guardado en dispositivo (sin conexión)", se "reinicia"
 // la app (se cierra y se vuelve a abrir la base) y el reporte sigue ahí; al volver la red, se manda.
 //   flutter test test/s4_flujo_offline_test.dart

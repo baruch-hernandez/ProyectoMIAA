@@ -89,7 +89,6 @@ class BorradorReporte extends ChangeNotifier {
       : _campos = campos,
         _fotos = fotos;
 
-  /// Un borrador vacío.
   factory BorradorReporte.nuevo(AlmacenBorrador almacen) => BorradorReporte._(
         almacen,
         nuevoUuid(),
@@ -171,7 +170,7 @@ class BorradorReporte extends ChangeNotifier {
     unawaited(_guardar());
   }
 
-  /// Tarea 2.2: el reporte NO se puede enviar sin al menos una foto, y desde el Sprint 4 tampoco
+  /// El reporte NO se puede enviar sin al menos una foto, y tampoco
   /// sin ubicación (un reporte hecho sin red debe traer dónde se hizo). Los demás campos los valida
   /// el formulario al tocar "Enviar".
   bool get puedeEnviar => _fotos.isNotEmpty && _ubicacion != null;
@@ -187,7 +186,7 @@ class BorradorReporte extends ChangeNotifier {
     _avisar();
   }
 
-  /// Tarea 2.5: fija la foto confirmada al borrador (archivo + metadatos de auditoría).
+  /// Fija la foto confirmada al borrador (archivo + metadatos de auditoría).
   Future<FotoEvidencia> agregarFoto(FotoProcesada procesada, OrigenFoto origen, {DateTime? ahora}) async {
     if (completoDeFotos) {
       throw const FotoInvalida('Ya tienes ${ReglasFoto.maxFotos} fotos; quita una para agregar otra.');
@@ -262,7 +261,7 @@ class BorradorReporte extends ChangeNotifier {
           'fechaCaptura': f.fechaCaptura.toUtc().toIso8601String(),
           'origenFecha': f.origenFecha.clave,
           'origenFoto': f.origen.clave,
-          // Historia 3: dónde se tomó (solo cámara de la app) y cuánto se corrigió el reloj
+          // Dónde se tomó (solo cámara de la app) y cuánto se corrigió el reloj
           if (f.gps != null) ...{
             'latitud': f.gps!.lat,
             'longitud': f.gps!.lng,

@@ -1,4 +1,4 @@
-// Sprint 5 — QA 3.2: Payload exacto del latido (latitud, longitud, precision) y flujo de logout.
+// QA 3.2: Payload exacto del latido (latitud, longitud, precision) y flujo de logout.
 //   flutter test test/s5_latido_test.dart
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';

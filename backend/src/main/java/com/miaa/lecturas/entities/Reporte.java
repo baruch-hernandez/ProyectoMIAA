@@ -27,7 +27,6 @@ public class Reporte {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // ---------- Domicilio ----------
     @Column(nullable = false, length = 150)
     private String calle;
 
@@ -53,7 +52,6 @@ public class Reporte {
     @Column(name = "numero_contrato", length = 30)
     private String numeroContrato;
 
-    // ---------- Predio ----------
     /**
      * HABITACIONAL, COMERCIAL... (ver ReporteRequestDTO). String y no enum para que Hibernate no cree
      * un CHECK que luego no se actualiza (ver EsquemaFotos). Null solo en reportes de antes del campo.
@@ -70,7 +68,6 @@ public class Reporte {
 
     /**
      * Id que generó el celular (UUID): evita duplicados al reenviar un reporte guardado sin conexión.
-     * Antes se llamaba cliente_id: EsquemaReportes pasa los datos viejos a esta columna.
      */
     @Column(name = "client_sync_id", length = 36)
     private String clienteId;
@@ -79,16 +76,13 @@ public class Reporte {
     @Column(name = "fecha_captura")
     private Instant fechaCaptura;
 
-    // ---------- El reporte ----------
     @Column(nullable = false, columnDefinition = "TEXT")
     private String descripcion;
 
-    // ---------- Relaciones ----------
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "creado_por_id", nullable = false)
     private Usuario creadoPor;
 
-    // orphanRemoval: si quitas una foto de esta lista, JPA hace el DELETE solo.
     @OneToMany(mappedBy = "reporte", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("fechaCaptura ASC, id ASC")
     private List<FotoReporte> fotos = new ArrayList<>();
@@ -97,8 +91,7 @@ public class Reporte {
     @OrderBy("fechaCreacion ASC")
     private List<NotaReporte> notas = new ArrayList<>();
 
-    // ---------- Fechas del reporte (las pone el servidor) ----------
-    // Ojo: la hora que importa de cada FOTO es la de captura (FotoReporte.fechaCaptura).
+    // Las pone el servidor. Ojo: la hora que importa de cada FOTO es la de captura (FotoReporte.fechaCaptura).
     @Column(name = "fecha_creacion", nullable = false, updatable = false)
     private LocalDateTime fechaCreacion;
 
@@ -135,7 +128,6 @@ public class Reporte {
         return "R-%d-%06d".formatted(anio, id);
     }
 
-    /** Domicilio en una sola línea, para listas. */
     public String getDomicilioCompleto() {
         String interior = (numeroInterior == null || numeroInterior.isBlank()) ? "" : " Int. " + numeroInterior;
         return "%s #%s%s, %s, C.P. %s, %s".formatted(calle, numeroExterior, interior, colonia, codigoPostal, municipio);

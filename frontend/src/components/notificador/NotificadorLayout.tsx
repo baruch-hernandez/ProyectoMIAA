@@ -158,7 +158,6 @@ export function NotificadorLayout() {
         <Outlet />
       </main>
 
-      {/* Barra inferior (solo celular) */}
       <nav
         className="md:hidden fixed inset-x-0 bottom-0 z-30 bg-white border-t border-slate-200 pb-[env(safe-area-inset-bottom)]"
         aria-label="Principal"

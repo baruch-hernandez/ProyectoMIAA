@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'reportes_offline_dao.dart';
 import 'sync_manager.dart';
 
-/// Sprint 4 (tarea 2.5): en el inicio, cuántos reportes faltan por llegar al servidor.
+/// En el inicio, cuántos reportes faltan por llegar al servidor.
 /// Solo aparece si hay alguno pendiente o rechazado.
 class TarjetaPendientes extends StatelessWidget {
   const TarjetaPendientes({super.key, required this.sync});

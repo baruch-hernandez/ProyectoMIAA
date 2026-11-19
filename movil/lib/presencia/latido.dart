@@ -25,11 +25,11 @@ Stream<LecturaGps> lecturasSiHayPermiso({
   yield* gps.lecturas();
 }
 
-/// Tarea 2.4: "sigo aquí" al backend cada segundo → el admin ve al notificador "Activo".
+/// "sigo aquí" al backend cada segundo → el admin ve al notificador "Activo".
 /// Con la pantalla apagada o la app al fondo se detiene y avisa que se pausó (sale inactivo al
 /// instante); al volver, late de inmediato.
 ///
-/// Sprint 5 (tarea 2.1): UNA petición por latido, POST /heartbeat. Para cuidar los datos
+/// UNA petición por latido, POST /heartbeat. Para cuidar los datos
 /// móviles, las coordenadas solo van cuando sirven: al moverse [metrosParaReenviar] o más, o cada
 /// [reenviarCada] si sigue en el mismo lugar; los demás latidos van sin cuerpo. Las lecturas fuera
 /// del estado (saltos del GPS) ni se mandan: el backend las rechaza.

@@ -30,7 +30,6 @@ public record EmpleadoDTO(
         boolean habilitado,
         Disponibilidad disponibilidad,
         Instant ultimaConexion,
-        /** ADMIN o NOTIFICADOR. */
         String rol) {
 
 }

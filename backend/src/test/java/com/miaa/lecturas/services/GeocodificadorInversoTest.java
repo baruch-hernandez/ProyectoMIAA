@@ -17,7 +17,7 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
-/** Sprint 5, tarea 1.3: dirección por coordenadas sin pasarse del límite de Nominatim. */
+/** Dirección por coordenadas sin pasarse del límite de Nominatim. */
 class GeocodificadorInversoTest {
 
     private static final String RESPUESTA = """

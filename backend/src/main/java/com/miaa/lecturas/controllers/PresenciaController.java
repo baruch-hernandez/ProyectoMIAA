@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * El latido de presencia (Sprint 5, tarea 1.2). Nadie puede mandar el de otro: el id sale del token.
+ * El latido de presencia. Nadie puede mandar el de otro: el id sale del token.
  * Lo usan la app y la web, uno por segundo.
  *
  *   POST /heartbeat   sin cuerpo, o { latitud, longitud, precision }   → 204

@@ -98,10 +98,6 @@ public class ReporteService {
         this.horasParaModificar = horasParaModificar;
     }
 
-    // =====================================================================
-    // Subir un reporte (NOTIFICADOR)
-    // =====================================================================
-
     @Transactional
     public ReporteDetalleDTO crear(UsuarioPrincipal yo, ReporteRequestDTO req) {
         // ¿Ya lo habíamos recibido? Pasa si el celular lo guardó sin conexión, lo envió,
@@ -134,14 +130,10 @@ public class ReporteService {
         fotos.forEach(f -> r.agregarFoto(crearFoto(f)));
 
         Reporte guardado = reporteRepository.save(r);
-        // Historia 6: aviso en tiempo real a los admins; AvisosReportes lo manda al confirmar la transacción
+        // Aviso en tiempo real a los admins; AvisosReportes lo manda al confirmar la transacción
         eventos.publishEvent(new NuevoReporteEvent(ReporteResumenDTO.desde(guardado, fotos.size(), 0)));
         return aDetalle(guardado, List.of(), yo);
     }
-
-    // =====================================================================
-    // Corregir (NOTIFICADOR, solo el suyo y a tiempo; ADMIN, cualquiera) o borrar (NOTIFICADOR)
-    // =====================================================================
 
     @Transactional
     public ReporteDetalleDTO editar(UsuarioPrincipal yo, Long id, ReporteEdicionDTO req) {
@@ -165,10 +157,6 @@ public class ReporteService {
         reporteRepository.delete(r);
     }
 
-    // =====================================================================
-    // Consultar
-    // =====================================================================
-
     /** NOTIFICADOR: solo los reportes que él subió, del más nuevo al más viejo. */
     @Transactional(readOnly = true)
     public List<ReporteResumenDTO> mios(UsuarioPrincipal yo) {
@@ -177,7 +165,6 @@ public class ReporteService {
                 reporteRepository.contarNotasDeUsuario(yo.id()));
     }
 
-    /** Tamaño máximo de página que puede pedir el admin. */
     public static final int MAX_TAMANO_PAGINA = 100;
 
     /**
@@ -208,7 +195,7 @@ public class ReporteService {
     }
 
     /**
-     * Historia 6 (tarea 1.2): miniatura JPEG de la primera foto, para el listado. La ve quien puede ver
+     * Miniatura JPEG de la primera foto, para el listado. La ve quien puede ver
      * el reporte (el admin o su autor). Sin fotos → 404.
      */
     @Transactional(readOnly = true)
@@ -222,10 +209,6 @@ public class ReporteService {
         // Foto de antes de AlmacenFotos (base64 en la BD): se reduce al vuelo
         return AlmacenFotos.reducir(Base64.getDecoder().decode(f.getDatos().substring(f.getDatos().indexOf(',') + 1)));
     }
-
-    // =====================================================================
-    // Notas (quien lo subió y el admin: es su conversación) y fotos (solo quien lo subió)
-    // =====================================================================
 
     @Transactional
     public NotaDTO agregarNota(UsuarioPrincipal yo, Long reporteId, String texto) {
@@ -280,10 +263,6 @@ public class ReporteService {
         r.setFechaEdicion(ahora);
     }
 
-    // =====================================================================
-    // Helpers
-    // =====================================================================
-
     /** Ver: quien lo subió o cualquier ADMIN. */
     private Reporte obtenerParaVer(UsuarioPrincipal yo, Long id) {
         Reporte r = reporteRepository.buscarConAutor(id).orElseThrow(() -> noEncontrado(id));
@@ -314,7 +293,6 @@ public class ReporteService {
         return r;
     }
 
-    /** Lógica pura (se prueba sin BD): ¿todavía está a tiempo? */
     static boolean dentroDeVentana(LocalDateTime creado, LocalDateTime ahora, int horas) {
         return creado != null && ahora.isBefore(creado.plusHours(horas));
     }
@@ -373,7 +351,7 @@ public class ReporteService {
     }
 
     /**
-     * Historia 3 (tarea 4.3): el punto de la foto es opcional (la web y la galería no lo tienen),
+     * El punto de la foto es opcional (la web y la galería no lo tienen),
      * pero si viene, completo y dentro del estado. Los rangos los revisa FotoRequestDTO.
      */
     private void validarGpsFoto(FotoRequestDTO req) {

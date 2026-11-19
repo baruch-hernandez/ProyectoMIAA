@@ -9,7 +9,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 /**
- * Sprint 4 (tarea 1.2): la columna reportes.cliente_id ahora se llama client_sync_id.
+ * La columna reportes.cliente_id ahora se llama client_sync_id.
  *
  * ddl-auto=update no renombra: crea client_sync_id (con su índice UNIQUE) junto a la vieja.
  * Este paso copia los UUID que ya había y borra cliente_id; en una base nueva no hace nada.

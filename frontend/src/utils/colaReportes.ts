@@ -64,7 +64,6 @@ function notificar() {
   oyentes.forEach((fn) => fn());
 }
 
-// ---------- operaciones ----------
 export async function guardarPendiente(p: ReportePendiente): Promise<void> {
   await operar('readwrite', (a) => a.put(p));
   notificar();
@@ -82,7 +81,6 @@ export async function descartarPendiente(clienteId: string): Promise<void> {
   notificar();
 }
 
-// ---------- envío ----------
 let enCurso: Promise<number> | null = null;
 
 /**

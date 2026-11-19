@@ -18,7 +18,7 @@ typedef EnviarLote = Future<Map<String, dynamic>> Function(
 /// Qué pasó al tocar "Enviar" en el formulario.
 typedef ResultadoEnvio = ({EstadoSync estado, String? error});
 
-/// Sprint 4 (tarea 2.4): la bandeja de salida de reportes.
+/// La bandeja de salida de reportes.
 ///
 /// "Enviar" SIEMPRE guarda primero en el celular (SQLite + archivos) y después intenta mandarlo:
 /// si no hay red o el servidor no contesta, no se pierde nada. Los pendientes se mandan solos, en

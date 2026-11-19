@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
-/// Sprint 4 (tarea 2.2): las fotos de cada reporte guardado sin conexión, en la carpeta PRIVADA
+/// Las fotos de cada reporte guardado sin conexión, en la carpeta PRIVADA
 /// de la app (no salen en la galería ni las ven otras apps):
 ///   `<documentos>/reportes_offline/<uuid>/<foto>.jpg`
 /// Ya vienen comprimidas (JPEG de ProcesadorFotos): se guardan tal cual, sin volver a comprimir.

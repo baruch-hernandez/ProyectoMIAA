@@ -23,7 +23,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * Presencia y ubicación en vivo (Sprints 3 y 5), en una sola fila por empleado (UsuarioPresencia).
+ * Presencia y ubicación en vivo, en una sola fila por empleado (UsuarioPresencia).
  *
  *  1. Mientras la sesión está abierta, la app manda un latido cada segundo (POST /heartbeat),
  *     con las coordenadas si las tiene: ACTIVO y última conexión = ahora.
@@ -54,7 +54,7 @@ public class PresenciaService {
         this.segundosUbicacion = segundosUbicacion;
     }
 
-    /** Tarea 1.2: "sigo aquí", con o sin coordenadas. Fuera de Aguascalientes → 400 y no cambia nada. */
+    /** "sigo aquí", con o sin coordenadas. Fuera de Aguascalientes → 400 y no cambia nada. */
     @Transactional
     public void latido(long usuarioId, UbicacionRequestDTO ubicacion) {
         if (ubicacion != null && !limiteAgs.contiene(ubicacion.latitud(), ubicacion.longitud())) {
@@ -87,16 +87,14 @@ public class PresenciaService {
         presencias.findById(usuarioId).ifPresent(p -> p.setEstadoConexion(EstadoConexion.INACTIVO));
     }
 
-    /** Tarea 1.4: los que dejaron de mandar latido pasan a INACTIVO (una sola consulta UPDATE). */
+    /** Los que dejaron de mandar latido pasan a INACTIVO (una sola consulta UPDATE). */
     @Scheduled(fixedDelayString = "${miaa.presencia.revisar-cada-ms:1000}")
     public void marcarInactivosSinLatido() {
         presencias.marcarInactivos(Instant.now().minusSeconds(segundosEnLinea),
                 EstadoConexion.ACTIVO, EstadoConexion.INACTIVO);
     }
 
-    // ---------------------------------------------------------------- consultas (ADMIN)
-
-    /** Tarea 1.5: todos los notificadores habilitados, con o sin ubicación (dos consultas). */
+    /** Todos los notificadores habilitados, con o sin ubicación (dos consultas). */
     @Transactional(readOnly = true)
     public List<UbicacionEmpleadoDTO> cuadrillas() {
         Instant ahora = Instant.now();
@@ -107,7 +105,6 @@ public class PresenciaService {
                 .toList();
     }
 
-    /** La ficha de un empleado. */
     @Transactional(readOnly = true)
     public UbicacionEmpleadoDTO deEmpleado(long empleadoId) {
         Usuario empleado = usuarios.findById(empleadoId)
@@ -132,8 +129,6 @@ public class PresenciaService {
         return activo(p, ahora, segundosEnLinea) && p.getFechaUbicacionUtc() != null
                 && !p.getFechaUbicacionUtc().isBefore(ahora.minusSeconds(segundosUbicacion));
     }
-
-    // ---------------------------------------------------------------- lógica pura (se prueba sin BD)
 
     static boolean activo(UsuarioPresencia p, Instant ahora, long segundos) {
         return p != null && p.getEstadoConexion() == EstadoConexion.ACTIVO && p.getUltimaConexionUtc() != null

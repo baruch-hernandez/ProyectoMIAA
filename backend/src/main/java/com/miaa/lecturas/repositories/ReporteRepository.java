@@ -35,7 +35,7 @@ public interface ReporteRepository extends JpaRepository<Reporte, Long> {
             """;
 
     /**
-     * Una página, por hora de captura en campo, de la más nueva a la más vieja (Historia 6). Los
+     * Una página, por hora de captura en campo, de la más nueva a la más vieja. Los
      * reportes viejos sin hora de captura van al final. El admin no carga la historia completa de golpe.
      */
     @Query(value = "SELECT r FROM Reporte r JOIN FETCH r.creadoPor" + FILTROS

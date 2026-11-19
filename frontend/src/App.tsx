@@ -22,7 +22,6 @@ function App() {
       {/* Pantalla de carga (gota de agua) encima de todo mientras se espera al servidor */}
       <GotaCarga />
       <Routes>
-        {/* Ruta pública */}
         <Route path="/" element={<Login />} />
 
         {/* Con sesión, pero ANTES de todo lo demás: contraseña temporal y aviso de privacidad */}

@@ -1,4 +1,4 @@
-// Sprint 4 — tarea 3.4: prueba de estrés de reconexión. 10 reportes hechos sin red se suben en
+// Tarea 3.4: prueba de estrés de reconexión. 10 reportes hechos sin red se suben en
 // ráfaga mientras la red va y viene (y una respuesta se pierde a medio camino):
 //   - llegan los 10, cada uno UNA vez;
 //   - cada foto llega idéntica byte por byte;

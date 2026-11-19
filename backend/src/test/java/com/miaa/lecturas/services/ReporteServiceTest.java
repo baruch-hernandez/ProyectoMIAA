@@ -194,8 +194,6 @@ class ReporteServiceTest {
         servicio.editar(AUTOR, 5L, edicion());
     }
 
-    // ---------- Historia 3: punto GPS de cada foto ----------
-
     @Test
     void laFotoGuardaSuPuntoSuPrecisionYElDesfaseDelReloj() {
         reporte(1);
@@ -225,7 +223,7 @@ class ReporteServiceTest {
         verify(fotos, never()).save(any());
     }
 
-    /** Historia 6 (tareas 1.4 y 2.5): igual para POST /reportes y /reportes/sync, que usan crear(). */
+    /** Igual para POST /reportes y /reportes/sync, que usan crear(). */
     @Test
     void unReporteNuevoAvisaALosAdminsYSuReenvioSinConexionNo() {
         Usuario autor = new Usuario();

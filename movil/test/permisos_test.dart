@@ -1,4 +1,4 @@
-// Tareas 1.4 y 4.2: estados de permiso y modal informativo cuando la cámara está denegada.
+// Estados de permiso y modal informativo cuando la cámara está denegada.
 //   flutter test test/permisos_test.dart
 import 'package:flutter_test/flutter_test.dart';
 import 'package:movil/fotos/pantalla_vista_previa.dart';

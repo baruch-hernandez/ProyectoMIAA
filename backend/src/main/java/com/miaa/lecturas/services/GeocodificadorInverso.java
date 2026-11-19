@@ -20,7 +20,7 @@ import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Sprint 5 (tarea 1.3): la dirección de cada empleado a partir de sus coordenadas, con Nominatim
+ * La dirección de cada empleado a partir de sus coordenadas, con Nominatim
  * (OpenStreetMap), el mismo servicio que ya usa la web al llenar un reporte.
  *
  * Nominatim permite como máximo 1 consulta por segundo y nada de uso masivo, así que:
@@ -124,8 +124,6 @@ public class GeocodificadorInverso {
             return null;
         }
     }
-
-    // ---------------------------------------------------------------- lógica pura (se prueba sin red)
 
     /** "Av. Madero 120, Zona Centro, Aguascalientes" con los campos de Nominatim (como direccionGps.ts). */
     static String formatear(JsonNode respuesta) {

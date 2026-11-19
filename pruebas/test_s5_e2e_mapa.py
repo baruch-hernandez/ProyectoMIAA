@@ -58,14 +58,14 @@ def test_3_3_e2e_mapa_marcador_popup_y_transicion_logout(navegador, config, crea
     assert movil.post("/heartbeat", json=PUNTO_AGS).status_code == 204
     hora_latido = datetime.now(ZoneInfo("America/Mexico_City"))
 
-    # 4. Verificar marcador en VERDE (#0fa987)[cite: 41]
+    # 4. Verificar marcador en VERDE (#0fa987)
     esperar_color_marcador(navegador, COLOR_VERDE, timeout=10)
     captura(navegador, "s5_e2e_1_marcador_verde")
 
     # Refrescar latido para mantenerlo activo mientras se abre el popup
     assert movil.post("/heartbeat").status_code == 204
 
-    # 5. Clic en el botón de la lista lateral para abrir el popup y revisar datos[cite: 41]
+    # 5. Clic en el botón de la lista lateral para abrir el popup y revisar datos
     boton_empleado = WebDriverWait(navegador, 10).until(
         EC.element_to_be_clickable(
             (By.XPATH, f"//section[@aria-label='Notificadores']//button[contains(., '{datos['nombre']}')]")
@@ -105,7 +105,7 @@ def test_3_3_e2e_mapa_marcador_popup_y_transicion_logout(navegador, config, crea
     esperar_color_marcador(navegador, COLOR_GRIS, timeout=8)
     captura(navegador, "s5_e2e_4_marcador_gris_sin_red")
 
-    # 8. Validar filtro select#filtro-cuadrilla[cite: 41]
+    # 8. Validar filtro select#filtro-cuadrilla
     selector = Select(navegador.find_element(By.CSS_SELECTOR, "select#filtro-cuadrilla"))
     selector.select_by_value("ACTIVO")
     time.sleep(0.4)

@@ -24,7 +24,7 @@ function Seguir({ lat, lng, activo }: { lat: number; lng: number; activo: boolea
 
 /**
  * Ficha de un empleado (solo ADMIN): su cuenta y, si es notificador, su ubicación EN VIVO.
- * Pregunta al backend cada 5 s; si la pestaña está oculta, deja de preguntar
+ * Pregunta al backend cada CONSULTA_MS; si la pestaña está oculta, deja de preguntar
  * (no tiene caso gastar peticiones) y al volver pregunta de inmediato.
  */
 export function UbicacionEmpleado() {
@@ -115,7 +115,6 @@ export function UbicacionEmpleado() {
     <div className="space-y-5">
       {volver}
 
-      {/* ---------- Encabezado con el estado ---------- */}
       <header className="flex flex-wrap items-center justify-between gap-4 rounded-3xl bg-white border border-slate-200 p-5 sm:p-6">
         <div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-miaa-marino">{d.nombre}</h1>

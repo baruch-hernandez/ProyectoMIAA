@@ -11,7 +11,6 @@ declare module 'axios' {
   }
 }
 
-// Cambiar https://localhost:8500 por http://localhost:8090
 export const URL_API: string = import.meta.env.VITE_API_URL || 'http://localhost:8500/api';
 
 if (import.meta.env.PROD && URL_API.startsWith('http://')) {
@@ -20,7 +19,6 @@ if (import.meta.env.PROD && URL_API.startsWith('http://')) {
 
 const api = axios.create({ baseURL: URL_API });
 
-// ---------- Antes de cada petición: agregar el token ----------
 api.interceptors.request.use((config) => {
   const token = obtenerToken();
 

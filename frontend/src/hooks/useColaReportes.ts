@@ -40,7 +40,6 @@ export function useColaReportes({ automatico = false } = {}) {
     }
   }, [usuarioId]);
 
-  // Envío automático
   const hayPendientes = pendientes.some((p) => !p.error);
   useEffect(() => {
     if (!automatico || usuarioId == null) return;

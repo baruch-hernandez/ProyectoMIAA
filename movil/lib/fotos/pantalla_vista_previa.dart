@@ -6,7 +6,7 @@ import 'procesador_fotos.dart';
 /// Lo que decidió el notificador al revisar la foto.
 enum DecisionVistaPrevia { repetir, confirmar }
 
-/// Tareas 2.3, 2.4 y 2.5: la foto en grande (con zoom) para revisar nitidez y que se lean
+/// La foto en grande (con zoom) para revisar nitidez y que se lean
 /// los dígitos del medidor, con "Repetir foto" y "Usar foto".
 ///
 /// Muestra la foto YA COMPRIMIDA: lo que se ve aquí es exactamente lo que se enviará.
@@ -126,7 +126,7 @@ class PantallaVistaPrevia extends StatelessWidget {
   }
 }
 
-/// Tarea 3.3: lo que quedó registrado con la foto: punto, margen de error y hora (UTC y local).
+/// Lo que quedó registrado con la foto: punto, margen de error y hora (UTC y local).
 /// Una foto de interior puede no traer punto: entonces se dice, y la hora se muestra igual.
 class _TarjetaGps extends StatelessWidget {
   const _TarjetaGps({required this.foto});

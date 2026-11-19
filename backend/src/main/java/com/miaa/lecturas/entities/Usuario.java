@@ -22,9 +22,7 @@ public class Usuario {
 
     private String email;
 
-    // WRITE_ONLY: Jackson puede LEERLO de un JSON que llega, pero NUNCA lo escribe
-    // en las respuestas. Antes, GET /rutas regresaba la contraseña del notificador.
-    // (Lo ideal a futuro: no regresar entidades, sino DTOs.)
+    // WRITE_ONLY: Jackson puede leerlo de un JSON que llega, pero NUNCA lo escribe en las respuestas
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @ToString.Exclude
     private String password;
@@ -43,10 +41,7 @@ public class Usuario {
     @Column(name = "ultimo_acceso")
     private java.time.LocalDateTime ultimoAcceso;
 
-    // ---------- Cuenta ----------
-    // Se usan Boolean (con mayúscula) y no boolean: las filas que ya existían
-    // quedan en
-    // NULL al agregar la columna, y un boolean primitivo no acepta NULL.
+    // Boolean y no boolean: las filas que ya existían quedan en NULL al agregar la columna
 
     /**
      * null o true = puede entrar. false = dado de baja (NO se borra: sus reportes
@@ -72,8 +67,6 @@ public class Usuario {
     @Column(name = "fecha_alta")
     private java.time.LocalDateTime fechaAlta;
 
-    // ---------- Protección contra fuerza bruta (ver BloqueoPorIntentos) ----------
-
     /**
      * Contraseñas incorrectas seguidas desde el último acceso correcto (null = 0).
      */
@@ -96,5 +89,4 @@ public class Usuario {
         return Boolean.TRUE.equals(debeCambiarPassword);
     }
 
-    // La presencia (activo/inactivo, último latido y ubicación) vive en UsuarioPresencia.
 }

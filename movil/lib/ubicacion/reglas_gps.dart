@@ -2,7 +2,7 @@ import 'afinador_gps.dart';
 import 'limite_ags.dart';
 import 'ubicacion.dart';
 
-/// Historia 3: cuándo el GPS es lo bastante bueno para tomar la foto de evidencia.
+/// Cuándo el GPS es lo bastante bueno para tomar la foto de evidencia.
 /// Los umbrales del backend (FotoRequestDTO.java) son los mismos.
 class ReglasGps {
   ReglasGps._();
@@ -14,7 +14,7 @@ class ReglasGps {
   static const amarillo = 5.0;
 
   /// Casi ningún celular baja de ±3 m (el radio que reporta Android es al 68 %), y bajo techo el
-  /// chip GPS no da nada. Pasado este tiempo la foto se puede tomar igual (tarea 1.3): con la
+  /// chip GPS no da nada. Pasado este tiempo la foto se puede tomar igual: con la
   /// mejor lectura que haya, o sin coordenadas si no hay ninguna que sirva (medidor en interior).
   static const esperaMaxima = Duration(seconds: 10);
 
@@ -25,7 +25,7 @@ class ReglasGps {
   static const lecturaVieja = Duration(seconds: 5);
 }
 
-/// Tarea 3.1: verde ≤ 1 m, amarillo 1–5 m, rojo > 5 m.
+/// Verde ≤ 1 m, amarillo 1–5 m, rojo > 5 m.
 enum Semaforo { verde, amarillo, rojo }
 
 Semaforo semaforoDe(double precision) => precision <= ReglasGps.objetivo
@@ -34,7 +34,7 @@ Semaforo semaforoDe(double precision) => precision <= ReglasGps.objetivo
         ? Semaforo.amarillo
         : Semaforo.rojo;
 
-/// Tarea 2.3 (backlog actual): la lectura más precisa de los últimos [ReglasGps.lecturaVieja], no
+/// La lectura más precisa de los últimos [ReglasGps.lecturaVieja], no
 /// la última que llegó. Si llegan ±2.8, ±3.1 y ±3.5, la foto se queda con ±2.8.
 class VentanaGps {
   final _lecturas = <({LecturaGps lectura, DateTime en})>[];
@@ -53,7 +53,7 @@ class VentanaGps {
   void limpiar() => _lecturas.clear();
 }
 
-/// Tarea 2.4 (backlog actual): lo que impide tomar la foto sin importar la señal, porque el
+/// Lo que impide tomar la foto sin importar la señal, porque el
 /// notificador lo puede arreglar en Ajustes. null = nada.
 String? bloqueoDeHardware({required bool gpsApagado, required bool aproximada, required bool ahorro}) {
   if (gpsApagado) return 'La ubicación del celular está apagada. Préndela para tomar la foto.';
@@ -70,7 +70,7 @@ LecturaGps? lecturaParaFoto(LecturaGps? lectura, {required Duration edad}) =>
         ? lectura
         : null;
 
-/// Tareas 1.3 y 3.2: null = ya se puede tomar la foto; si no, qué se espera (para mostrarlo).
+/// Null = ya se puede tomar la foto; si no, qué se espera (para mostrarlo).
 /// [esperando]: desde cuándo se abrió la cámara.
 String? motivoParaEsperar(LecturaGps? lectura, {required Duration edad, required Duration esperando}) {
   final util = lecturaParaFoto(lectura, edad: edad);

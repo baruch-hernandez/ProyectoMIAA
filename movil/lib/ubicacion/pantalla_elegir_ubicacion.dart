@@ -187,8 +187,6 @@ class _PantallaElegirUbicacionState extends State<PantallaElegirUbicacion> {
     super.dispose();
   }
 
-  // ------------------------------------------------------------------ mover el pin
-
   void _alMover(MapCamera camara, bool porGesto) {
     // El mapa puede avisar mientras se está dibujando (al medir su tamaño): ahí no se puede
     // llamar setState, así que se deja para justo después del cuadro.
@@ -262,8 +260,6 @@ class _PantallaElegirUbicacionState extends State<PantallaElegirUbicacion> {
     if (mejor != null) _moverAGps(mejor);
   }
 
-  // ------------------------------------------------------------------ dirección del punto
-
   /// Espera a que dejen de mover el mapa antes de buscar (Nominatim permite 1 petición por segundo).
   void _programarBusqueda() {
     _espera?.cancel();
@@ -320,8 +316,6 @@ class _PantallaElegirUbicacionState extends State<PantallaElegirUbicacion> {
       direccion: d is DireccionEncontrada && _puntoDireccion == _centro ? d.direccion : null,
     ));
   }
-
-  // ------------------------------------------------------------------ pantalla
 
   @override
   Widget build(BuildContext context) {

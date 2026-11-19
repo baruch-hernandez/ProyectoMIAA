@@ -19,10 +19,8 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<Usuario> findParaLoginByEmailIgnoreCase(String email);
 
-    // SELECT * FROM usuarios WHERE rol = ? ORDER BY nombre
     List<Usuario> findByRolOrderByNombreAsc(String rol);
 
-    // Para no repetir usuario ni correo (sin importar mayúsculas)
     boolean existsByUsernameIgnoreCase(String username);
 
     boolean existsByUsernameIgnoreCaseAndIdNot(String username, Long id);

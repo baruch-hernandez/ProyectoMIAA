@@ -84,7 +84,7 @@ class ReporteOffline {
       );
 }
 
-/// Sprint 4 (tarea 2.1): leer y escribir la bandeja de salida. Todo filtra por notificador.
+/// Leer y escribir la bandeja de salida. Todo filtra por notificador.
 class ReportesOfflineDao {
   ReportesOfflineDao(this._bd);
 

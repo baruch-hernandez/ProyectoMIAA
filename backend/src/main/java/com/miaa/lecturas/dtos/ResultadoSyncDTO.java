@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Respuesta de POST /reportes/sync (Sprint 4, tarea 1.4): qué reportes del lote quedaron guardados
+ * Respuesta de POST /reportes/sync: qué reportes del lote quedaron guardados
  * y cuáles se rechazaron y por qué. Un rechazo no detiene a los demás del lote.
  *
  *   { "sincronizados": [ { "clientSyncId": "…", "id": 42, "folio": "R-2026-000042" } ],

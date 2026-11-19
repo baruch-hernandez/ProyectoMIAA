@@ -16,7 +16,6 @@ public final class RespuestaJson {
         error(res, status, mensaje, codigo, null);
     }
 
-    /** Igual, más "segundos" (cuánto esperar antes de reintentar). */
     public static void error(HttpServletResponse res, int status, String mensaje, String codigo, Long segundos)
             throws IOException {
         res.setStatus(status);

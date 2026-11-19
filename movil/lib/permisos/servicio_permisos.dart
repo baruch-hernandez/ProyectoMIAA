@@ -5,10 +5,9 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../core/plataforma.dart';
 
-/// Los permisos que usa el reporte.
 enum TipoPermiso { camara, galeria, ubicacion }
 
-/// El estado de un permiso, ya traducido a lo que le importa a la app (tarea 1.4).
+/// El estado de un permiso, ya traducido a lo que le importa a la app.
 enum EstadoPermiso {
   /// PermissionStatus.granted (o limited: "solo algunas fotos" en Android 14).
   concedido,

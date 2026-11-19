@@ -57,7 +57,6 @@ public class AuthController {
 
         String identificador = request.getUsername().trim();
 
-        // 1. Buscar por username o por email (RF-01), sin importar mayúsculas
         Optional<Usuario> usuarioOpt = usuarioRepository.findParaLoginByUsernameIgnoreCase(identificador);
         if (usuarioOpt.isEmpty()) {
             usuarioOpt = usuarioRepository.findParaLoginByEmailIgnoreCase(identificador);
@@ -65,7 +64,6 @@ public class AuthController {
 
         LocalDateTime ahora = LocalDateTime.now();
 
-        // 2. Revisar bloqueo temporal por intentos fallidos (RNF-04)
         if (usuarioOpt.isPresent()) {
             LocalDateTime hasta = bloqueo.bloqueadaHasta(usuarioOpt.get(), ahora);
             if (hasta != null) {
@@ -73,7 +71,6 @@ public class AuthController {
             }
         }
 
-        // 3. Validar contraseña con BCrypt
         boolean credencialesValidas = usuarioOpt
                 .map(u -> u.getPassword() != null && passwordEncoder.matches(request.getPassword(), u.getPassword()))
                 .orElse(false);
@@ -100,25 +97,19 @@ public class AuthController {
         Usuario usuario = usuarioOpt.get();
         bloqueo.registrarExito(usuario); // Reiniciar contador de intentos
 
-        // Validar si la cuenta está activa
         if (!usuario.estaHabilitado()) {
             usuarioRepository.save(usuario);
             return error(HttpStatus.FORBIDDEN, "Tu cuenta está dada de baja. Habla con tu administrador.");
         }
 
-        // Registrar último acceso y presencia
         usuario.setUltimoAcceso(ahora);
         usuarioRepository.save(usuario);
         presenciaService.latido(usuario.getId(), null);
 
-        // Generar token JWT
         String token = jwtUtils.generarToken(usuario);
 
-        // Rol: ADMIN o NOTIFICADOR (RF-02)
         String rolNombre = usuario.getRol();
 
-        // 4. Estructura de respuesta adaptada exactamente al requerimiento de la Tarea
-        // 2.1
         Map<String, Object> response = new LinkedHashMap<>();
         response.put("token", token);
 

@@ -17,7 +17,6 @@ function httpsDesarrollo() {
   return { pfx: readFileSync(certificado), passphrase: process.env.MIAA_KEYSTORE_PASSWORD ?? 'miaa-dev' }
 }
 
-// https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const conHttps = mode === 'https'
   // A dónde reenvía Vite las peticiones /api/... (el backend en ESTA misma PC).

@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-/** Tarea 1.4: JWT firmado con HS256 y con vida de 24 horas. */
+/** JWT firmado con HS256 y con vida de 24 horas. */
 class JwtUtilsTest {
 
     private static final String SECRETO = "404F635266556A586E3272357538782F413F4428472B4B6250645367566B5970";
@@ -29,7 +29,6 @@ class JwtUtilsTest {
         return u;
     }
 
-    /** Lee un número del payload del JWT (la parte del medio, en Base64URL). */
     private static long campo(String token, String nombre) {
         String payload = new String(Base64.getUrlDecoder().decode(token.split("\\.")[1]), StandardCharsets.UTF_8);
         Matcher m = Pattern.compile("\"" + nombre + "\":(\\d+)").matcher(payload);

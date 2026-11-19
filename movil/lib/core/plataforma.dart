@@ -37,7 +37,6 @@ class Plataforma {
     }
   }
 
-  /// Abre los ajustes del "Ahorro de batería".
   static Future<bool> abrirAhorroEnergia() async {
     if (!Platform.isAndroid) return false;
     try {

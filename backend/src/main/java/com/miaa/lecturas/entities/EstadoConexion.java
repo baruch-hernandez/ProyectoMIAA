@@ -1,6 +1,5 @@
 package com.miaa.lecturas.entities;
 
-/** usuario_presencia.estado_conexion (Sprint 5). */
 public enum EstadoConexion {
     /** Sesión iniciada y latidos llegando. */
     ACTIVO,

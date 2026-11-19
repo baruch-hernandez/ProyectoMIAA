@@ -75,7 +75,7 @@ class PantallaNuevoReporte extends StatefulWidget {
   static const llaveAvisoFoto = Key('aviso-falta-foto');
   static const llaveAvisoUbicacion = Key('aviso-falta-ubicacion');
 
-  /// El aviso de "Guardado en dispositivo (sin conexión)" (Sprint 4, tarea 2.5).
+  /// El aviso de "Guardado en dispositivo (sin conexión)".
   static const llaveGuardadoOffline = Key('aviso-guardado-offline');
   static const llaveCamara = Key('btn-foto-camara');
   static const llaveGaleria = Key('btn-foto-galeria');
@@ -136,8 +136,6 @@ class _PantallaNuevoReporteState extends State<PantallaNuevoReporte> {
     }
     super.dispose();
   }
-
-  // ------------------------------------------------------------------ ubicación del domicilio
 
   /// Al abrir: solo si el permiso YA está dado (no se interrumpe con un diálogo al entrar).
   Future<void> _ubicarSiYaHayPermiso() async {
@@ -246,7 +244,7 @@ class _PantallaNuevoReporteState extends State<PantallaNuevoReporte> {
       ));
   }
 
-  /// Tareas 3.1–3.3 + 2.3–2.5: permiso → cámara/galería → procesar → vista previa →
+  /// Permiso → cámara/galería → procesar → vista previa →
   /// repetir (vuelve a abrir la misma fuente) o confirmar (se fija al borrador).
   Future<void> _agregarFoto(OrigenFoto origen) async {
     if (_procesando || _enviando) return;
@@ -258,7 +256,7 @@ class _PantallaNuevoReporteState extends State<PantallaNuevoReporte> {
     final tipo = origen == OrigenFoto.camara ? TipoPermiso.camara : TipoPermiso.galeria;
     final hayPermiso = await asegurarPermiso(context, widget.permisos, tipo);
     if (!hayPermiso) return;
-    // Historia 3: la foto de la cámara lleva el punto exacto donde se tomó
+    // La foto de la cámara lleva el punto exacto donde se tomó
     if (origen == OrigenFoto.camara) {
       if (!mounted || !await asegurarPermiso(context, widget.permisos, TipoPermiso.ubicacion)) return;
     }
@@ -490,7 +488,7 @@ class _PantallaNuevoReporteState extends State<PantallaNuevoReporte> {
                   else if (_b.ubicacion == null)
                     const _Falta('Marca la ubicación del domicilio (GPS o mapa) para poder enviar el reporte.',
                         llave: PantallaNuevoReporte.llaveAvisoUbicacion),
-                  // Tarea 2.2: deshabilitado (onPressed: null) mientras no haya foto.
+                  // Deshabilitado (onPressed: null) mientras no haya foto.
                   FilledButton.icon(
                     key: PantallaNuevoReporte.llaveEnviar,
                     style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),

@@ -9,7 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tarea 1.5 (rate limit del login). Se prueba con un reloj FALSO: así no hay que esperar
+ * Rate limit del login. Se prueba con un reloj FALSO: así no hay que esperar
  * 60 segundos reales para ver que la ventana se reinicia.
  */
 class LimitadorPorVentanaTest {

@@ -36,7 +36,6 @@ public class ValidadorFotos {
     /** Solo JPEG o PNG (las que Java sabe leer sin librerías extra). */
     private static final Pattern DATA_URL = Pattern.compile("^data:image/(jpeg|jpg|png);base64,(.+)$", Pattern.DOTALL);
 
-    /** Medidas reales de la imagen. */
     public record Medidas(int ancho, int alto) {
     }
 
