@@ -1,7 +1,7 @@
 package com.miaa.lecturas.dtos;
 
 /**
- * GET /usuarios/yo — quién soy y qué me falta para poder usar la app.
+ * GET /yo — quién soy y qué me falta para poder usar la app.
  *
  * @param debeCambiarPassword      entró con contraseña temporal: tiene que cambiarla
  * @param avisoPrivacidadPendiente no ha aceptado la versión vigente del aviso de privacidad

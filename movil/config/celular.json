@@ -1,4 +1,4 @@
 {
-  "API_URL": "https://144.46.52.189:8500/api/v1",
+  "API_URL": "https://144.46.52.189:8500/api",
   "CERT_DEV": "true"
 }

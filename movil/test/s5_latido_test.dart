@@ -30,14 +30,14 @@ void main() {
     await pumpEventQueue();
 
     expect(peticiones, hasLength(1));
-    expect(peticiones.first.path, '/usuarios/heartbeat');
+    expect(peticiones.first.path, '/heartbeat');
     expect(peticiones.first.data, isNull);
 
     // 2. El stream GPS ya entregó puntoAgs y late -> manda el mapa exacto con coordenadas
     await latido.latir();
 
     expect(peticiones, hasLength(2));
-    expect(peticiones[1].path, '/usuarios/heartbeat');
+    expect(peticiones[1].path, '/heartbeat');
     expect(peticiones[1].data, {'latitud': 21.88, 'longitud': -102.29, 'precision': 8.0});
     expect(Latido.compartiendo.value, isTrue);
   });

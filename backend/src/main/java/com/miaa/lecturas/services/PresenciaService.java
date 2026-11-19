@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 /**
  * Presencia y ubicación en vivo (Sprints 3 y 5), en una sola fila por empleado (UsuarioPresencia).
  *
- *  1. Mientras la sesión está abierta, la app manda un latido cada segundo (POST /usuarios/heartbeat),
+ *  1. Mientras la sesión está abierta, la app manda un latido cada segundo (POST /heartbeat),
  *     con las coordenadas si las tiene: ACTIVO y última conexión = ahora.
  *  2. Al cerrar sesión o pausarse la app: INACTIVO al instante (se conserva el último punto).
  *  3. Si los latidos dejan de llegar (sin red, celular apagado), la tarea programada lo marca

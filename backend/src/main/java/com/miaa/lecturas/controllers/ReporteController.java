@@ -11,13 +11,16 @@ import com.miaa.lecturas.dtos.ReporteEdicionDTO;
 import com.miaa.lecturas.dtos.ReporteRequestDTO;
 import com.miaa.lecturas.dtos.ReporteResumenDTO;
 import com.miaa.lecturas.dtos.ResultadoSyncDTO;
+import com.miaa.lecturas.services.AvisosReportes;
 import com.miaa.lecturas.services.ReporteService;
 import com.miaa.lecturas.services.SincronizacionService;
 import jakarta.validation.Valid;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -32,7 +35,9 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -50,8 +55,10 @@ import java.util.Map;
  *  ADMIN
  *   GET    /reportes?pagina=0&tamano=50      los reportes de todos los empleados, por páginas
  *          &empleadoId=7&desde=2026-11-01&hasta=2026-11-18   filtros opcionales (días incluidos)
+ *   GET    /reportes/eventos                 avisos de reportes nuevos en tiempo real (SSE, Historia 6)
  *  AMBOS
  *   GET    /reportes/{id}                    detalle (el notificador solo los suyos)
+ *   GET    /reportes/{id}/miniatura          JPEG chico de la primera foto (Historia 6)
  *   POST   /reportes/{id}/notas              agregar una nota (el notificador al suyo; el admin a cualquiera)
  *   PUT    /reportes/{id}                    corregir datos (el notificador, el suyo y a tiempo; el admin, cualquiera)
  *
@@ -60,15 +67,18 @@ import java.util.Map;
  * compile sin la opción "-parameters".
  */
 @RestController
-@RequestMapping({ "/reportes", "/api/v1/reportes" })
+@RequestMapping("/reportes")
 public class ReporteController {
 
     private final ReporteService reporteService;
     private final SincronizacionService sincronizacionService;
+    private final AvisosReportes avisos;
 
-    public ReporteController(ReporteService reporteService, SincronizacionService sincronizacionService) {
+    public ReporteController(ReporteService reporteService, SincronizacionService sincronizacionService,
+                             AvisosReportes avisos) {
         this.reporteService = reporteService;
         this.sincronizacionService = sincronizacionService;
+        this.avisos = avisos;
     }
 
     @PostMapping
@@ -105,6 +115,22 @@ public class ReporteController {
                                    @RequestParam(name = "desde", required = false) @DateTimeFormat(iso = ISO.DATE) LocalDate desde,
                                    @RequestParam(name = "hasta", required = false) @DateTimeFormat(iso = ISO.DATE) LocalDate hasta) {
         return reporteService.todos(pagina, tamano, empleadoId, desde, hasta);
+    }
+
+    /** Historia 6: avisos de reportes nuevos en tiempo real (Server-Sent Events). Ver AvisosReportes. */
+    @GetMapping(path = "/eventos", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @PreAuthorize("hasRole('ADMIN')")
+    public SseEmitter eventos() {
+        return avisos.suscribir();
+    }
+
+    /** Historia 6: miniatura JPEG (~320 px) de la primera foto, para el listado. */
+    @GetMapping(path = "/{id}/miniatura", produces = MediaType.IMAGE_JPEG_VALUE)
+    public ResponseEntity<byte[]> miniatura(@AuthenticationPrincipal UsuarioPrincipal yo, @PathVariable("id") Long id) {
+        return ResponseEntity.ok()
+                // privada (lleva token); 5 min, porque en las primeras 24 h el autor puede cambiar las fotos
+                .cacheControl(CacheControl.maxAge(Duration.ofMinutes(5)).cachePrivate())
+                .body(reporteService.miniatura(yo, id));
     }
 
     @GetMapping("/{id}")

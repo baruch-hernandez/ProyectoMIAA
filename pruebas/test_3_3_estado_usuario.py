@@ -6,7 +6,7 @@ import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Lee la URL de la API del entorno o usa el valor por defecto
-BASE_URL = os.getenv("MIAA_API", "https://localhost:8500/api/v1").rstrip("/")
+BASE_URL = os.getenv("MIAA_API", "https://localhost:8500/api").rstrip("/")
 
 def api_url(ruta: str) -> str:
     if not ruta.startswith("/"):
@@ -18,7 +18,7 @@ def test_estado_dinamico_usuario_conexion_y_desconexion():
     Tarea 3.3 / 1.4:
     Valida la transición del estado del usuario entre activo (EN_LINEA) e inactivo (DESCONECTADO):
     1. Login de notificador -> debe responder 200 y token.
-    2. Enviar latido de presencia (POST /usuarios/heartbeat) -> responde 204.
+    2. Enviar latido de presencia (POST /heartbeat) -> responde 204.
     3. Logout explícito (POST /auth/logout) -> responde 204 y limpia presencia.
     """
     # 1. Autenticar como notificador de campo
@@ -35,7 +35,7 @@ def test_estado_dinamico_usuario_conexion_y_desconexion():
     headers_notificador = {"Authorization": f"Bearer {token_notificador}"}
 
     # 2. Enviar latido de presencia (latido periódico desde el móvil)
-    res_latido = requests.post(api_url("/usuarios/heartbeat"), headers=headers_notificador, verify=False)
+    res_latido = requests.post(api_url("/heartbeat"), headers=headers_notificador, verify=False)
     assert res_latido.status_code == 204, f"Fallo al registrar presencia: {res_latido.status_code}"
 
     # 3. Autenticar como admin para verificar disponibilidad

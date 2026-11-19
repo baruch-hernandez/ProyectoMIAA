@@ -1,4 +1,4 @@
-"""Sprint 4 — tareas 3.3 y 3.4 (lado servidor): POST /api/v1/reportes/sync.
+"""Sprint 4 — tareas 3.3 y 3.4 (lado servidor): POST /api/reportes/sync.
 
 Lo que manda la app cuando recupera la señal: una parte "reportes" (JSON, lista) y una parte binaria
 por foto. Se revisa:
@@ -212,12 +212,12 @@ def test_mandar_la_ubicacion_cuenta_como_latido(crear_notificador, admin, config
     datos = crear_notificador("latidoubic", requisitos=False)
     api = Api(config.api)
     api.entrar(datos["username"], datos["password"])
-    assert api.delete("/usuarios/yo/conexion").status_code == 204  # inactivo
+    assert api.delete("/yo/conexion").status_code == 204  # inactivo
 
-    r = api.post("/usuarios/heartbeat", json={"latitud": CENTRO_AGS[0], "longitud": CENTRO_AGS[1], "precision": 5})
+    r = api.post("/heartbeat", json={"latitud": CENTRO_AGS[0], "longitud": CENTRO_AGS[1], "precision": 5})
 
     assert r.status_code == 204, r.text
-    [yo] = [e for e in admin.get("/usuarios/empleados").json()["empleados"] if e["id"] == datos["id"]]
+    [yo] = [e for e in admin.get("/empleados").json()["empleados"] if e["id"] == datos["id"]]
     assert yo["activo"] is True, "el latido con la ubicación lo vuelve a poner activo"
 
 

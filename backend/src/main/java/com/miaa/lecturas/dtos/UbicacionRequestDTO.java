@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 
 /**
- * Las coordenadas que acompañan al latido (POST /usuarios/heartbeat). Si traen un campo "fecha"
+ * Las coordenadas que acompañan al latido (POST /heartbeat). Si traen un campo "fecha"
  * (apps viejas), se ignora: cuenta la hora en que llegó al servidor.
  */
 public record UbicacionRequestDTO(

@@ -58,7 +58,7 @@ void main() {
       final contestar = Completer<void>();
       a.listo = contestar.future;
 
-      final latido = _dio(a).post('/usuarios/heartbeat', options: Carga.oculta);
+      final latido = _dio(a).post('/heartbeat', options: Carga.oculta);
       await Future<void>.delayed(const Duration(milliseconds: 20)); // ya salió y espera al servidor
       expect(Carga.pendientes.value, 0);
       contestar.complete();

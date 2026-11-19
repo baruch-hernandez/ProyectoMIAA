@@ -27,18 +27,18 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * Empleados (solo ADMIN). Todo el controlador exige el rol con @PreAuthorize a nivel clase.
  *
- *   GET  /usuarios/empleados                    lista con actividad y "en línea"
- *   POST /usuarios/empleados                    dar de alta con su rol (contraseña temporal)
- *   GET  /usuarios/empleados/{id}               datos de su cuenta
- *   PUT  /usuarios/empleados/{id}               editar nombre, usuario, correo y rol
- *   POST /usuarios/empleados/{id}/password      restablecer contraseña (temporal)
- *   PUT  /usuarios/empleados/{id}/habilitado    dar de baja / reactivar
- *   POST /usuarios/empleados/{id}/desbloquear   quitar el bloqueo por intentos fallidos
- *   GET  /usuarios/empleados/{id}/ubicacion     ubicación en vivo
- *   (el mapa de todos es GET /admin/cuadrillas/ubicaciones, en CuadrillasController)
+ *   GET  /empleados                    lista con actividad y "en línea"
+ *   POST /empleados                    dar de alta con su rol (contraseña temporal)
+ *   GET  /empleados/{id}               datos de su cuenta
+ *   PUT  /empleados/{id}               editar nombre, usuario, correo y rol
+ *   POST /empleados/{id}/password      restablecer contraseña (temporal)
+ *   PUT  /empleados/{id}/habilitado    dar de baja / reactivar
+ *   POST /empleados/{id}/desbloquear   quitar el bloqueo por intentos fallidos
+ *   GET  /empleados/{id}/ubicacion     ubicación en vivo
+ *   (el mapa de todos es GET /cuadrillas, en CuadrillasController)
  */
 @RestController
-@RequestMapping({ "/usuarios", "/api/v1/usuarios" })
+@RequestMapping("/empleados")
 @PreAuthorize("hasRole('ADMIN')")
 public class UsuarioController {
 
@@ -54,55 +54,55 @@ public class UsuarioController {
     }
 
     /**
-     * GET /usuarios/empleados (solo ADMIN)
+     * GET /empleados (solo ADMIN)
      * → { empleados: [{ id, nombre, username, ultimoAcceso, ultimoReporte,
      *      totalReportes, ultimaActividad, activo, diasSinActividad, enLinea }] }
      */
-    @GetMapping("/empleados")
+    @GetMapping
     public EmpleadosDTO empleados() {
         return empleadoService.listar();
     }
 
     /**
-     * GET /usuarios/empleados/{id}/ubicacion (solo ADMIN)
+     * GET /empleados/{id}/ubicacion (solo ADMIN)
      * Última ubicación del notificador y si está en línea. El mapa del admin lo consulta cada 5 s.
      */
-    @GetMapping("/empleados/{id}/ubicacion")
+    @GetMapping("/{id}/ubicacion")
     @SuppressWarnings("null")
     public UbicacionEmpleadoDTO ubicacion(@PathVariable("id") Long id) {
         return presenciaService.deEmpleado(id);
     }
 
-    @PostMapping("/empleados")
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public CuentaEmpleadoDTO crear(@Valid @RequestBody NuevoEmpleadoDTO request) {
         return gestionEmpleados.crear(request);
     }
 
-    @GetMapping("/empleados/{id}")
+    @GetMapping("/{id}")
     public CuentaEmpleadoDTO cuenta(@PathVariable("id") Long id) {
         return gestionEmpleados.obtener(id);
     }
 
-    @PutMapping("/empleados/{id}")
+    @PutMapping("/{id}")
     public CuentaEmpleadoDTO editar(@PathVariable("id") Long id, @Valid @RequestBody EdicionEmpleadoDTO request,
                                     @AuthenticationPrincipal UsuarioPrincipal yo) {
         return gestionEmpleados.editar(id, request, yo);
     }
 
-    @PostMapping("/empleados/{id}/password")
+    @PostMapping("/{id}/password")
     public CuentaEmpleadoDTO restablecerPassword(@PathVariable("id") Long id,
                                                  @Valid @RequestBody PasswordTemporalDTO request) {
         return gestionEmpleados.restablecerPassword(id, request.passwordTemporal());
     }
 
-    @PutMapping("/empleados/{id}/habilitado")
+    @PutMapping("/{id}/habilitado")
     public CuentaEmpleadoDTO cambiarHabilitado(@PathVariable("id") Long id, @Valid @RequestBody HabilitadoDTO request,
                                                @AuthenticationPrincipal UsuarioPrincipal yo) {
         return gestionEmpleados.cambiarHabilitado(id, request.habilitado(), yo);
     }
 
-    @PostMapping("/empleados/{id}/desbloquear")
+    @PostMapping("/{id}/desbloquear")
     public CuentaEmpleadoDTO desbloquear(@PathVariable("id") Long id) {
         return gestionEmpleados.desbloquear(id);
     }

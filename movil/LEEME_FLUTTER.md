@@ -25,9 +25,9 @@ notificador_miaa/
 │  │  ├─ sesion.dart                login, logout, token cifrado (flutter_secure_storage)
 │  │  └─ pantalla_login.dart        formulario + errores (bloqueo 423, rate limit 429)
 │  ├─ presencia/
-│  │  └─ latido.dart                POST /usuarios/heartbeat cada segundo (tarea 2.4)
+│  │  └─ latido.dart                POST /heartbeat cada segundo (tarea 2.4)
 │  ├─ inicio/
-│  │  └─ pantalla_inicio.dart       "Hola, …", estado Activo y GET /usuarios/yo
+│  │  └─ pantalla_inicio.dart       "Hola, …", estado Activo y GET /yo
 │  └─ diagnostico/
 │     └─ pantalla_diagnostico.dart  prueba la conexión paso por paso
 └─ test/
@@ -74,7 +74,7 @@ android:usesCleartextTraffic="false"
 ```
 
 ### 5. URL del backend
-- **Emulador:** `config/dev.json` ya trae `https://10.0.2.2:8500/api/v1`.
+- **Emulador:** `config/dev.json` ya trae `https://10.0.2.2:8500/api`.
 - **Celular:** en `config/celular.json` cambia `192.168.1.50` por la IP de tu PC (`ipconfig` → *Dirección IPv4*). El celular y la PC deben estar **en la misma red wifi**.
   - Abre el puerto 8500 en el firewall de Windows (PowerShell como administrador):
     ```powershell
@@ -95,7 +95,7 @@ flutter run --dart-define-from-file=config/celular.json
 1. Arranca el backend: `.\mvnw spring-boot:run` (con el perfil `https`, que ya trae `application.properties`).
 2. Corre la app, toca **"Probar conexión con el servidor"** y revisa que todo salga en verde.
 3. Entra con `notificador1` / `notificador1`:
-   - verás "Hola, Juan Pérez", el punto verde **Activo** y la respuesta de `/usuarios/yo` (con el aviso de privacidad pendiente, que es lo que sigue por programar);
+   - verás "Hola, Juan Pérez", el punto verde **Activo** y la respuesta de `/yo` (con el aviso de privacidad pendiente, que es lo que sigue por programar);
    - en el **panel web del admin → Empleados**, Juan Pérez sale **Activo**;
    - al tocar **Cerrar sesión**, el admin lo ve "Últ. vez…".
 4. Entra con `admin`: la app debe **rechazarlo** ("Esta app es solo para notificadores").
@@ -114,6 +114,6 @@ flutter run --dart-define-from-file=config/celular.json
 | `Respondió 429` | Muchos intentos seguidos desde el mismo celular: espera un minuto |
 
 ## Lo que sigue (no viene aquí, a propósito)
-- **Pantallas de requisitos:** cambiar la contraseña temporal y aceptar el aviso de privacidad. El backend ya tiene `PUT /usuarios/yo/password` y `POST /usuarios/yo/aviso-privacidad`.
+- **Pantallas de requisitos:** cambiar la contraseña temporal y aceptar el aviso de privacidad. El backend ya tiene `PUT /yo/password` y `POST /yo/aviso`.
 - **Reportes:** lista (`GET /reportes/mios`), nuevo reporte con GPS (`geolocator`) y fotos (`image_picker`), y la cola sin señal.
 - **Manejo de estado:** cuando crezca, pasar `Sesion` a Riverpod o Bloc y la navegación a `go_router`. Para esta prueba se usó un `ChangeNotifier` simple, a propósito, para que se entienda todo sin librerías extra.

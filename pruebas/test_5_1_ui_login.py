@@ -44,7 +44,7 @@ def test_cuenta_bloqueada_muestra_aviso_y_cuenta_regresiva(navegador, config, ad
     ui.esperar_texto(navegador, "Cuenta bloqueada")
     ui.esperar_texto(navegador, "Tiempo restante")
     captura(navegador, "5.1_cuenta_bloqueada")
-    admin.post(f"/usuarios/empleados/{n['id']}/desbloquear")
+    admin.post(f"/empleados/{n['id']}/desbloquear")
 
 
 def test_rate_limit_deshabilita_el_boton_con_cuenta_regresiva(config):

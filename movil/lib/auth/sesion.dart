@@ -8,7 +8,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../core/api.dart';
 import '../core/carga.dart';
 
-/// Lo que regresa POST /api/v1/auth/login en "user".
+/// Lo que regresa POST /api/auth/login en "user".
 class Usuario {
   const Usuario({
     required this.id,
@@ -155,7 +155,7 @@ class Sesion extends ChangeNotifier {
   /// pendientes = true: la app muestra la pantalla de requisitos (p. ej. el admin le restableció
   /// la contraseña con la sesión abierta y el backend respondió REQUISITO_PENDIENTE).
   /// false: ya cambió la contraseña y aceptó el aviso; la app pasa al inicio.
-  /// Qué falta exactamente lo pregunta la pantalla al backend (GET /usuarios/yo).
+  /// Qué falta exactamente lo pregunta la pantalla al backend (GET /yo).
   Future<void> marcarRequisitos({required bool pendientes}) async {
     final u = usuario;
     if (u == null || u.tieneRequisitos == pendientes) return;

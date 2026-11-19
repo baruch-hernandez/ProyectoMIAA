@@ -30,6 +30,23 @@ class AlmacenFotosTest {
     }
 
     @Test
+    void laMiniaturaEsChicaGuardaLaProporcionYSeQuedaEnDisco(@TempDir Path carpeta) throws Exception {
+        java.io.ByteArrayOutputStream png = new java.io.ByteArrayOutputStream();
+        javax.imageio.ImageIO.write(new java.awt.image.BufferedImage(1920, 1080, java.awt.image.BufferedImage.TYPE_INT_RGB), "png", png);
+        AlmacenFotos almacen = new AlmacenFotos(carpeta.toString());
+        String nombre = almacen.guardar(png.toByteArray(), "png");
+
+        var mini = javax.imageio.ImageIO.read(new java.io.ByteArrayInputStream(almacen.miniatura(nombre)));
+
+        assertTrue(mini.getWidth() == AlmacenFotos.LADO_MINIATURA && mini.getHeight() == 180, mini.getWidth() + "x" + mini.getHeight());
+        assertTrue(Files.exists(carpeta.resolve(nombre.replace(".png", "-mini.jpg"))), "la segunda vez ya no se recalcula");
+        almacen.borrar(nombre); // sin transacción: la foto y su miniatura, ya
+        try (var quedan = Files.list(carpeta)) {
+            assertFalse(quedan.findAny().isPresent());
+        }
+    }
+
+    @Test
     void siLaTransaccionSeDeshaceNoQuedaElArchivo(@TempDir Path carpeta) throws Exception {
         AlmacenFotos almacen = new AlmacenFotos(carpeta.toString());
         TransactionSynchronizationManager.initSynchronization();

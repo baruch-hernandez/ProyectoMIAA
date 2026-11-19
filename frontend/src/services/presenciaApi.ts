@@ -8,12 +8,12 @@ import type { UbicacionNueva } from '../types/reporte';
 export const presenciaApi = {
   /** "Sigo aquí", con la ubicación si la hay: cada segundo con la app a la vista (useCompartirUbicacion). */
   latido: async (punto?: UbicacionNueva) => {
-    await api.post('/usuarios/heartbeat', punto, { segundoPlano: true });
+    await api.post('/heartbeat', punto, { segundoPlano: true });
   },
 
   /** La pestaña se ocultó o se apagó la pantalla: sale inactivo al instante. */
   pausar: async () => {
-    await api.delete('/usuarios/yo/conexion', { segundoPlano: true });
+    await api.delete('/yo/conexion', { segundoPlano: true });
   },
 
   /** Avisa al backend que cerró sesión: sale DESCONECTADO al instante (tarea 2.2). */

@@ -24,7 +24,7 @@ El proyecto tiene tres partes que hablan con la misma API:
            │ HTTPS + JWT                   │ HTTPS + JWT
            ▼                               ▼
  ┌──────────────────────────────────────────────────────┐
- │  API Spring Boot   https://…:8500/api/v1             │
+ │  API Spring Boot   https://…:8500/api             │
  │  Filtros: rate limit login → JWT → requisitos        │
  │  Controllers → Services (reglas) → Repositories      │
  └─────────────────────────┬────────────────────────────┘
@@ -139,7 +139,7 @@ cd backend
 
 - Arranca en **`https://localhost:8500`** con el perfil `https`, que ya viene activo en `application.properties`.
 - La primera vez crea los usuarios de prueba (sección 5).
-- Para comprobar que responde: `curl.exe -k https://localhost:8500/api/v1/auth/login` debe contestar (aunque sea con error de método).
+- Para comprobar que responde: `curl.exe -k https://localhost:8500/api/auth/login` debe contestar (aunque sea con error de método).
 
 ### 4.4 Panel web
 
@@ -199,13 +199,13 @@ La app móvil rechaza al admin ("Esta app es solo para notificadores").
 
 ### 6.1 Inicio de sesión y seguridad
 
-1. `POST /api/v1/auth/login` compara la contraseña con su hash **BCrypt** y devuelve un **JWT** firmado (HS256) que dura 24 h ([JwtUtils.java](backend/src/main/java/com/miaa/lecturas/config/JwtUtils.java)).
+1. `POST /api/auth/login` compara la contraseña con su hash **BCrypt** y devuelve un **JWT** firmado (HS256) que dura 24 h ([JwtUtils.java](backend/src/main/java/com/miaa/lecturas/config/JwtUtils.java)).
 2. En cada petición, [JwtAuthFilter](backend/src/main/java/com/miaa/lecturas/config/JwtAuthFilter.java) valida el token, carga al usuario y revisa que siga habilitado.
 3. Hay dos frenos contra la fuerza bruta:
    - **Rate limit por IP** ([LimiteLoginFilter](backend/src/main/java/com/miaa/lecturas/config/LimiteLoginFilter.java)): más de 10 intentos de login por minuto → **429** con `Retry-After`.
    - **Bloqueo de cuenta** ([BloqueoPorIntentos](backend/src/main/java/com/miaa/lecturas/services/BloqueoPorIntentos.java)): 5 contraseñas incorrectas seguidas → **423**, cuenta bloqueada 15 min. El admin puede desbloquearla.
 4. **Roles:** `@PreAuthorize("hasRole('ADMIN')")` o `'NOTIFICADOR'` en cada controller. Además, los services revisan que el reporte sea tuyo antes de tocarlo.
-5. **Requisitos de la cuenta:** si el usuario tiene una contraseña temporal (porque el admin lo dio de alta o se la restableció) o no ha aceptado la versión vigente del aviso de privacidad, toda la API responde **403 `REQUISITO_PENDIENTE`**. Solo puede usar las rutas de su cuenta (`/usuarios/yo/...`). La web lo manda a `/cuenta/requisitos`.
+5. **Requisitos de la cuenta:** si el usuario tiene una contraseña temporal (porque el admin lo dio de alta o se la restableció) o no ha aceptado la versión vigente del aviso de privacidad, toda la API responde **403 `REQUISITO_PENDIENTE`**. Solo puede usar las rutas de su cuenta (`/yo/...`). La web lo manda a `/cuenta/requisitos`.
 
 En el celular, el token se guarda cifrado con `flutter_secure_storage`. En la web vive en `sessionStorage`, así que se borra al cerrar la pestaña.
 
@@ -267,27 +267,27 @@ Cada foto también manda `origenFecha` (OBTURADOR, EXIF, ARCHIVO o SUBIDA) para 
 
 Todo vive en [PresenciaService.java](backend/src/main/java/com/miaa/lecturas/services/PresenciaService.java) y en la tabla `usuario_presencia` (una fila por empleado).
 
-- **Activo / Inactivo:** con la sesión iniciada y la app a la vista, la app manda **un** latido por segundo, `POST /usuarios/heartbeat`. Para cuidar los datos móviles, las coordenadas solo van cuando se movió 5 m o más, o cada 30 s si sigue en el mismo lugar; los demás latidos van sin cuerpo. Fuera de Aguascalientes el backend responde 400 (la app ni manda esas lecturas).
-- Al cerrar sesión, apagar la pantalla o mandar la app al fondo, avisa (`POST /auth/logout` o `DELETE /usuarios/yo/conexion`) y pasa a **INACTIVO** de inmediato. Si no llega latido en 2 s (sin señal, celular apagado de golpe), una tarea programada (`@Scheduled`, cada segundo) lo marca INACTIVO.
+- **Activo / Inactivo:** con la sesión iniciada y la app a la vista, la app manda **un** latido por segundo, `POST /heartbeat`. Para cuidar los datos móviles, las coordenadas solo van cuando se movió 5 m o más, o cada 30 s si sigue en el mismo lugar; los demás latidos van sin cuerpo. Fuera de Aguascalientes el backend responde 400 (la app ni manda esas lecturas).
+- Al cerrar sesión, apagar la pantalla o mandar la app al fondo, avisa (`POST /auth/logout` o `DELETE /yo/conexion`) y pasa a **INACTIVO** de inmediato. Si no llega latido en 2 s (sin señal, celular apagado de golpe), una tarea programada (`@Scheduled`, cada segundo) lo marca INACTIVO.
 - **Dirección:** [GeocodificadorInverso.java](backend/src/main/java/com/miaa/lecturas/services/GeocodificadorInverso.java) la pide a Nominatim (OpenStreetMap) solo si el empleado se movió más de 50 m, sin hacer esperar al latido, con caché y **máximo 1 consulta por segundo** (la regla de Nominatim). Se apaga con `miaa.geocodificacion.habilitada=false` (así está en el perfil de pruebas). Para producción conviene un Nominatim propio (`miaa.geocodificacion.url`).
 - **Mapa de cuadrillas** ([MapaNotificadores.tsx](frontend/src/components/admin/MapaNotificadores.tsx)): verde = ACTIVO, gris = INACTIVO (en su último lugar). Al tocar un marcador o un nombre de la lista sale su rol, estado, dirección, coordenadas y "Última conexión: Hoy 14:32 h" en hora de Aguascalientes. La lista se puede buscar por nombre y filtrar por estado. Consulta cada segundo con la pestaña visible ("casi tiempo real" sin WebSockets).
-- La web del notificador hace lo mismo con `POST /usuarios/heartbeat` (un latido por segundo, con la ubicación del navegador si la hay).
+- La web del notificador hace lo mismo con `POST /heartbeat` (un latido por segundo, con la ubicación del navegador si la hay).
 
 ---
 
 ## 7. API
 
-Todas las rutas existen con y sin el prefijo `/api/v1`. Todas, menos el login, piden `Authorization: Bearer <token>`.
+Todas las rutas cuelgan de `/api` (sin versión; `server.servlet.context-path`): `https://host:8500/api/reportes`. Las de la tabla se escriben sin ese `/api`. Todas, menos el login, piden `Authorization: Bearer <token>`.
 
 | Método | Ruta | Rol | Qué hace |
 | --- | --- | --- | --- |
 | POST | `/auth/login` | — | Usuario y contraseña → token |
 | POST | `/auth/logout` | cualquiera | INACTIVO al instante |
-| GET | `/usuarios/yo` | cualquiera | Mi cuenta y mis requisitos pendientes |
-| PUT | `/usuarios/yo/password` | cualquiera | Cambiar mi contraseña |
-| POST | `/usuarios/yo/aviso-privacidad` | cualquiera | Aceptar el aviso (con su versión) |
-| POST | `/usuarios/heartbeat` | cualquiera | Latido; cuerpo opcional `{ latitud, longitud, precision }` (fuera de Aguascalientes → 400) |
-| DELETE | `/usuarios/yo/conexion` | cualquiera | INACTIVO al instante (la app se pausó) |
+| GET | `/yo` | cualquiera | Mi cuenta y mis requisitos pendientes |
+| PUT | `/yo/password` | cualquiera | Cambiar mi contraseña |
+| POST | `/yo/aviso` | cualquiera | Aceptar el aviso (con su versión) |
+| POST | `/heartbeat` | cualquiera | Latido; cuerpo opcional `{ latitud, longitud, precision }` (fuera de Aguascalientes → 400) |
+| DELETE | `/yo/conexion` | cualquiera | INACTIVO al instante (la app se pausó) |
 | POST | `/reportes` | NOTIFICADOR | Crear reporte con fotos |
 | POST | `/reportes/sync` | NOTIFICADOR | Subir de golpe los guardados sin conexión: multipart, con la parte `reportes` (JSON) y una parte binaria por foto. Responde `{ sincronizados: [{clientSyncId, id, folio}], rechazados: [{clientSyncId, motivo, errores}] }`. Exige coordenadas, al menos 1 foto y `fechaCaptura` en UTC (termina en `Z`). Un `clientSyncId` repetido regresa el reporte de antes |
 | GET | `/reportes/mios` | NOTIFICADOR | Mis reportes |
@@ -296,13 +296,13 @@ Todas las rutas existen con y sin el prefijo `/api/v1`. Todas, menos el login, p
 | PUT / DELETE | `/reportes/{id}` | NOTIFICADOR | Editar o borrar (24 h) |
 | POST | `/reportes/{id}/notas` | NOTIFICADOR | Agregar nota |
 | POST / DELETE | `/reportes/{id}/fotos[/{fotoId}]` | NOTIFICADOR | Agregar o quitar foto (24 h) |
-| GET | `/admin/cuadrillas/ubicaciones` | ADMIN | Mapa de cuadrillas: cada notificador con `estadoConexion`, rol, coordenadas, `direccionGeocodificada` y `ultimaConexion` (UTC) |
-| GET / POST | `/usuarios/empleados` | ADMIN | Listar empleados o dar de alta uno |
-| GET / PUT | `/usuarios/empleados/{id}` | ADMIN | Ver o editar empleado |
-| GET | `/usuarios/empleados/{id}/ubicacion` | ADMIN | Última ubicación del empleado |
-| POST | `/usuarios/empleados/{id}/password` | ADMIN | Restablecer contraseña (queda como temporal) |
-| PUT | `/usuarios/empleados/{id}/habilitado` | ADMIN | Dar de baja o de alta |
-| POST | `/usuarios/empleados/{id}/desbloquear` | ADMIN | Quitar el bloqueo por intentos |
+| GET | `/cuadrillas` | ADMIN | Mapa de cuadrillas: cada notificador con `estadoConexion`, rol, coordenadas, `direccionGeocodificada` y `ultimaConexion` (UTC) |
+| GET / POST | `/empleados` | ADMIN | Listar empleados o dar de alta uno |
+| GET / PUT | `/empleados/{id}` | ADMIN | Ver o editar empleado |
+| GET | `/empleados/{id}/ubicacion` | ADMIN | Última ubicación del empleado |
+| POST | `/empleados/{id}/password` | ADMIN | Restablecer contraseña (queda como temporal) |
+| PUT | `/empleados/{id}/habilitado` | ADMIN | Dar de baja o de alta |
+| POST | `/empleados/{id}/desbloquear` | ADMIN | Quitar el bloqueo por intentos |
 
 **Errores:** responden en JSON, `{ "status", "message" }`. Las validaciones devuelven **400** con `{ message, errores: { campo: "mensaje" } }` ([GlobalExceptionHandler](backend/src/main/java/com/miaa/lecturas/exceptions/GlobalExceptionHandler.java)).
 

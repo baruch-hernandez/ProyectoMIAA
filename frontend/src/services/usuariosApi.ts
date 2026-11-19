@@ -4,30 +4,30 @@ import type { CuentaEmpleado, EdicionEmpleado, EmpleadosRespuesta, NuevoEmpleado
 /** Empleados (solo ADMIN). */
 export const usuariosApi = {
   /** Lista con actividad, "en línea" y si está dado de baja. segundoPlano = refresco automático (sin gota de carga) */
-  empleados: async (segundoPlano = false) => (await api.get<EmpleadosRespuesta>('/usuarios/empleados', { segundoPlano })).data,
+  empleados: async (segundoPlano = false) => (await api.get<EmpleadosRespuesta>('/empleados', { segundoPlano })).data,
 
   /** Última ubicación y si está en línea */
-  ubicacion: async (id: number) => (await api.get<UbicacionEmpleado>(`/usuarios/empleados/${id}/ubicacion`, { segundoPlano: true })).data, // se consulta cada segundo
+  ubicacion: async (id: number) => (await api.get<UbicacionEmpleado>(`/empleados/${id}/ubicacion`, { segundoPlano: true })).data, // se consulta cada segundo
 
   /** Mapa de cuadrillas: los notificadores con su estado, última ubicación, dirección y última conexión */
-  ubicaciones: async () => (await api.get<UbicacionEmpleado[]>('/admin/cuadrillas/ubicaciones', { segundoPlano: true })).data, // cada segundo
+  ubicaciones: async () => (await api.get<UbicacionEmpleado[]>('/cuadrillas', { segundoPlano: true })).data, // cada segundo
 
   /** Datos de su cuenta */
-  cuenta: async (id: number) => (await api.get<CuentaEmpleado>(`/usuarios/empleados/${id}`)).data,
+  cuenta: async (id: number) => (await api.get<CuentaEmpleado>(`/empleados/${id}`)).data,
 
-  crear: async (datos: NuevoEmpleado) => (await api.post<CuentaEmpleado>('/usuarios/empleados', datos)).data,
+  crear: async (datos: NuevoEmpleado) => (await api.post<CuentaEmpleado>('/empleados', datos)).data,
 
   editar: async (id: number, datos: EdicionEmpleado) =>
-    (await api.put<CuentaEmpleado>(`/usuarios/empleados/${id}`, datos)).data,
+    (await api.put<CuentaEmpleado>(`/empleados/${id}`, datos)).data,
 
   restablecerPassword: async (id: number, passwordTemporal: string) =>
-    (await api.post<CuentaEmpleado>(`/usuarios/empleados/${id}/password`, { passwordTemporal })).data,
+    (await api.post<CuentaEmpleado>(`/empleados/${id}/password`, { passwordTemporal })).data,
 
   /** false = dar de baja, true = reactivar */
   cambiarHabilitado: async (id: number, habilitado: boolean) =>
-    (await api.put<CuentaEmpleado>(`/usuarios/empleados/${id}/habilitado`, { habilitado })).data,
+    (await api.put<CuentaEmpleado>(`/empleados/${id}/habilitado`, { habilitado })).data,
 
   /** Quitar el bloqueo por intentos fallidos */
   desbloquear: async (id: number) =>
-    (await api.post<CuentaEmpleado>(`/usuarios/empleados/${id}/desbloquear`)).data,
+    (await api.post<CuentaEmpleado>(`/empleados/${id}/desbloquear`)).data,
 };

@@ -2,9 +2,13 @@ package com.miaa.lecturas.dtos;
 
 import com.miaa.lecturas.entities.Reporte;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 
-/** Un renglón de la lista de reportes (sin fotos: solo cuántas tiene). */
+/**
+ * Un renglón de la lista de reportes (sin fotos: solo cuántas tiene y de dónde sacar la miniatura).
+ * También es lo que lleva el aviso en tiempo real al admin (NuevoReporteEvent).
+ */
 public record ReporteResumenDTO(
         Long id,
         String folio,
@@ -17,7 +21,13 @@ public record ReporteResumenDTO(
         LocalDateTime fechaCreacion,
         long totalFotos,
         long totalNotas,
-        boolean editado) {
+        boolean editado,
+        Double latitud,
+        Double longitud,
+        /** Cuándo se llenó en campo (UTC); null en reportes de antes de guardarla. */
+        Instant fechaCaptura,
+        /** Ruta de la miniatura de la primera foto, relativa a la API ("/reportes/7/miniatura"); null sin fotos. */
+        String miniatura) {
 
     private static final int LARGO_VISTA_PREVIA = 180;
 
@@ -36,6 +46,10 @@ public record ReporteResumenDTO(
                 r.getFechaCreacion(),
                 totalFotos,
                 totalNotas,
-                r.getFechaEdicion() != null);
+                r.getFechaEdicion() != null,
+                r.getLatitud(),
+                r.getLongitud(),
+                r.getFechaCaptura(),
+                totalFotos > 0 ? "/reportes/" + r.getId() + "/miniatura" : null);
     }
 }

@@ -4,6 +4,7 @@ import com.miaa.lecturas.config.UsuarioPrincipal;
 import com.miaa.lecturas.dtos.DatosReporte;
 import com.miaa.lecturas.dtos.FotoDTO;
 import com.miaa.lecturas.dtos.FotoRequestDTO;
+import com.miaa.lecturas.dtos.NuevoReporteEvent;
 import com.miaa.lecturas.dtos.NotaDTO;
 import com.miaa.lecturas.dtos.PaginaReportesDTO;
 import com.miaa.lecturas.dtos.ReporteDetalleDTO;
@@ -19,6 +20,7 @@ import com.miaa.lecturas.repositories.NotaReporteRepository;
 import com.miaa.lecturas.repositories.ReporteRepository;
 import com.miaa.lecturas.repositories.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
@@ -28,6 +30,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -72,6 +75,7 @@ public class ReporteService {
     private final LimiteAguascalientes limiteAgs;
     private final ValidadorFotos validadorFotos;
     private final AlmacenFotos almacenFotos;
+    private final ApplicationEventPublisher eventos;
     private final int horasParaModificar;
 
     public ReporteService(ReporteRepository reporteRepository,
@@ -81,6 +85,7 @@ public class ReporteService {
                           LimiteAguascalientes limiteAgs,
                           ValidadorFotos validadorFotos,
                           AlmacenFotos almacenFotos,
+                          ApplicationEventPublisher eventos,
                           @Value("${miaa.reportes.horas-para-modificar:24}") int horasParaModificar) {
         this.reporteRepository = reporteRepository;
         this.fotoRepository = fotoRepository;
@@ -89,6 +94,7 @@ public class ReporteService {
         this.limiteAgs = limiteAgs;
         this.validadorFotos = validadorFotos;
         this.almacenFotos = almacenFotos;
+        this.eventos = eventos;
         this.horasParaModificar = horasParaModificar;
     }
 
@@ -128,6 +134,8 @@ public class ReporteService {
         fotos.forEach(f -> r.agregarFoto(crearFoto(f)));
 
         Reporte guardado = reporteRepository.save(r);
+        // Historia 6: aviso en tiempo real a los admins; AvisosReportes lo manda al confirmar la transacción
+        eventos.publishEvent(new NuevoReporteEvent(ReporteResumenDTO.desde(guardado, fotos.size(), 0)));
         return aDetalle(guardado, List.of(), yo);
     }
 
@@ -197,6 +205,22 @@ public class ReporteService {
     public ReporteDetalleDTO detalle(UsuarioPrincipal yo, Long id) {
         Reporte r = obtenerParaVer(yo, id);
         return aDetalle(r, notaRepository.buscarPorReporte(id), yo);
+    }
+
+    /**
+     * Historia 6 (tarea 1.2): miniatura JPEG de la primera foto, para el listado. La ve quien puede ver
+     * el reporte (el admin o su autor). Sin fotos → 404.
+     */
+    @Transactional(readOnly = true)
+    public byte[] miniatura(UsuarioPrincipal yo, Long id) {
+        obtenerParaVer(yo, id);
+        FotoReporte f = fotoRepository.findFirstByReporteIdOrderByFechaCapturaAscIdAsc(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "El reporte no tiene fotos"));
+        if (f.getArchivo() != null) {
+            return almacenFotos.miniatura(f.getArchivo());
+        }
+        // Foto de antes de AlmacenFotos (base64 en la BD): se reduce al vuelo
+        return AlmacenFotos.reducir(Base64.getDecoder().decode(f.getDatos().substring(f.getDatos().indexOf(',') + 1)));
     }
 
     // =====================================================================

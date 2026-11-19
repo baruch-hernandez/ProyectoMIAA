@@ -81,12 +81,12 @@ class _PantallaDiagnosticoState extends State<PantallaDiagnostico> {
     });
 
     if (widget.sesion.conSesion) {
-      await _paso('Token válido (GET /usuarios/yo)', () async {
-        final r = await dio.get('/usuarios/yo');
+      await _paso('Token válido (GET /yo)', () async {
+        final r = await dio.get('/yo');
         return 'Hola, ${r.data['nombre']} · rol ${r.data['rol']}';
       });
       await _paso('Latido de disponibilidad (2.4)', () async {
-        final r = await dio.post('/usuarios/heartbeat');
+        final r = await dio.post('/heartbeat');
         return 'Respondió ${r.statusCode}: el admin te ve "En línea"';
       });
     } else {

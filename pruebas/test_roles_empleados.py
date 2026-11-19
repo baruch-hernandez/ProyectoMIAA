@@ -21,11 +21,11 @@ def _nuevo(admin, rol=None, etiqueta="rol"):
     cuerpo = {"nombre": f"Prueba {etiqueta}", "username": username, "passwordTemporal": PASSWORD_TEMPORAL}
     if rol is not None:
         cuerpo["rol"] = rol
-    return admin.post("/usuarios/empleados", json=cuerpo), username
+    return admin.post("/empleados", json=cuerpo), username
 
 
 def _baja(admin, id_):
-    admin.put(f"/usuarios/empleados/{id_}/habilitado", json={"habilitado": False})
+    admin.put(f"/empleados/{id_}/habilitado", json={"habilitado": False})
 
 
 # ----------------------------- API -----------------------------
@@ -36,7 +36,7 @@ def test_alta_como_administrador(admin, config):
     try:
         datos = Api(config.api).entrar(username, PASSWORD_TEMPORAL)
         assert datos["user"]["role"] == "ADMIN", "el login debe regresar el rol asignado"
-        empleados = admin.get("/usuarios/empleados").json()["empleados"]
+        empleados = admin.get("/empleados").json()["empleados"]
         assert any(e["username"] == username and e["rol"] == "ADMIN" for e in empleados), \
             "el nuevo administrador debe aparecer en la lista de empleados"
     finally:
@@ -58,26 +58,26 @@ def test_cambiar_el_rol_de_otro_aplica_de_inmediato(admin, crear_notificador, co
     n = crear_notificador("ascenso", requisitos=False)
     api = Api(config.api)
     api.entrar(n["username"], n["password"])
-    assert api.get("/usuarios/empleados").status_code == 403, "como notificador no ve el panel"
+    assert api.get("/empleados").status_code == 403, "como notificador no ve el panel"
 
-    r = admin.put(f"/usuarios/empleados/{n['id']}",
+    r = admin.put(f"/empleados/{n['id']}",
                   json={"nombre": n["nombre"], "username": n["username"], "email": None, "rol": "ADMIN"})
     assert r.status_code == 200 and r.json()["rol"] == "ADMIN"
     # Con el MISMO token: el backend lee el rol de la base en cada petición
-    assert api.get("/usuarios/empleados").status_code == 200, "el ascenso debe aplicar sin volver a entrar"
+    assert api.get("/empleados").status_code == 200, "el ascenso debe aplicar sin volver a entrar"
 
-    admin.put(f"/usuarios/empleados/{n['id']}",
+    admin.put(f"/empleados/{n['id']}",
               json={"nombre": n["nombre"], "username": n["username"], "email": None, "rol": "NOTIFICADOR"})
-    assert api.get("/usuarios/empleados").status_code == 403, "y quitárselo también aplica al instante"
+    assert api.get("/empleados").status_code == 403, "y quitárselo también aplica al instante"
 
 
 def test_nadie_se_cambia_su_propio_rol_ni_se_da_de_baja(admin):
-    yo = admin.get("/usuarios/yo").json()
-    r = admin.put(f"/usuarios/empleados/{yo['id']}",
+    yo = admin.get("/yo").json()
+    r = admin.put(f"/empleados/{yo['id']}",
                   json={"nombre": yo["nombre"], "username": yo["username"], "email": yo["email"], "rol": "NOTIFICADOR"})
     assert r.status_code == 409, "un admin no debe poder quitarse a sí mismo el rol"
-    assert admin.put(f"/usuarios/empleados/{yo['id']}/habilitado", json={"habilitado": False}).status_code == 409
-    assert admin.get("/usuarios/yo").json()["rol"] == "ADMIN"
+    assert admin.put(f"/empleados/{yo['id']}/habilitado", json={"habilitado": False}).status_code == 409
+    assert admin.get("/yo").json()["rol"] == "ADMIN"
 
 
 # ----------------------------- Interfaz (Selenium) -----------------------------
@@ -113,13 +113,13 @@ def test_alta_de_administrador_desde_el_panel(navegador, config, admin):
         ui.esperar_texto(otro, "Crea tu contraseña")
     finally:
         otro.quit()
-        nuevo = next(e for e in admin.get("/usuarios/empleados").json()["empleados"] if e["username"] == username)
+        nuevo = next(e for e in admin.get("/empleados").json()["empleados"] if e["username"] == username)
         _baja(admin, nuevo["id"])
 
 
 @pytest.mark.ui
 def test_en_su_propia_ficha_no_puede_cambiarse_el_rol(navegador, config, admin):
-    yo = admin.get("/usuarios/yo").json()
+    yo = admin.get("/yo").json()
     ui.abrir_login(navegador, config.front)
     ui.login(navegador, config.admin_usuario, config.admin_password)
     ui.esperar_ruta(navegador, "/admin")

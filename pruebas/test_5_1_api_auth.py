@@ -42,7 +42,7 @@ def test_campos_vacios_responden_400(nueva_api):
 
 
 def test_la_api_nunca_regresa_contrasenas(admin):
-    for ruta in ("/usuarios/yo", "/usuarios/empleados"):
+    for ruta in ("/yo", "/empleados"):
         texto = admin.get(ruta).text.lower()
         assert '"password"' not in texto, f"{ruta} expone la contraseña"
         assert "$2a$" not in texto and "$2b$" not in texto, f"{ruta} expone un hash BCrypt"
@@ -50,14 +50,14 @@ def test_la_api_nunca_regresa_contrasenas(admin):
 
 # ----------------------------- 2.3 Middleware JWT -----------------------------
 def test_sin_token_responde_401(nueva_api):
-    assert nueva_api().get("/usuarios/yo").status_code == 401
+    assert nueva_api().get("/yo").status_code == 401
 
 
 def test_token_alterado_responde_401(admin, nueva_api):
     api = nueva_api()
     cabeza, cuerpo, firma = admin.token.split(".")
     api.token = f"{cabeza}.{cuerpo}.{firma[:-4]}AAAA"
-    assert api.get("/usuarios/yo").status_code == 401
+    assert api.get("/yo").status_code == 401
 
 
 def test_notificador_no_entra_a_endpoints_de_admin(crear_notificador, config):
@@ -65,7 +65,7 @@ def test_notificador_no_entra_a_endpoints_de_admin(crear_notificador, config):
     api = Api(config.api)
     datos = api.entrar(n["username"], n["password"])
     assert datos["user"]["role"] == "NOTIFICADOR"
-    r = api.get("/usuarios/empleados")
+    r = api.get("/empleados")
     assert r.status_code == 403
     assert r.json().get("codigo") != "REQUISITO_PENDIENTE", "debe ser 403 por ROL, no por requisitos"
 
@@ -94,7 +94,7 @@ def test_bloqueo_tras_intentos_fallidos_y_desbloqueo(admin, crear_notificador, c
     assert api.login(n["username"], n["password"]).status_code == 423
 
     # El admin la desbloquea y ya puede entrar
-    assert admin.post(f"/usuarios/empleados/{n['id']}/desbloquear").status_code == 200
+    assert admin.post(f"/empleados/{n['id']}/desbloquear").status_code == 200
     assert api.login(n["username"], n["password"]).status_code == 200
 
 
@@ -116,12 +116,12 @@ def test_rate_limit_por_ip(config, nueva_api):
 def test_el_rate_limit_es_solo_para_el_login(config, admin):
     """Las demás rutas no cuentan como intentos de login."""
     for _ in range((config.max_por_ip or 10) + 2):
-        assert admin.get("/usuarios/yo").status_code == 200
+        assert admin.get("/yo").status_code == 200
 
 
 # ----------------------------- 2.2 / 2.4 Logout y disponibilidad -----------------------------
 def _disponibilidad(admin, id_):
-    empleados = admin.get("/usuarios/empleados").json()["empleados"]
+    empleados = admin.get("/empleados").json()["empleados"]
     return next(e for e in empleados if e["id"] == id_)["disponibilidad"]
 
 
@@ -131,7 +131,7 @@ def test_login_latido_y_logout_cambian_la_disponibilidad(admin, crear_notificado
     api.entrar(n["username"], n["password"])
     assert _disponibilidad(admin, n["id"]) == "EN_LINEA", "al iniciar sesión debe quedar en línea"
 
-    assert api.post("/usuarios/heartbeat").status_code == 204, "el latido debe responder 204"
+    assert api.post("/heartbeat").status_code == 204, "el latido debe responder 204"
     assert _disponibilidad(admin, n["id"]) == "EN_LINEA"
 
     assert api.post("/auth/logout").status_code == 204

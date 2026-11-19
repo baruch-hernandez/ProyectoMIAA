@@ -78,8 +78,8 @@ export const Login: React.FC = () => {
     setLoading(true);
 
     try {
-      // Tarea 2.1: POST /api/v1/auth/login. El "/api/v1" ya lo pone VITE_API_URL (baseURL de api.ts):
-      // si se vuelve a escribir aquí, la URL queda /api/v1/api/v1/auth/login y el backend no la conoce.
+      // Tarea 2.1: POST /api/auth/login. El "/api" ya lo pone VITE_API_URL (baseURL de api.ts):
+      // si se vuelve a escribir aquí, la URL queda /api/api/auth/login y el backend no la conoce.
       const response = await api.post<LoginResponse>('/auth/login', { username, password });
       
       const { token, user } = response.data;

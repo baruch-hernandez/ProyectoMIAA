@@ -37,7 +37,7 @@ public class LimiteLoginFilter extends OncePerRequestFilter {
         return !esLogin(request.getMethod(), request.getRequestURI(), request.getContextPath());
     }
 
-    /** POST a /auth/login, /api/v1/auth/login o /api/auth/login. */
+    /** POST a /api/auth/login ([contexto] = "/api", server.servlet.context-path). */
     static boolean esLogin(String metodo, String uri, String contexto) {
         if (!"POST".equalsIgnoreCase(metodo) || uri == null) {
             return false;
@@ -47,7 +47,7 @@ public class LimiteLoginFilter extends OncePerRequestFilter {
         if (ruta.endsWith("/")) {
             ruta = ruta.substring(0, ruta.length() - 1);
         }
-        return ruta.equals("/auth/login") || ruta.equals("/api/v1/auth/login") || ruta.equals("/api/auth/login");
+        return ruta.equals("/auth/login");
     }
 
     @Override

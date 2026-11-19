@@ -15,10 +15,10 @@ import org.springframework.web.bind.annotation.RestController;
  * El latido de presencia (Sprint 5, tarea 1.2). Nadie puede mandar el de otro: el id sale del token.
  * Lo usan la app y la web, uno por segundo.
  *
- *   POST /usuarios/heartbeat   sin cuerpo, o { latitud, longitud, precision }   → 204
- *                              (fuera de Aguascalientes → 400)
+ *   POST /heartbeat   sin cuerpo, o { latitud, longitud, precision }   → 204
+ *                     (fuera de Aguascalientes → 400)
  *
- * Pausar (INACTIVO al instante) es DELETE /usuarios/yo/conexion, en CuentaController.
+ * Pausar (INACTIVO al instante) es DELETE /yo/conexion, en CuentaController.
  */
 @RestController
 public class PresenciaController {
@@ -30,7 +30,7 @@ public class PresenciaController {
     }
 
     @SuppressWarnings("null")
-    @PostMapping({ "/usuarios/heartbeat", "/api/v1/usuarios/heartbeat" })
+    @PostMapping("/heartbeat")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void latido(@AuthenticationPrincipal UsuarioPrincipal yo,
                        @Valid @RequestBody(required = false) UbicacionRequestDTO ubicacion) {

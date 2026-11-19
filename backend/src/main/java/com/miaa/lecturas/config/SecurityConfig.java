@@ -19,6 +19,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Arrays;
@@ -69,8 +70,11 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Garantiza el paso de CORS preflight (OPTIONS)
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/auth/**", "/api/v1/auth/**", "/api/auth/**").permitAll()
+                        .requestMatchers("/auth/**").permitAll() // relativo al "/api" (server.servlet.context-path)
                         .requestMatchers("/error").permitAll()
+                        // Cierre de los avisos en tiempo real (SseEmitter): la petición original ya pasó por el
+                        // JWT y @PreAuthorize; este segundo paso interno no trae token y no debe volver a pedirlo
+                        .dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll()
                         .anyRequest().hasAnyRole("ADMIN", "NOTIFICADOR"))
 
                 .exceptionHandling(e -> e

@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-/** PUT /usuarios/empleados/{id} — corregir los datos de un empleado y, si se quiere, cambiar su rol. */
+/** PUT /empleados/{id} — corregir los datos de un empleado y, si se quiere, cambiar su rol. */
 public record EdicionEmpleadoDTO(
         @NotBlank(message = "Escribe el nombre")
         @Size(max = 100, message = "Máximo 100 caracteres")

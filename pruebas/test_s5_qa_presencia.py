@@ -1,9 +1,9 @@
 """Sprint 5 — QA 3.1: Presencia en tiempo real, transición automática a INACTIVO y permisos.
 
 Valida:
-1. Actualización sucesiva de coordenadas y timestamp UTC en /usuarios/heartbeat.
+1. Actualización sucesiva de coordenadas y timestamp UTC en /heartbeat.
 2. Transición automática a INACTIVO al expirar segundos-en-linea (verificando API y BD usuario_presencia).
-3. Rechazo 403 para NOTIFICADOR, 401 sin token en /admin/cuadrillas/ubicaciones, y rechazo 400 para rol LECTURISTA.
+3. Rechazo 403 para NOTIFICADOR, 401 sin token en /cuadrillas, y rechazo 400 para rol LECTURISTA.
 """
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ from apoyo.api import Api
 
 PUNTO_1 = {"latitud": 21.8818, "longitud": -102.2916, "precision": 6}
 PUNTO_2 = {"latitud": 21.8900, "longitud": -102.3000, "precision": 4}
-CUADRILLAS = "/admin/cuadrillas/ubicaciones"
+CUADRILLAS = "/cuadrillas"
 
 
 @pytest.fixture()
@@ -39,7 +39,7 @@ def test_3_1_actualizacion_coordenadas_y_timestamp_utc(notificador, admin):
     api, datos = notificador
 
     # 1. Primer latido con coordenadas
-    r1 = api.post("/usuarios/heartbeat", json=PUNTO_1)
+    r1 = api.post("/heartbeat", json=PUNTO_1)
     assert r1.status_code == 204, r1.text
     estado_1 = buscar_en_mapa(admin, datos["id"])
 
@@ -52,7 +52,7 @@ def test_3_1_actualizacion_coordenadas_y_timestamp_utc(notificador, admin):
     time.sleep(1.1)
 
     # 2. Segundo latido desplazado -> actualiza punto y timestamp mayor
-    r2 = api.post("/usuarios/heartbeat", json=PUNTO_2)
+    r2 = api.post("/heartbeat", json=PUNTO_2)
     assert r2.status_code == 204, r2.text
     estado_2 = buscar_en_mapa(admin, datos["id"])
 
@@ -65,7 +65,7 @@ def test_3_1_transicion_automatica_a_inactivo_por_tiempo(notificador, admin):
     api, datos = notificador
     umbral = int(os.environ.get("MIAA_SEGUNDOS_EN_LINEA", "60"))
 
-    assert api.post("/usuarios/heartbeat", json=PUNTO_1).status_code == 204
+    assert api.post("/heartbeat", json=PUNTO_1).status_code == 204
     assert buscar_en_mapa(admin, datos["id"])["estadoConexion"] == "ACTIVO"
 
     # Esperar umbral + 2 s para que expire la ventana y corra el @Scheduled
@@ -105,7 +105,7 @@ def test_3_1_permisos_y_rechazo_rol_lecturista(notificador, admin, config):
 
     # Rol viejo LECTURISTA -> 400 Bad Request
     r_lecturista = admin.post(
-        "/usuarios/empleados",
+        "/empleados",
         json={
             "nombre": "Prueba Lecturista",
             "username": "qa_lecturista_invalido",

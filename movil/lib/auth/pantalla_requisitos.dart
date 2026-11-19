@@ -14,7 +14,7 @@ List<(String, bool)> reglasPassword(String nueva, String confirmacion) => [
 /// Antes de usar la app, el notificador resuelve lo que le falte, en orden (como RequisitosCuenta.tsx):
 ///   1. cambiar la contraseña temporal que le dio el admin,
 ///   2. aceptar el aviso de privacidad.
-/// El estado real lo dice el backend (GET /usuarios/yo), no lo guardado en el celular.
+/// El estado real lo dice el backend (GET /yo), no lo guardado en el celular.
 class PantallaRequisitos extends StatefulWidget {
   const PantallaRequisitos({
     super.key,

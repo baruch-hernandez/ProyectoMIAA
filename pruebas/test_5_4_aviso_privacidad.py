@@ -22,27 +22,27 @@ def test_sin_aceptar_el_aviso_el_backend_bloquea_todo_lo_demas(crear_notificador
     assert datos["user"]["avisoPendiente"] is True
 
     # Se resuelve SOLO la contraseña temporal, para que lo único pendiente sea el aviso
-    assert api.put("/usuarios/yo/password", json={"actual": n["password"], "nueva": PASSWORD_DEFINITIVA}).ok
-    cuenta = api.get("/usuarios/yo").json()
+    assert api.put("/yo/password", json={"actual": n["password"], "nueva": PASSWORD_DEFINITIVA}).ok
+    cuenta = api.get("/yo").json()
     assert cuenta["debeCambiarPassword"] is False and cuenta["avisoPrivacidadPendiente"] is True
 
     r = api.get("/reportes/mios")
     assert r.status_code == 403 and r.json()["codigo"] == "REQUISITO_PENDIENTE"
 
     # Aceptar una versión que no es la vigente no cuenta
-    assert api.post("/usuarios/yo/aviso-privacidad", json={"version": "1999-01"}).status_code == 409
+    assert api.post("/yo/aviso", json={"version": "1999-01"}).status_code == 409
 
     version = cuenta["avisoPrivacidadVersion"]
-    r = api.post("/usuarios/yo/aviso-privacidad", json={"version": version})
+    r = api.post("/yo/aviso", json={"version": version})
     assert r.status_code == 200 and r.json()["avisoPrivacidadPendiente"] is False
 
     assert api.get("/reportes/mios").status_code == 200, "ya aceptado, debe poder usar la app"
-    ficha = admin.get(f"/usuarios/empleados/{n['id']}").json()
+    ficha = admin.get(f"/empleados/{n['id']}").json()
     assert ficha["avisoPrivacidadFecha"], "debe quedar registrada la fecha en que lo aceptó"
 
 
 def test_el_admin_no_tiene_que_aceptar_el_aviso(admin):
-    assert admin.get("/usuarios/yo").json()["avisoPrivacidadPendiente"] is False
+    assert admin.get("/yo").json()["avisoPrivacidadPendiente"] is False
 
 
 # ----------------------------- Interfaz (Selenium) -----------------------------
@@ -78,7 +78,7 @@ def test_flujo_completo_del_aviso_en_la_web(navegador, config, crear_notificador
     captura(navegador, "5.4_aviso_aceptado")
 
     # El backend lo registró
-    ficha = admin.get(f"/usuarios/empleados/{n['id']}").json()
+    ficha = admin.get(f"/empleados/{n['id']}").json()
     assert ficha["avisoPrivacidadFecha"], "el aviso aceptado no quedó guardado"
     assert ficha["debeCambiarPassword"] is False
 

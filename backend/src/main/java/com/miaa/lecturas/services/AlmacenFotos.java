@@ -5,12 +5,21 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import javax.imageio.ImageIO;
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.Base64;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -56,11 +65,65 @@ public class AlmacenFotos {
         }
     }
 
-    /** Borra el archivo cuando se confirme la transacción (si se deshace, la foto sigue ahí). */
+    /** Borra el archivo (y su miniatura) cuando se confirme la transacción (si se deshace, la foto sigue ahí). */
     public void borrar(String nombre) {
-        Path archivo = carpeta.resolve(nombre);
-        if (!alTerminar(TransactionSynchronization.STATUS_COMMITTED, archivo)) {
-            borrarYa(archivo); // sin transacción: ya
+        for (Path archivo : List.of(carpeta.resolve(nombre), rutaMiniatura(nombre))) {
+            if (!alTerminar(TransactionSynchronization.STATUS_COMMITTED, archivo)) {
+                borrarYa(archivo); // sin transacción: ya
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------- miniaturas (Historia 6, tarea 1.2)
+
+    /** Lado largo de la miniatura del listado: ~10-20 KB en vez de ~1 MB por foto. */
+    static final int LADO_MINIATURA = 320;
+
+    /** La miniatura JPEG de la foto [nombre]: se hace la primera vez que se pide y se queda en disco. */
+    public byte[] miniatura(String nombre) {
+        Path mini = rutaMiniatura(nombre);
+        try {
+            if (Files.exists(mini)) {
+                return Files.readAllBytes(mini);
+            }
+            byte[] bytes = reducir(Files.readAllBytes(carpeta.resolve(nombre)));
+            // A un archivo temporal y luego se renombra: dos peticiones a la vez nunca leen una a medias
+            Path temporal = Files.createTempFile(carpeta, "mini-", ".tmp");
+            Files.write(temporal, bytes);
+            Files.move(temporal, mini, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            return bytes;
+        } catch (IOException e) {
+            throw new UncheckedIOException("No se pudo hacer la miniatura de " + nombre, e);
+        }
+    }
+
+    private Path rutaMiniatura(String nombre) {
+        return carpeta.resolve(nombre.substring(0, nombre.lastIndexOf('.')) + "-mini.jpg");
+    }
+
+    /** La imagen reducida a [LADO_MINIATURA] px de lado largo, en JPEG (las PNG quedan con fondo blanco). */
+    public static byte[] reducir(byte[] original) {
+        try {
+            BufferedImage imagen = ImageIO.read(new ByteArrayInputStream(original));
+            if (imagen == null) {
+                throw new IOException("No es una imagen que Java sepa leer");
+            }
+            double escala = Math.min(1.0, (double) LADO_MINIATURA / Math.max(imagen.getWidth(), imagen.getHeight()));
+            int ancho = Math.max(1, (int) Math.round(imagen.getWidth() * escala));
+            int alto = Math.max(1, (int) Math.round(imagen.getHeight() * escala));
+            BufferedImage mini = new BufferedImage(ancho, alto, BufferedImage.TYPE_INT_RGB);
+            Graphics2D g = mini.createGraphics();
+            try {
+                g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                g.drawImage(imagen, 0, 0, ancho, alto, Color.WHITE, null);
+            } finally {
+                g.dispose();
+            }
+            ByteArrayOutputStream salida = new ByteArrayOutputStream();
+            ImageIO.write(mini, "jpg", salida);
+            return salida.toByteArray();
+        } catch (IOException e) {
+            throw new UncheckedIOException("No se pudo reducir la foto", e);
         }
     }
 

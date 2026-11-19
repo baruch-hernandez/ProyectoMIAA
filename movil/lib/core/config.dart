@@ -7,7 +7,7 @@ class Config {
   /// URL base de la API. En el emulador, la PC es 10.0.2.2; en un celular, la IP de la PC.
   static const apiUrl = String.fromEnvironment(
     'API_URL',
-    defaultValue: 'https://10.0.2.2:8500/api/v1',
+    defaultValue: 'https://10.0.2.2:8500/api',
   );
 
   /// En debug, confiar en el certificado autofirmado de desarrollo (assets/dev/miaa-dev.pem).
@@ -18,7 +18,7 @@ class Config {
   static const latidoSegundos = int.fromEnvironment('LATIDO_SEGUNDOS', defaultValue: 1);
 
   /// Muestra lo que solo sirve para desarrollar: "Probar conexión", la tarjeta del latido y la
-  /// respuesta de /usuarios/yo. Para verlas: --dart-define=HERRAMIENTAS_DEV=true
+  /// respuesta de /yo. Para verlas: --dart-define=HERRAMIENTAS_DEV=true
   static const herramientasDev = bool.fromEnvironment('HERRAMIENTAS_DEV');
 
   /// Geocodificador (coordenadas → dirección). Nominatim público solo para desarrollo:

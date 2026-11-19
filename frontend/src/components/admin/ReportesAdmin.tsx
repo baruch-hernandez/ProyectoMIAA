@@ -1,20 +1,23 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { reportesApi, leerError } from '../../services/reportesApi';
 import { usuariosApi } from '../../services/usuariosApi';
+import { alNuevoReporte, coincideConFiltros } from '../../services/avisosReportes';
 import type { Empleado, FiltrosReportes, PaginaReportes, ReporteResumen } from '../../types/reporte';
 import { claseInput } from '../../utils/estilos';
-import { ListaReportes } from '../reportes/ListaReportes';
+import { TablaReportes } from './TablaReportes';
+import { ModalEvidencia } from './ModalEvidencia';
 import { destelloCarga } from '../../services/carga';
 
 const SIN_FILTROS: FiltrosReportes = { empleadoId: '', desde: '', hasta: '' };
 const claseEtiqueta = 'block mb-1 text-xs font-semibold text-slate-600';
 
 /**
- * El administrador ve los reportes de TODOS los empleados, del más nuevo al más viejo.
- * Se filtran por empleado y por rango de días en el backend (así el total y "Ver más" cuadran).
- * Los datos se corrigen desde el detalle.
+ * Bandeja del administrador (Historia 6): los reportes de TODOS los empleados, por hora de captura
+ * de la más nueva a la más vieja. Se filtran por empleado y por rango de días en el backend (así el
+ * total y "Ver más" cuadran). Los datos se corrigen desde el detalle.
  * Llegan de 50 en 50 ("Ver más"): con meses de reportes, traerlos todos de golpe sería muy lento.
+ * Los que llegan mientras está abierta (aviso en tiempo real) se insertan arriba, sin recargar.
  */
 export function ReportesAdmin() {
   const [reportes, setReportes] = useState<ReporteResumen[]>([]);
@@ -25,6 +28,19 @@ export function ReportesAdmin() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [recarga, setRecarga] = useState(0);
+  const [nuevos, setNuevos] = useState<ReadonlySet<number>>(new Set());
+  const [evidencia, setEvidencia] = useState<number | null>(null);
+  const filtrosActuales = useRef(filtros);
+  useEffect(() => { filtrosActuales.current = filtros; }, [filtros]);
+
+  // Reporte nuevo en vivo: arriba de la lista, marcado como "Nuevo" (si entra en los filtros)
+  useEffect(() => alNuevoReporte((r) => {
+    if (!coincideConFiltros(r, filtrosActuales.current)) return;
+    setReportes((l) => (l.some((x) => x.id === r.id) ? l : [r, ...l]));
+    setUltima((u) => (u ? { ...u, total: u.total + 1 } : u));
+    setNuevos((s) => new Set(s).add(r.id));
+  }), []);
+  const cerrarEvidencia = useCallback(() => setEvidencia(null), []);
 
   // Para el selector de empleado. Si falla, el filtro por fecha sigue sirviendo.
   useEffect(() => {
@@ -84,7 +100,7 @@ export function ReportesAdmin() {
             <span className="tabular-nums font-semibold text-miaa-marino">{total}</span>{' '}
             {total === 1 ? 'reporte' : 'reportes'} de{' '}
             <span className="tabular-nums font-semibold text-miaa-marino">{empleadosConReportes}</span>{' '}
-            {empleadosConReportes === 1 ? 'empleado' : 'empleados'}, del más reciente al más antiguo.
+            {empleadosConReportes === 1 ? 'empleado' : 'empleados'}, por hora de captura (la más reciente primero).
           </p>
         </div>
         <button
@@ -174,7 +190,7 @@ export function ReportesAdmin() {
         </div>
       ) : (
         <>
-          <ListaReportes reportes={reportes} enlace={(id) => `/admin/reportes/${id}`} mostrarAutor />
+          <TablaReportes reportes={reportes} nuevos={nuevos} onAbrirEvidencia={setEvidencia} />
           {ultima?.hayMas && (
             <div className="text-center">
               <button
@@ -189,6 +205,8 @@ export function ReportesAdmin() {
           )}
         </>
       )}
+
+      {evidencia != null && <ModalEvidencia reporteId={evidencia} onCerrar={cerrarEvidencia} />}
     </div>
   );
 }

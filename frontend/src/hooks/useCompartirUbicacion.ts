@@ -11,7 +11,7 @@ const hayGeolocalizacion = typeof navigator !== 'undefined' && 'geolocation' in 
 
 /**
  * Mientras el notificador tenga la app A LA VISTA: "sigo aquí" y su ubicación para el admin,
- * en UNA petición por segundo (POST /usuarios/heartbeat), igual que la app de Flutter.
+ * en UNA petición por segundo (POST /heartbeat), igual que la app de Flutter.
  *
  *  - Con coordenadas si el GPS ya dio una lectura dentro del estado; si no, sin cuerpo.
  *    watchPosition solo guarda la última lectura: el latido de cada segundo la lleva.

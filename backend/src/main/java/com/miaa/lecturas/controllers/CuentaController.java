@@ -23,14 +23,14 @@ import org.springframework.web.bind.annotation.RestController;
  * La cuenta de quien hace la petición (cualquier rol). Estas rutas siguen disponibles
  * aunque tenga requisitos pendientes: son justo para resolverlos.
  *
- *   GET  /usuarios/yo
- *   PUT  /usuarios/yo/password           { actual, nueva }
- *   POST /usuarios/yo/aviso-privacidad   { version }
- *   DELETE /usuarios/yo/conexion         la app se pausó: inactivo al instante
- *                                        (el latido es POST /usuarios/heartbeat, en PresenciaController)
+ *   GET  /yo
+ *   PUT  /yo/password           { actual, nueva }
+ *   POST /yo/aviso              { version }
+ *   DELETE /yo/conexion         la app se pausó: inactivo al instante
+ *                                (el latido es POST /heartbeat, en PresenciaController)
  */
 @RestController
-@RequestMapping({ "/usuarios/yo", "/api/v1/usuarios/yo" })
+@RequestMapping("/yo")
 public class CuentaController {
 
     private final PresenciaService presenciaService;
@@ -52,7 +52,7 @@ public class CuentaController {
         return cuentaService.cambiarPassword(yo, request.actual(), request.nueva());
     }
 
-    @PostMapping("/aviso-privacidad")
+    @PostMapping("/aviso")
     public CuentaDTO aceptarAviso(@AuthenticationPrincipal UsuarioPrincipal yo,
                                   @Valid @RequestBody AceptarAvisoDTO request) {
         return cuentaService.aceptarAviso(yo, request.version());

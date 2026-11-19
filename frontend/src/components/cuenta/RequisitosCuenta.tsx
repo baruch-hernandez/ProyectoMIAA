@@ -13,7 +13,7 @@ import { FormCambioPassword } from './FormCambioPassword';
  * Antes de usar la app, la persona resuelve lo que le falte, en orden:
  *   1. cambiar la contraseña temporal que le dio el admin,
  *   2. aceptar el aviso de privacidad (solo notificadores).
- * El estado real lo dice el backend (GET /usuarios/yo), no lo guardado en el navegador.
+ * El estado real lo dice el backend (GET /yo), no lo guardado en el navegador.
  */
 export function RequisitosCuenta() {
   const navigate = useNavigate();

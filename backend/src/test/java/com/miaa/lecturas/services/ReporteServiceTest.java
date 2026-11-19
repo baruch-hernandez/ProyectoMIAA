@@ -4,7 +4,9 @@ import com.miaa.lecturas.config.UsuarioPrincipal;
 import com.miaa.lecturas.dtos.FotoDTO;
 import com.miaa.lecturas.dtos.FotoRequestDTO;
 import com.miaa.lecturas.dtos.ReporteDetalleDTO;
+import com.miaa.lecturas.dtos.NuevoReporteEvent;
 import com.miaa.lecturas.dtos.ReporteEdicionDTO;
+import com.miaa.lecturas.dtos.ReporteRequestDTO;
 import com.miaa.lecturas.dtos.ReporteResumenDTO;
 import com.miaa.lecturas.entities.OrigenFechaFoto;
 import com.miaa.lecturas.entities.OrigenFoto;
@@ -17,6 +19,8 @@ import com.miaa.lecturas.repositories.UsuarioRepository;
 import org.junit.jupiter.api.BeforeEach;
 import jakarta.validation.Validation;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
@@ -52,6 +56,7 @@ class ReporteServiceTest {
     private UsuarioRepository usuarios;
     private LimiteAguascalientes limiteAgs;
     private ReporteService servicio;
+    private ApplicationEventPublisher eventos;
 
     @BeforeEach
     void preparar() {
@@ -65,8 +70,9 @@ class ReporteServiceTest {
         when(validador.validar(any())).thenReturn(
                 new ValidadorFotos.Imagen(new byte[0], "jpeg", new ValidadorFotos.Medidas(1920, 1080)));
         when(fotos.save(any())).thenAnswer(i -> i.getArgument(0));
+        eventos = mock(ApplicationEventPublisher.class);
         servicio = new ReporteService(reportes, fotos, notas, usuarios,
-                limiteAgs, validador, mock(AlmacenFotos.class), 24);
+                limiteAgs, validador, mock(AlmacenFotos.class), eventos, 24);
     }
 
     /** Una foto con el GPS que se indique (null = sin GPS, como la web o la galería). */
@@ -217,6 +223,42 @@ class ReporteServiceTest {
         assertEquals(400, status(assertThrows(ResponseStatusException.class,
                 () -> servicio.agregarFoto(AUTOR, 5L, foto(22.4, -101.8, 0.8)))));
         verify(fotos, never()).save(any());
+    }
+
+    /** Historia 6 (tareas 1.4 y 2.5): igual para POST /reportes y /reportes/sync, que usan crear(). */
+    @Test
+    void unReporteNuevoAvisaALosAdminsYSuReenvioSinConexionNo() {
+        Usuario autor = new Usuario();
+        autor.setId(AUTOR.id());
+        autor.setNombre("Autor");
+        when(usuarios.findById(AUTOR.id())).thenReturn(Optional.of(autor));
+        when(limiteAgs.contiene(21.88234, -102.29581)).thenReturn(true);
+        Reporte[] guardado = new Reporte[1];
+        when(reportes.save(any())).thenAnswer(i -> {
+            guardado[0] = i.getArgument(0);
+            guardado[0].setId(9L);
+            return guardado[0];
+        });
+        String uuid = "123e4567-e89b-12d3-a456-426614174000";
+        ReporteRequestDTO req = new ReporteRequestDTO("Madero", "120", null, "Centro", "20000", "Aguascalientes",
+                null, null, "BALDIO", null, 21.88234, -102.29581, "Fuga en la banqueta",
+                List.of(foto(null, null, null)), uuid, Instant.parse("2026-11-19T18:00:00Z"));
+
+        servicio.crear(AUTOR, req);
+
+        ArgumentCaptor<Object> evento = ArgumentCaptor.forClass(Object.class);
+        verify(eventos).publishEvent(evento.capture());
+        ReporteResumenDTO aviso = ((NuevoReporteEvent) evento.getValue()).reporte();
+        assertEquals(9L, aviso.id());
+        assertEquals("Autor", aviso.autor());
+        assertEquals(21.88234, aviso.latitud());
+        assertEquals(Instant.parse("2026-11-19T18:00:00Z"), aviso.fechaCaptura());
+        assertEquals("/reportes/9/miniatura", aviso.miniatura());
+
+        // El celular no recibió la respuesta y lo vuelve a mandar: mismo reporte, ningún aviso repetido
+        when(reportes.buscarPorClienteId(uuid)).thenReturn(Optional.of(guardado[0]));
+        servicio.crear(AUTOR, req);
+        verify(eventos, times(1)).publishEvent(evento.capture());
     }
 
     @Test

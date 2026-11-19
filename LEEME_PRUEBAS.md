@@ -60,7 +60,7 @@ Para correr solo una tarea: `pytest test_5_3_concurrencia.py -s`. El `-s` muestr
 | Variable | Por defecto | Para qué |
 |---|---|---|
 | `MIAA_FRONT` | `https://localhost:5173` | URL del front |
-| `MIAA_API` | `https://localhost:8500/api/v1` | URL de la API |
+| `MIAA_API` | `https://localhost:8500/api` | URL de la API |
 | `MIAA_ADMIN_USUARIO` / `MIAA_ADMIN_PASSWORD` | `admin` / `admin123` | Admin para preparar datos |
 | `MIAA_INTENTOS_MAXIMOS` | `5` | Igual que `miaa.login.intentos-maximos` |
 | `MIAA_USUARIOS_CARGA` | `100` | Usuarios simultáneos (5.3) |

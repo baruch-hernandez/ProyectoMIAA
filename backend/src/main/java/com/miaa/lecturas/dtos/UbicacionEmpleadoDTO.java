@@ -5,7 +5,7 @@ import com.miaa.lecturas.entities.EstadoConexion;
 import java.time.Instant;
 
 /**
- * Lo que ve el ADMIN de cada empleado en el mapa (GET /admin/cuadrillas/ubicaciones) y en su ficha.
+ * Lo que ve el ADMIN de cada empleado en el mapa (GET /cuadrillas) y en su ficha.
  *
  * @param estadoConexion       ACTIVO con la sesión iniciada y un latido reciente; si no, INACTIVO
  * @param enLinea              lo mismo que estadoConexion == ACTIVO (lo usa la ficha del empleado)

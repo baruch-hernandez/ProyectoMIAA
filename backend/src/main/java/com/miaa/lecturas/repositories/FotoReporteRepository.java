@@ -11,4 +11,7 @@ public interface FotoReporteRepository extends JpaRepository<FotoReporte, Long> 
     List<FotoReporte> findByReporteIdOrderByFechaCapturaAscIdAsc(Long reporteId);
 
     long countByReporteId(Long reporteId);
+
+    /** La primera foto (la de la miniatura del listado). */
+    java.util.Optional<FotoReporte> findFirstByReporteIdOrderByFechaCapturaAscIdAsc(Long reporteId);
 }

@@ -9,16 +9,16 @@ class ApiCuenta {
 
   final Api _api;
 
-  /// GET /usuarios/yo → CuentaDTO { nombre, debeCambiarPassword, avisoPrivacidadPendiente, … }
-  Future<Map<String, dynamic>> yo() => _mapa(() => _api.dio.get('/usuarios/yo'));
+  /// GET /yo → CuentaDTO { nombre, debeCambiarPassword, avisoPrivacidadPendiente, … }
+  Future<Map<String, dynamic>> yo() => _mapa(() => _api.dio.get('/yo'));
 
-  /// PUT /usuarios/yo/password: 400 con el motivo si la actual no es o la nueva no cumple.
+  /// PUT /yo/password: 400 con el motivo si la actual no es o la nueva no cumple.
   Future<Map<String, dynamic>> cambiarPassword(String actual, String nueva) =>
-      _mapa(() => _api.dio.put('/usuarios/yo/password', data: {'actual': actual, 'nueva': nueva}));
+      _mapa(() => _api.dio.put('/yo/password', data: {'actual': actual, 'nueva': nueva}));
 
-  /// POST /usuarios/yo/aviso-privacidad: 409 si la versión ya no es la vigente.
+  /// POST /yo/aviso: 409 si la versión ya no es la vigente.
   Future<Map<String, dynamic>> aceptarAviso(String version) =>
-      _mapa(() => _api.dio.post('/usuarios/yo/aviso-privacidad', data: {'version': version}));
+      _mapa(() => _api.dio.post('/yo/aviso', data: {'version': version}));
 
   static Future<Map<String, dynamic>> _mapa(Future<Response<dynamic>> Function() peticion) async {
     try {

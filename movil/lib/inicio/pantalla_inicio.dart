@@ -17,7 +17,7 @@ import '../sincronizacion/servicio_conectividad.dart';
 import '../sincronizacion/sync_manager.dart';
 import '../sincronizacion/tarjeta_pendientes.dart';
 
-/// Inicio después del login: nuevo reporte (Sprint 2), quién soy (GET /usuarios/yo) y el latido de la 2.4.
+/// Inicio después del login: nuevo reporte (Sprint 2), quién soy (GET /yo) y el latido de la 2.4.
 class PantallaInicio extends StatefulWidget {
   const PantallaInicio({super.key, required this.sesion});
 
@@ -71,7 +71,7 @@ class _PantallaInicioState extends State<PantallaInicio> with WidgetsBindingObse
 
   Future<void> _cargarCuenta() async {
     try {
-      final r = await widget.sesion.api.dio.get('/usuarios/yo');
+      final r = await widget.sesion.api.dio.get('/yo');
       if (mounted) setState(() => _cuenta = r.data as Map<String, dynamic>);
     } catch (e) {
       if (mounted) setState(() => _errorCuenta = ApiError.de(e).mensaje);
@@ -170,7 +170,7 @@ class _PantallaInicioState extends State<PantallaInicio> with WidgetsBindingObse
               Text(
                 'Esta es la pantalla de prueba del sprint: confirma que el login, el token, '
                 'el latido y el logout funcionan contra el backend real. '
-                'Desliza hacia abajo para volver a consultar /usuarios/yo.',
+                'Desliza hacia abajo para volver a consultar /yo.',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ],
@@ -220,7 +220,7 @@ class _TarjetaCuenta extends StatelessWidget {
     }
     final c = cuenta;
     if (c == null) {
-      return const Card(child: ListTile(title: Text('Consultando /usuarios/yo…')));
+      return const Card(child: ListTile(title: Text('Consultando /yo…')));
     }
     final pendientes = [
       if (c['debeCambiarPassword'] == true) 'Cambiar la contraseña temporal',
@@ -232,7 +232,7 @@ class _TarjetaCuenta extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Respuesta de GET /usuarios/yo', style: Theme.of(context).textTheme.titleMedium),
+            Text('Respuesta de GET /yo', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),
             Text('id: ${c['id']}  ·  rol: ${c['rol']}'),
             Text('correo: ${c['email'] ?? '—'}'),

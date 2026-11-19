@@ -2,7 +2,7 @@
 
 Todo se ajusta con variables de entorno (valores por defecto entre corchetes):
   MIAA_FRONT            [https://localhost:5173]        front (npm run dev:https)
-  MIAA_API              [https://localhost:8500/api/v1]  API (perfiles https,pruebas)
+  MIAA_API              [https://localhost:8500/api]  API (perfiles https,pruebas)
   MIAA_ADMIN_USUARIO    [admin]      MIAA_ADMIN_PASSWORD [admin123]
   MIAA_INTENTOS_MAXIMOS [5]          debe coincidir con miaa.login.intentos-maximos
   MIAA_HEADLESS         [1]          0 = ver el navegador mientras corre
@@ -26,7 +26,7 @@ CARPETA_CAPTURAS = CARPETA_REPORTES / "capturas"
 
 class Config:
     front = os.environ.get("MIAA_FRONT", "https://localhost:5173").rstrip("/")
-    api = os.environ.get("MIAA_API", "https://localhost:8500/api/v1").rstrip("/")
+    api = os.environ.get("MIAA_API", "https://localhost:8500/api").rstrip("/")
     admin_usuario = os.environ.get("MIAA_ADMIN_USUARIO", "admin")
     admin_password = os.environ.get("MIAA_ADMIN_PASSWORD", "admin123")
     intentos_maximos = int(os.environ.get("MIAA_INTENTOS_MAXIMOS", "5"))
@@ -102,7 +102,7 @@ def crear_notificador(admin):
 
     def crear(etiqueta: str, requisitos: bool = True) -> dict:
         username = f"qa_{re.sub(r'[^a-z0-9]', '', etiqueta.lower())[:12]}_{secrets.token_hex(3)}"
-        r = admin.post("/usuarios/empleados", json={
+        r = admin.post("/empleados", json={
             "nombre": f"Prueba {etiqueta}", "username": username,
             "email": f"{username}@pruebas.miaa.local", "passwordTemporal": PASSWORD_TEMPORAL})
         assert r.status_code == 201, f"No se pudo crear {username}: {r.status_code} {r.text}"
@@ -112,17 +112,17 @@ def crear_notificador(admin):
         if not requisitos:
             u = Api(Config.api)
             u.entrar(username, PASSWORD_TEMPORAL)
-            r = u.put("/usuarios/yo/password", json={"actual": PASSWORD_TEMPORAL, "nueva": PASSWORD_DEFINITIVA})
+            r = u.put("/yo/password", json={"actual": PASSWORD_TEMPORAL, "nueva": PASSWORD_DEFINITIVA})
             assert r.status_code == 200, r.text
-            version = u.get("/usuarios/yo").json()["avisoPrivacidadVersion"]
-            r = u.post("/usuarios/yo/aviso-privacidad", json={"version": version})
+            version = u.get("/yo").json()["avisoPrivacidadVersion"]
+            r = u.post("/yo/aviso", json={"version": version})
             assert r.status_code == 200, r.text
             datos["password"] = PASSWORD_DEFINITIVA
         return datos
 
     yield crear
     for id_ in creados:  # que no queden cuentas de prueba activas
-        admin.put(f"/usuarios/empleados/{id_}/habilitado", json={"habilitado": False})
+        admin.put(f"/empleados/{id_}/habilitado", json={"habilitado": False})
 
 
 # ---------------------------------------------------------------------------

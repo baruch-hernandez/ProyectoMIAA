@@ -85,11 +85,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     }
 
     static boolean rutaDeCuenta(HttpServletRequest request) {
-        String ruta = request.getRequestURI().substring(request.getContextPath().length());
-        if (ruta.startsWith("/api/v1")) {
-            ruta = ruta.substring("/api/v1".length());
-        }
-        return ruta.equals("/usuarios/yo") || ruta.startsWith("/usuarios/yo/") || ruta.equals("/usuarios/heartbeat")
+        String ruta = request.getRequestURI().substring(request.getContextPath().length()); // sin el "/api"
+        return ruta.equals("/yo") || ruta.startsWith("/yo/") || ruta.equals("/heartbeat")
                 || ruta.equals("/auth/logout");
     }
 }

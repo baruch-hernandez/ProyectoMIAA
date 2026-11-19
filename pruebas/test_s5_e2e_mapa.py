@@ -55,7 +55,7 @@ def test_3_3_e2e_mapa_marcador_popup_y_transicion_logout(navegador, config, crea
     buscador.send_keys(datos["nombre"])
 
     # 3. Mandar latido con coordenadas ya con el mapa abierto (evita que expire antes de cargar)
-    assert movil.post("/usuarios/heartbeat", json=PUNTO_AGS).status_code == 204
+    assert movil.post("/heartbeat", json=PUNTO_AGS).status_code == 204
     hora_latido = datetime.now(ZoneInfo("America/Mexico_City"))
 
     # 4. Verificar marcador en VERDE (#0fa987)[cite: 41]
@@ -63,7 +63,7 @@ def test_3_3_e2e_mapa_marcador_popup_y_transicion_logout(navegador, config, crea
     captura(navegador, "s5_e2e_1_marcador_verde")
 
     # Refrescar latido para mantenerlo activo mientras se abre el popup
-    assert movil.post("/usuarios/heartbeat").status_code == 204
+    assert movil.post("/heartbeat").status_code == 204
 
     # 5. Clic en el botón de la lista lateral para abrir el popup y revisar datos[cite: 41]
     boton_empleado = WebDriverWait(navegador, 10).until(
@@ -98,7 +98,7 @@ def test_3_3_e2e_mapa_marcador_popup_y_transicion_logout(navegador, config, crea
 
     # 7. Reconectar, volver a VERDE y simular pérdida de conectividad (sin latidos)
     movil.entrar(datos["username"], datos["password"])
-    assert movil.post("/usuarios/heartbeat", json=PUNTO_AGS).status_code == 204
+    assert movil.post("/heartbeat", json=PUNTO_AGS).status_code == 204
     esperar_color_marcador(navegador, COLOR_VERDE, timeout=8)
 
     time.sleep(umbral + 2)

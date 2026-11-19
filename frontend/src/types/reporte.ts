@@ -28,6 +28,11 @@ export interface Foto {
   fechaCaptura: string; // cuándo se TOMÓ (la que importa)
   origenFecha: OrigenFechaFoto;
   fechaSubida: string; // cuándo llegó al servidor
+  /** Punto GPS de la cámara de la app; null en fotos de la web o la galería */
+  latitud: number | null;
+  longitud: number | null;
+  /** Radio de error del GPS en metros */
+  precisionGps: number | null;
 }
 
 /** POST /reportes  ↔  ReporteRequestDTO.java */
@@ -68,6 +73,12 @@ export interface ReporteResumen {
   totalFotos: number;
   totalNotas: number;
   editado: boolean;
+  latitud: number | null;
+  longitud: number | null;
+  /** Cuándo se llenó en campo (UTC); null en reportes viejos */
+  fechaCaptura: string | null;
+  /** Ruta de la miniatura en la API ("/reportes/7/miniatura"); null si no tiene fotos */
+  miniatura: string | null;
 }
 
 /** Filtros de GET /reportes (admin). '' = sin filtro; fechas 'AAAA-MM-DD', ambos días incluidos */
@@ -132,7 +143,7 @@ export interface ReporteDetalle {
   puedeAnotar: boolean;
 }
 
-/** GET /usuarios/empleados  ↔  EmpleadoDTO.java */
+/** GET /empleados  ↔  EmpleadoDTO.java */
 export interface Empleado {
   id: number;
   nombre: string;
@@ -158,12 +169,12 @@ export interface Empleado {
 /** ↔ Disponibilidad.java */
 export type Disponibilidad = 'EN_LINEA' | 'DESCONECTADO';
 
-/** GET /usuarios/empleados  ↔  EmpleadosDTO.java */
+/** GET /empleados  ↔  EmpleadosDTO.java */
 export interface EmpleadosRespuesta {
   empleados: Empleado[];
 }
 
-/** POST /usuarios/heartbeat  ↔  UbicacionRequestDTO.java (fuera de Aguascalientes → 400) */
+/** POST /heartbeat  ↔  UbicacionRequestDTO.java (fuera de Aguascalientes → 400) */
 export interface UbicacionNueva {
   latitud: number;
   longitud: number;
@@ -173,7 +184,7 @@ export interface UbicacionNueva {
 /** ↔ EstadoConexion.java */
 export type EstadoConexion = 'ACTIVO' | 'INACTIVO';
 
-/** GET /admin/cuadrillas/ubicaciones y /usuarios/empleados/{id}/ubicacion  ↔  UbicacionEmpleadoDTO.java */
+/** GET /cuadrillas y /empleados/{id}/ubicacion  ↔  UbicacionEmpleadoDTO.java */
 export interface UbicacionEmpleado {
   empleadoId: number;
   nombre: string;
@@ -198,7 +209,7 @@ export interface UbicacionEmpleado {
 
 // ---------------------------------------------------------------- cuentas
 
-/** GET /usuarios/yo  ↔  CuentaDTO.java */
+/** GET /yo  ↔  CuentaDTO.java */
 export interface Cuenta {
   id: number;
   nombre: string;
@@ -211,7 +222,7 @@ export interface Cuenta {
   avisoPrivacidadVersion: string;
 }
 
-/** GET /usuarios/empleados/{id}  ↔  CuentaEmpleadoDTO.java */
+/** GET /empleados/{id}  ↔  CuentaEmpleadoDTO.java */
 export interface CuentaEmpleado {
   id: number;
   nombre: string;
@@ -227,7 +238,7 @@ export interface CuentaEmpleado {
   rol: 'ADMIN' | 'NOTIFICADOR';
 }
 
-/** POST /usuarios/empleados  ↔  NuevoEmpleadoDTO.java */
+/** POST /empleados  ↔  NuevoEmpleadoDTO.java */
 export interface NuevoEmpleado {
   nombre: string;
   username: string;

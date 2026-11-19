@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
  * aceptar el aviso de privacidad.
  *
  * "Requisitos pendientes": mientras alguien deba cambiar su contraseña temporal o
- * no haya aceptado el aviso vigente, el JwtAuthFilter solo le deja usar /usuarios/yo/**.
+ * no haya aceptado el aviso vigente, el JwtAuthFilter solo le deja usar /yo/**.
  */
 @Service
 public class CuentaService {

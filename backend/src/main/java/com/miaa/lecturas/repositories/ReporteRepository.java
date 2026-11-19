@@ -34,9 +34,12 @@ public interface ReporteRepository extends JpaRepository<Reporte, Long> {
                AND r.fechaCreacion >= :desde AND r.fechaCreacion < :hasta
             """;
 
-    /** Una página, del más nuevo al más viejo (el admin no carga la historia completa de golpe). */
+    /**
+     * Una página, por hora de captura en campo, de la más nueva a la más vieja (Historia 6). Los
+     * reportes viejos sin hora de captura van al final. El admin no carga la historia completa de golpe.
+     */
     @Query(value = "SELECT r FROM Reporte r JOIN FETCH r.creadoPor" + FILTROS
-            + " ORDER BY r.fechaCreacion DESC, r.id DESC",
+            + " ORDER BY r.fechaCaptura DESC NULLS LAST, r.fechaCreacion DESC, r.id DESC",
             countQuery = "SELECT COUNT(r) FROM Reporte r" + FILTROS)
     Page<Reporte> buscarTodos(@Param("autorId") Long autorId, @Param("desde") LocalDateTime desde,
                               @Param("hasta") LocalDateTime hasta, Pageable pagina);

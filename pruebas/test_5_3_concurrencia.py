@@ -47,16 +47,16 @@ def resumen(nombre, tiempos_ms):
 @pytest.fixture(scope="module")
 def usuarios_carga(admin, config):
     """Crea (o reinicia) carga_001 … carga_100 con la misma contraseña temporal."""
-    existentes = {e["username"]: e["id"] for e in admin.get("/usuarios/empleados").json()["empleados"]}
+    existentes = {e["username"]: e["id"] for e in admin.get("/empleados").json()["empleados"]}
 
     def preparar(i):
         username = f"carga_{i:03d}"
         if username in existentes:
             id_ = existentes[username]
-            admin.put(f"/usuarios/empleados/{id_}/habilitado", json={"habilitado": True})
-            r = admin.post(f"/usuarios/empleados/{id_}/password", json={"passwordTemporal": PASSWORD_CARGA})
+            admin.put(f"/empleados/{id_}/habilitado", json={"habilitado": True})
+            r = admin.post(f"/empleados/{id_}/password", json={"passwordTemporal": PASSWORD_CARGA})
         else:
-            r = admin.post("/usuarios/empleados", json={
+            r = admin.post("/empleados", json={
                 "nombre": f"Carga {i:03d}", "username": username, "passwordTemporal": PASSWORD_CARGA})
             id_ = r.json().get("id") if r.ok else None
         assert r.ok, f"No se pudo preparar {username}: {r.status_code} {r.text}"
@@ -81,10 +81,10 @@ def test_100_usuarios_inician_sesion_al_mismo_tiempo(usuarios_carga, admin, conf
             if r.status_code == 200:
                 api.token = r.json()["token"]
                 t1 = time.perf_counter()
-                r = api.get("/usuarios/yo")
+                r = api.get("/yo")
                 fila["yo_ms"], fila["yo_status"] = (time.perf_counter() - t1) * 1000, r.status_code
                 t2 = time.perf_counter()
-                r = api.post("/usuarios/heartbeat")
+                r = api.post("/heartbeat")
                 fila["latido_ms"], fila["latido_status"] = (time.perf_counter() - t2) * 1000, r.status_code
         except Exception as e:  # noqa: BLE001
             fila["error"] = repr(e)
@@ -117,7 +117,7 @@ def test_100_usuarios_inician_sesion_al_mismo_tiempo(usuarios_carga, admin, conf
     assert percentil(logins, 95) <= P95_MAX_MS, f"el 95% de los logins debe tardar ≤ {P95_MAX_MS:.0f} ms"
 
     # 2.4 bajo carga: el admin ve a los 100 en línea
-    empleados = admin.get("/usuarios/empleados").json()["empleados"]
+    empleados = admin.get("/empleados").json()["empleados"]
     en_linea = sum(1 for e in empleados if e["username"] in usuarios_carga and e["disponibilidad"] == "EN_LINEA")
     print(f"En línea según el panel del admin: {en_linea}/{USUARIOS}")
     assert en_linea == USUARIOS

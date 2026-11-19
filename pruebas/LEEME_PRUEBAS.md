@@ -10,7 +10,7 @@
 | **5.4** Aviso de privacidad | `test_5_4_aviso_privacidad.py` | El backend bloquea sin aviso, se guarda versión y fecha, el flujo en pantalla, que no se pueda brincar | requests + **Selenium** |
 | **S4 3.3** Sincronización offline | `test_s4_sync_reportes.py` | `POST /reportes/sync`: reporte con hora desfasada, idempotencia del `clientSyncId`, rechazo sin coordenadas, sin imagen o sin hora UTC (sin tumbar el lote) | requests (multipart) |
 | **S4 3.4** Ráfaga (servidor) | `test_s4_sync_reportes.py` | 10 reportes en lotes con uno repetido: 10 filas y fotos idénticas byte por byte | requests |
-| **S5 1.2 / 1.5 / 2.2** Cuadrillas | `test_s5_cuadrillas.py` | `POST /usuarios/heartbeat` con y sin coordenadas, 400 fuera de Aguascalientes, mapa del admin (estado, rol, coordenadas, última conexión UTC), INACTIVO al cerrar sesión, solo ADMIN | requests |
+| **S5 1.2 / 1.5 / 2.2** Cuadrillas | `test_s5_cuadrillas.py` | `POST /heartbeat` con y sin coordenadas, 400 fuera de Aguascalientes, mapa del admin (estado, rol, coordenadas, última conexión UTC), INACTIVO al cerrar sesión, solo ADMIN | requests |
 | **S4 3.1 / 3.2 / 3.4** App | `movil/test/s4_*_test.dart` | DAO SQLite, flujo en modo avión + reinicio, ráfaga con la red yendo y viniendo | `flutter test` (SQLite real con `sqflite_common_ffi`) |
 
 Cada prueba con navegador deja **capturas** en `reportes/capturas/`. Si una falla, también se guarda la pantalla del momento en que falló.
@@ -64,7 +64,7 @@ Para correr solo una tarea: `pytest test_5_3_concurrencia.py -s`. El `-s` muestr
 | Variable | Por defecto | Para qué |
 |---|---|---|
 | `MIAA_FRONT` | `https://localhost:5173` | URL del front |
-| `MIAA_API` | `https://localhost:8500/api/v1` | URL de la API |
+| `MIAA_API` | `https://localhost:8500/api` | URL de la API |
 | `MIAA_ADMIN_USUARIO` / `MIAA_ADMIN_PASSWORD` | `admin` / `admin123` | Admin para preparar datos |
 | `MIAA_INTENTOS_MAXIMOS` | `5` | Igual que `miaa.login.intentos-maximos` |
 | `MIAA_USUARIOS_CARGA` | `100` | Usuarios simultáneos (5.3) |

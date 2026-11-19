@@ -39,7 +39,7 @@ void main() {
     return (api, rutas);
   }
 
-  test('Sprint 5: un latido por segundo a /usuarios/heartbeat; las coordenadas solo si cambiaron', () async {
+  test('Sprint 5: un latido por segundo a /heartbeat; las coordenadas solo si cambiaron', () async {
     final (api, rutas) = await apiFalsa();
     final latido = Latido(api, gps: () => Stream.value(punto));
     addTearDown(latido.dispose);
@@ -49,7 +49,7 @@ void main() {
     await latido.latir(); // ya hay lectura: va con coordenadas
     await latido.latir(); // mismo lugar, hace menos de 30 s: sin coordenadas (ahorra datos)
 
-    expect(rutas, ['POST /usuarios/heartbeat', 'POST /usuarios/heartbeat +gps', 'POST /usuarios/heartbeat']);
+    expect(rutas, ['POST /heartbeat', 'POST /heartbeat +gps', 'POST /heartbeat']);
     expect(Latido.compartiendo.value, isTrue);
     expect(latido.ultimaUbicacion, isNotNull);
   });
@@ -63,7 +63,7 @@ void main() {
     await pumpEventQueue();
     await latido.latir();
 
-    expect(rutas, ['POST /usuarios/heartbeat', 'POST /usuarios/heartbeat']);
+    expect(rutas, ['POST /heartbeat', 'POST /heartbeat']);
   });
 
   test('tarea 2.2: al cerrar sesión (detener) ya no sale ningún latido ni ubicación', () async {

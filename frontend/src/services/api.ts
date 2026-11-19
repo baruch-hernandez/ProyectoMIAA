@@ -12,7 +12,7 @@ declare module 'axios' {
 }
 
 // Cambiar https://localhost:8500 por http://localhost:8090
-const URL_API: string = import.meta.env.VITE_API_URL || 'http://localhost:8500';
+export const URL_API: string = import.meta.env.VITE_API_URL || 'http://localhost:8500/api';
 
 if (import.meta.env.PROD && URL_API.startsWith('http://')) {
   console.error(`[MIAA] VITE_API_URL usa http:// (${URL_API}). En producción debe ser https://`);

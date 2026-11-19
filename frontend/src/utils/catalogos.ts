@@ -52,6 +52,12 @@ export function horaDeConexion(iso: string, ahora: Date = new Date()): string {
   return `${cuando} ${horaAgs.format(f)} h`;
 }
 
+/** "19/11/2026 14:32 h", siempre en hora de Aguascalientes (Historia 6: hora de captura). */
+export function fechaHoraAgs(iso: string): string {
+  const f = new Date(iso);
+  return `${fechaAgs.format(f)} ${horaAgs.format(f)} h`;
+}
+
 /** Cada cuánto pregunta el admin por las ubicaciones (solo con el mapa abierto y visible). */
 export const CONSULTA_MS = 1_000;
 

@@ -29,7 +29,7 @@ Stream<LecturaGps> lecturasSiHayPermiso({
 /// Con la pantalla apagada o la app al fondo se detiene y avisa que se pausó (sale inactivo al
 /// instante); al volver, late de inmediato.
 ///
-/// Sprint 5 (tarea 2.1): UNA petición por latido, POST /usuarios/heartbeat. Para cuidar los datos
+/// Sprint 5 (tarea 2.1): UNA petición por latido, POST /heartbeat. Para cuidar los datos
 /// móviles, las coordenadas solo van cuando sirven: al moverse [metrosParaReenviar] o más, o cada
 /// [reenviarCada] si sigue en el mismo lugar; los demás latidos van sin cuerpo. Las lecturas fuera
 /// del estado (saltos del GPS) ni se mandan: el backend las rechaza.
@@ -89,7 +89,7 @@ class Latido extends ChangeNotifier {
   Future<void> pausar() async {
     detener();
     try {
-      await _api.dio.delete('/usuarios/yo/conexion', options: Carga.oculta).timeout(const Duration(seconds: 2));
+      await _api.dio.delete('/yo/conexion', options: Carga.oculta).timeout(const Duration(seconds: 2));
     } catch (_) {}
   }
 
@@ -112,7 +112,7 @@ class Latido extends ChangeNotifier {
     final l = _ultimaLectura;
     final conPunto = l != null && _hayQueMandar(l);
     try {
-      await _api.dio.post('/usuarios/heartbeat',
+      await _api.dio.post('/heartbeat',
           data: conPunto ? {'latitud': l.lat, 'longitud': l.lng, 'precision': l.precision} : null,
           options: Carga.oculta); // 204; de fondo: sin gota de carga
       if (conPunto) {
