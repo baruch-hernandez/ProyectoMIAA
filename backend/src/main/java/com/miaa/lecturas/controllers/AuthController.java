@@ -3,11 +3,15 @@ package com.miaa.lecturas.controllers;
 import com.miaa.lecturas.config.JwtUtils;
 import com.miaa.lecturas.config.UsuarioPrincipal;
 import com.miaa.lecturas.dtos.LoginRequestDTO;
+import com.miaa.lecturas.dtos.OlvidePasswordDTO;
+import com.miaa.lecturas.dtos.RestablecerPasswordDTO;
 import com.miaa.lecturas.entities.Usuario;
 import com.miaa.lecturas.repositories.UsuarioRepository;
 import com.miaa.lecturas.services.BloqueoPorIntentos;
 import com.miaa.lecturas.services.CuentaService;
 import com.miaa.lecturas.services.PresenciaService;
+import com.miaa.lecturas.services.RecuperacionPasswordService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -30,19 +34,36 @@ public class AuthController {
     private final CuentaService cuentaService;
     private final BloqueoPorIntentos bloqueo;
     private final PresenciaService presenciaService;
+    private final RecuperacionPasswordService recuperacion;
 
     public AuthController(UsuarioRepository usuarioRepository,
             PasswordEncoder passwordEncoder,
             JwtUtils jwtUtils,
             CuentaService cuentaService,
             BloqueoPorIntentos bloqueo,
-            PresenciaService presenciaService) {
+            PresenciaService presenciaService,
+            RecuperacionPasswordService recuperacion) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtils = jwtUtils;
         this.cuentaService = cuentaService;
         this.bloqueo = bloqueo;
         this.presenciaService = presenciaService;
+        this.recuperacion = recuperacion;
+    }
+
+    /** "Olvidé mi contraseña": manda un código al correo de la cuenta. Siempre 204, exista o no. */
+    @PostMapping("/password/olvide")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void olvidePassword(@Valid @RequestBody OlvidePasswordDTO request) {
+        recuperacion.solicitar(request.usuario(), LocalDateTime.now());
+    }
+
+    /** Con el código del correo pone la contraseña nueva (y quita un bloqueo por intentos). */
+    @PostMapping("/password/restablecer")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void restablecerPassword(@Valid @RequestBody RestablecerPasswordDTO request) {
+        recuperacion.restablecer(request.usuario(), request.codigo(), request.nueva(), LocalDateTime.now());
     }
 
     // @Transactional: la fila del usuario queda bloqueada (FOR UPDATE) hasta responder, así los

@@ -207,6 +207,8 @@ La app móvil rechaza al admin ("Esta app es solo para notificadores").
 4. **Roles:** `@PreAuthorize("hasRole('ADMIN')")` o `'NOTIFICADOR'` en cada controller. Además, los services revisan que el reporte sea tuyo antes de tocarlo.
 5. **Requisitos de la cuenta:** si el usuario tiene una contraseña temporal (porque el admin lo dio de alta o se la restableció) o no ha aceptado la versión vigente del aviso de privacidad, toda la API responde **403 `REQUISITO_PENDIENTE`**. Solo puede usar las rutas de su cuenta (`/yo/...`). La web lo manda a `/cuenta/requisitos`.
 
+**¿Olvidaste tu contraseña?** (en el login de la web y de la app): con su usuario o correo, la persona recibe en el correo de su cuenta un **código de 6 dígitos** que vence en 15 min y admite 5 intentos ([RecuperacionPasswordService](backend/src/main/java/com/miaa/lecturas/services/RecuperacionPasswordService.java)). Con él pone una contraseña nueva, que también quita un bloqueo por intentos. La respuesta nunca dice si la cuenta existe, y estas rutas comparten el límite de 10 por minuto del login. El correo sale por SMTP: definan `SPRING_MAIL_HOST`, `SPRING_MAIL_USERNAME` y `SPRING_MAIL_PASSWORD` (y si hace falta `SPRING_MAIL_PORT`, 587 por defecto). **Sin `SPRING_MAIL_HOST` no se manda correo: el código aparece en el log del backend** (solo para desarrollo).
+
 En el celular, el token se guarda cifrado con `flutter_secure_storage`. En la web vive en `sessionStorage`, así que se borra al cerrar la pestaña.
 
 ### 6.2 Reportes
@@ -283,6 +285,8 @@ Todas las rutas cuelgan de `/api` (sin versión; `server.servlet.context-path`):
 | --- | --- | --- | --- |
 | POST | `/auth/login` | — | Usuario y contraseña → token |
 | POST | `/auth/logout` | cualquiera | INACTIVO al instante |
+| POST | `/auth/password/olvide` | — | `{ usuario }` (usuario o correo): manda un código al correo de la cuenta. Siempre 204 |
+| POST | `/auth/password/restablecer` | — | `{ usuario, codigo, nueva }`: cambia la contraseña con el código (400 si es incorrecto o venció) |
 | GET | `/yo` | cualquiera | Mi cuenta y mis requisitos pendientes |
 | PUT | `/yo/password` | cualquiera | Cambiar mi contraseña |
 | POST | `/yo/aviso` | cualquiera | Aceptar el aviso (con su versión) |
@@ -291,8 +295,10 @@ Todas las rutas cuelgan de `/api` (sin versión; `server.servlet.context-path`):
 | POST | `/reportes` | NOTIFICADOR | Crear reporte con fotos |
 | POST | `/reportes/sync` | NOTIFICADOR | Subir de golpe los guardados sin conexión: multipart, con la parte `reportes` (JSON) y una parte binaria por foto. Responde `{ sincronizados: [{clientSyncId, id, folio}], rechazados: [{clientSyncId, motivo, errores}] }`. Exige coordenadas, al menos 1 foto y `fechaCaptura` en UTC (termina en `Z`). Un `clientSyncId` repetido regresa el reporte de antes |
 | GET | `/reportes/mios` | NOTIFICADOR | Mis reportes |
-| GET | `/reportes?pagina=0&tamano=50` | ADMIN | Todos los reportes, por páginas: `{ reportes, total, empleados, pagina, hayMas }` (máx. 100 por página). Filtros opcionales: `empleadoId`, `desde` y `hasta` (`AAAA-MM-DD`, días incluidos; `desde` después de `hasta` → 400) |
+| GET | `/reportes?pagina=0&tamano=50` | ADMIN | Todos los reportes, por hora de captura (la más nueva primero) y por páginas: `{ reportes, total, empleados, pagina, hayMas }` (máx. 100 por página). Filtros opcionales: `empleadoId`, `desde` y `hasta` (`AAAA-MM-DD`, días incluidos; `desde` después de `hasta` → 400) |
 | GET | `/reportes/{id}` | los dos* | Detalle (*el notificador solo ve los suyos) |
+| GET | `/reportes/{id}/miniatura` | los dos* | JPEG de ~320 px de la primera foto (para la bandeja del admin) |
+| GET | `/reportes/eventos` | ADMIN | Avisos en tiempo real (Server-Sent Events): `event: nuevo-reporte` con el renglón del reporte, cada vez que se guarda uno nuevo |
 | PUT / DELETE | `/reportes/{id}` | NOTIFICADOR | Editar o borrar (24 h) |
 | POST | `/reportes/{id}/notas` | NOTIFICADOR | Agregar nota |
 | POST / DELETE | `/reportes/{id}/fotos[/{fotoId}]` | NOTIFICADOR | Agregar o quitar foto (24 h) |

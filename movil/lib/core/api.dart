@@ -60,8 +60,11 @@ class ApiError implements Exception {
   String toString() => mensaje;
 }
 
+/// Login y "olvidé mi contraseña": sin token (uno viejo haría que el backend respondiera 401).
+bool esRutaPublica(String ruta) => ruta.contains('/auth/login') || ruta.contains('/auth/password/');
+
 /// Cliente HTTP de la app (Dio) con los interceptores, igual que api.ts del front web:
-///  - agrega "Authorization: Bearer <token>" a todo, menos al login;
+///  - agrega `Authorization: Bearer <token>` a todo, menos a las rutas públicas;
 ///  - si el backend responde 401 (token vencido o cuenta dada de baja), avisa para cerrar sesión.
 class Api {
   Api._(this.dio);
@@ -92,7 +95,7 @@ class Api {
     dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) {
         final t = token();
-        final esLogin = options.path.contains('/auth/login');
+        final esLogin = esRutaPublica(options.path);
         if (t != null && !esLogin && !options.headers.containsKey('Authorization')) {
           options.headers['Authorization'] = 'Bearer $t';
         }
@@ -104,7 +107,7 @@ class Api {
       },
       onError: (error, handler) {
         unawaited(RelojServidor.registrarRespuesta(error.response?.headers.value('date'))); // un 4xx también trae la hora
-        final esLogin = error.requestOptions.path.contains('/auth/login');
+        final esLogin = esRutaPublica(error.requestOptions.path);
         if (error.response?.statusCode == 401 && !esLogin) {
           alExpirar(ApiError.de(error));
         } else if (error.response?.statusCode == 403 && ApiError.de(error).codigo == 'REQUISITO_PENDIENTE') {

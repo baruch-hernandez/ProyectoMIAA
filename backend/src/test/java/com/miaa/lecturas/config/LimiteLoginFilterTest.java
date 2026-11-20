@@ -12,6 +12,8 @@ class LimiteLoginFilterTest {
     void aplicaAlPostDelLogin() {
         assertTrue(LimiteLoginFilter.esLogin("POST", "/api/auth/login", "/api"));
         assertTrue(LimiteLoginFilter.esLogin("post", "/api/auth/login/", "/api"));
+        assertTrue(LimiteLoginFilter.esLogin("POST", "/api/auth/password/olvide", "/api"));
+        assertTrue(LimiteLoginFilter.esLogin("POST", "/api/auth/password/restablecer", "/api"));
     }
 
     @Test

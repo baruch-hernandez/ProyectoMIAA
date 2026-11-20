@@ -37,7 +37,7 @@ public class LimiteLoginFilter extends OncePerRequestFilter {
         return !esLogin(request.getMethod(), request.getRequestURI(), request.getContextPath());
     }
 
-    /** POST a /api/auth/login ([contexto] = "/api", server.servlet.context-path). */
+    /** POST a /api/auth/login o /api/auth/password/... ([contexto] = "/api", server.servlet.context-path). */
     static boolean esLogin(String metodo, String uri, String contexto) {
         if (!"POST".equalsIgnoreCase(metodo) || uri == null) {
             return false;
@@ -47,7 +47,7 @@ public class LimiteLoginFilter extends OncePerRequestFilter {
         if (ruta.endsWith("/")) {
             ruta = ruta.substring(0, ruta.length() - 1);
         }
-        return ruta.equals("/auth/login");
+        return ruta.equals("/auth/login") || ruta.startsWith("/auth/password/"); // olvidé mi contraseña: mismo freno
     }
 
     @Override
@@ -57,7 +57,7 @@ public class LimiteLoginFilter extends OncePerRequestFilter {
         if (espera > 0) {
             response.setHeader("Retry-After", String.valueOf(espera));
             RespuestaJson.error(response, 429,
-                    "Demasiados intentos de inicio de sesión desde este equipo. Espera " + espera
+                    "Demasiados intentos desde este equipo. Espera " + espera
                             + (espera == 1 ? " segundo" : " segundos") + " y vuelve a intentar.",
                     "DEMASIADOS_INTENTOS", espera);
             return;

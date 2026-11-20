@@ -80,6 +80,18 @@ public class Usuario {
     @Column(name = "bloqueado_hasta")
     private java.time.LocalDateTime bloqueadoHasta;
 
+    // "Olvidé mi contraseña" (ver RecuperacionPasswordService): solo el hash del código, como la contraseña
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @ToString.Exclude
+    @Column(name = "reset_codigo_hash", length = 60)
+    private String resetCodigoHash;
+
+    @Column(name = "reset_expira")
+    private java.time.LocalDateTime resetExpira;
+
+    @Column(name = "reset_intentos")
+    private Integer resetIntentos;
+
     // Estos dos NO son getters (no empiezan con get/is): Jackson y JPA los ignoran.
     public boolean estaHabilitado() {
         return !Boolean.FALSE.equals(habilitado);

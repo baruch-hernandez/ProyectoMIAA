@@ -19,11 +19,14 @@ if (import.meta.env.PROD && URL_API.startsWith('http://')) {
 
 const api = axios.create({ baseURL: URL_API });
 
+/** Login y "olvidé mi contraseña": sin token (uno viejo haría que el backend respondiera 401). */
+const esPublica = (url?: string) => !!url && (url.includes('/auth/login') || url.includes('/auth/password/'));
+
 api.interceptors.request.use((config) => {
   const token = obtenerToken();
 
   // NO enviar cabecera Authorization en peticiones de autenticación/login
-  if (token && config.url && !config.url.includes('/auth/login')) {
+  if (token && !esPublica(config.url)) {
     config.headers.Authorization = `Bearer ${token}`;
   } else {
     delete config.headers.Authorization;
@@ -52,7 +55,7 @@ api.interceptors.response.use(
   },
   (error) => {
     terminarCarga(error?.config);
-    const esLogin = String(error?.config?.url ?? '').includes('/auth/login');
+    const esLogin = esPublica(error?.config?.url);
     const status = error?.response?.status;
     const codigo = error?.response?.data?.codigo;
 

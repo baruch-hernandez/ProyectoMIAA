@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, LoaderCircle, Lock, Timer } from 'lucide-react';
 import api from '../services/api';
 import { leerError } from '../services/reportesApi';
@@ -199,6 +199,9 @@ export const Login: React.FC = () => {
                   {verPassword ? <EyeOff size={20} aria-hidden="true" /> : <Eye size={20} aria-hidden="true" />}
                 </button>
               </div>
+              <Link to="/recuperar" state={{ usuario: username }} className="mt-2 inline-block text-sm font-semibold text-miaa-azul hover:underline">
+                ¿Olvidaste tu contraseña?
+              </Link>
             </div>
 
             <button

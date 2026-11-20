@@ -14,6 +14,7 @@ import { EditarReporte } from './components/notificador/EditarReporte';
 import { NuevoEmpleado } from './components/admin/NuevoEmpleado';
 import { RequisitosCuenta } from './components/cuenta/RequisitosCuenta';
 import { CambiarPassword } from './components/cuenta/CambiarPassword';
+import { RecuperarPassword } from './components/cuenta/RecuperarPassword';
 import { GotaCarga } from './components/GotaCarga';
 
 function App() {
@@ -23,6 +24,7 @@ function App() {
       <GotaCarga />
       <Routes>
         <Route path="/" element={<Login />} />
+        <Route path="/recuperar" element={<RecuperarPassword />} />
 
         {/* Con sesión, pero ANTES de todo lo demás: contraseña temporal y aviso de privacidad */}
         <Route path="/cuenta/requisitos" element={<RequisitosCuenta />} />

@@ -35,3 +35,6 @@ build/
 ### Fotos de evidencia (AlmacenFotos): datos, no código ###
 fotos/
 fotos-pruebas/
+
+### Credenciales del correo (cada quien la suya) ###
+correo.properties

@@ -7,6 +7,7 @@ import '../core/carga.dart';
 import '../core/config.dart';
 import '../core/logo_miaa.dart';
 import '../diagnostico/pantalla_diagnostico.dart';
+import 'pantalla_recuperar_password.dart';
 import 'sesion.dart';
 
 class PantallaLogin extends StatefulWidget {
@@ -133,6 +134,16 @@ class _PantallaLoginState extends State<PantallaLogin> {
                     child: _cargando
                         ? const SizedBox.square(dimension: 22, child: CircularProgressIndicator(strokeWidth: 2.5))
                         : Text(_espera > 0 ? 'Espera $_espera s' : 'Entrar'),
+                  ),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    key: const Key('btn-olvide-password'),
+                    onPressed: bloqueado
+                        ? null
+                        : () => Navigator.of(context).push(MaterialPageRoute(
+                              builder: (_) => PantallaRecuperarPassword(api: widget.sesion.api, usuario: _usuario.text.trim()),
+                            )),
+                    child: const Text('¿Olvidaste tu contraseña?'),
                   ),
                   if (Config.herramientasDev) ...[
                     const SizedBox(height: 12),
